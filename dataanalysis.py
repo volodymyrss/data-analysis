@@ -656,6 +656,7 @@ class MemCache: #d
                     print("requested to store DataFile",b)
 
                     p=cached_path+os.path.basename(b.path)
+                    b.cached_path=p+".gz"
                     b.store_stats=self.store_file(b.path,p)
                     obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.store_stats,'operation':'store'})
 
@@ -681,6 +682,7 @@ class MemCache: #d
         #self.make_record(self,hashe,content)
 
     def construct_cached_file_path(self,hashe,obj):
+        print("requested default cached file path")
 
         def hash_to_path(hashe):
             if isinstance(hashe,tuple):
@@ -801,7 +803,11 @@ class MemCacheSqlite(MemCache):
                 print("failed:",e)
                 return None
             #cur.execute("SELECT content FROM cacheindex WHERE hashe=?",(self.hashe2signature(hashe),))
-            rows = cur.fetchall()
+            try:
+                rows = cur.fetchall()
+            except Exception as e:
+                print("exception while fetching",e)
+                return None
 
         if len(rows)==0:
             print("found no cache")
@@ -1030,6 +1036,27 @@ class TransientCache(MemCache): #d
 
         self.store_to_parent(hashe,obj)
 
+class MemCacheNoIndex(MemCache):
+    def __init__(self,*a,**aa):
+        print(a,aa)
+        super(MemCacheNoIndex,self).__init__(*a,**aa)
+
+    def find(self,hashe):
+        import sqlite3 as lite
+        import sys
+
+        print("requested to find",hashe)
+
+        cached_path=self.construct_cached_file_path(hashe,None)
+        if os.path.exists(cached_path+"/cache.pickle.gz"):
+            print("found cache file:",cached_path+"/cache.pickle.gz")
+            return self.load_content(hashe,None)
+
+        print("no file found in",cached_path)
+        return None
+
+    def make_record(self,hashe,content):
+        raise Exception("please write to index!")
 
 #@for_all_methods(decorate_method)
 class DataAnalysis:
@@ -1627,7 +1654,7 @@ class DataFile(DataAnalysis):
     def __init__(self,fn=None):
         self.path=fn
 
-    def get_cached_path(self):
+    def get_cached_path(self): # not work properly if many run!
         return self.cached_path if hasattr(self,'cached_path') else self.path
 
     def open(self):
@@ -1711,8 +1738,10 @@ class find_module_standard(DataAnalysis):
         print("find module",self.input_module_name)
 
         module_name=self.input_module_name.handle
-        self.found=imp.find_module(module_name,sys.path+["."])
+        self.found=imp.find_module(module_name,["."]+sys.path)
         fp, pathname, description=self.found
+        
+        print("will search in",["."]+sys.path)
 
         print("found as",pathname)
 
@@ -1774,7 +1803,7 @@ def load_by_name(m):
         print("as",m0,m1)
         return import_analysis_module(m0,m1),m0
     else:
-        fp, pathname, description=imp.find_module(m,sys.path+["."])
+        fp, pathname, description=imp.find_module(m,["."]+sys.path)
         print("found as",  fp, pathname, description)
         return imp.load_module(m,fp,pathname,description), m
 
