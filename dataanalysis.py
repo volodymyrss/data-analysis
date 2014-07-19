@@ -6,6 +6,7 @@ import hashlib
 import pprint
 import time,gzip,cPickle,socket,sys,os,shutil,re,copy
 from subprocess import check_call
+import subprocess
 import collections
 
 # TODO:
@@ -86,7 +87,7 @@ def isdataanalysis(obj,alsofile=False):
     return False
 
 def objwalk(obj, path=(), memo=None, sel=lambda x:True):
-    print("walking in",obj,path)
+    #print("walking in",obj,path)
     if memo is None:
         memo = set()
     iterator = None
@@ -95,18 +96,18 @@ def objwalk(obj, path=(), memo=None, sel=lambda x:True):
     elif isinstance(obj, (Sequence, Set)) and not isinstance(obj, string_types):
         iterator = enumerate
     if iterator:
-        print("walking interate")
+        #print("walking interate")
         if id(obj) not in memo:
             memo.add(id(obj))
             for path_component, value in iterator(obj):
-                print("walking",path,path_component,value)
+         #       print("walking",path,path_component,value)
                 for result in objwalk(value, path + (path_component,), memo, sel):
                     yield result
             memo.remove(id(obj))
     else:
-        print("walk end",path,obj)
+        #print("walk end",path,obj)
         if sel(obj):
-            print("walk selected",path,obj)
+         #   print("walk selected",path,obj)
             yield obj
 
 #/objwalk
@@ -584,9 +585,14 @@ class MemCache: #d
                         except IOError:
                             if IOError.errno==20:
                                 print("can not copy from from cache, while cache record exists! inconsistent cache!")
-                                raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                      #          raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                                 # just reproduce?
                                 return None
+                        except subprocess.CalledProcessError:
+                            print("can not copy from from cache, while cache record exists! inconsistent cache!")
+                 #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                            # just reproduce?
+                            return None
                     elif restore_config['datafile_restore_mode']=="symlink":
                         os.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+b.path+".gz") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfile":
@@ -666,8 +672,9 @@ class MemCache: #d
         if found is None:
             self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content})
         else:
-            print("record already found:",found)
-            print("these results will be ignored! (why would we do this?..)")
+            print("record already found:",found,'{log:reflections}')
+            print("these results will be ignored! (why would we do this?..)","{log:reflections}") # current behavior is to replace
+            self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content}) # twice same!
         
         # and save
 
@@ -815,7 +822,10 @@ class MemCacheSqlite(MemCache):
         
         if len(rows)>1:
             print("multiple entries for same cache!")
-            raise Exception("confused cache! mupltile entries!")
+            #raise Exception("confused cache! mupltile entries! : "+str(rows))
+            print ("confused cache! mupltile entries! : "+str(rows),"{log:reflections}")
+            print ("confused cache will run it again","{log:reflections}")
+            return None
 
         return cPickle.loads(str(rows[0][0]))
 
