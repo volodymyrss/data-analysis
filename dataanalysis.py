@@ -959,7 +959,9 @@ class MemCacheMySQL(MemCacheSqlite):
         
         if len(rows)>1:
             print("multiple entries for same cache!")
-            raise Exception("confused cache! mupltile entries!")
+            print(rows)
+            return None
+            #raise Exception("confused cache! mupltile entries!")
 
         return cPickle.loads(str(rows[0][0]))
 
@@ -1363,13 +1365,15 @@ class DataAnalysis:
             print(render("{BLUE}this analysis has to run for hashe!{/}"))
             restore_rules['output_required']=True
         print("restore_rules:",restore_rules)
+        return restore_rules
 
-    def process_restore_config(self):
+    def process_restore_config(self,restore_config):
         rc=restore_config # this is for data restore modes, passed to cache
         if restore_config is None:
             rc={'datafile_restore_mode':'copy'}
         
         print('restore_config:',rc)
+        return restore_config
 
 
     def process_timespent_interpret(self):
@@ -1460,7 +1464,7 @@ class DataAnalysis:
 
         if restore_rules['output_required']: # 
             print("output required, try to GET from cache")
-            if self.retrieve_cache(fih,rc):
+            if self.retrieve_cache(fih,restore_config):
                 print("cache found and retrieved",'{log:top}')
             else:
                 print("no cache",'{log:top}')
@@ -1473,7 +1477,7 @@ class DataAnalysis:
                     ## if output has to be generated, but explicite input was not prepared, do it
                     ## process
                     return self.process(process_function=process_function,
-                                        restore_rules=update_dict(restore_rules,ict(output_required=True,explicit_input_required=True)) )
+                                        restore_rules=update_dict(restore_rules,dict(output_required=True,explicit_input_required=True)) )
                     ##  /process
 
                 if restore_rules['can_delegate'] and self.cached:
