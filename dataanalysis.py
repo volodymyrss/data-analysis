@@ -1068,6 +1068,9 @@ class MemCacheNoIndex(MemCache):
     def make_record(self,hashe,content):
         raise Exception("please write to index!")
 
+def update_dict(a,b):
+    return dict(a.items()+b.items())
+
 #@for_all_methods(decorate_method)
 class DataAnalysis:
     __metaclass__ = decorate_all_methods
@@ -1253,7 +1256,8 @@ class DataAnalysis:
     store output with
         """
 
-        print("storing in cache",fih)
+        print(render("{MAGENTA}storing in cache{/}"))
+        print("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
         print(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
@@ -1324,33 +1328,9 @@ class DataAnalysis:
 
     def get(self):
         return self.process(output_required=True)[1]
-    
-    def process(self,process_function=None,restore_rules=None,restore_config=None,**extra):
-        print(render("{BLUE}PROCESS{/}"))
-
-        rc=restore_config # this is for data restore modes, passed to cache
-        if restore_config is None:
-            rc={'datafile_restore_mode':'copy'}
         
-        print('restore_config:',rc)
 
-        restore_rules_default=dict(output_required=False,explicit_input_required=False,restore_complete=False,restore_noncached=False,run_if_haveto=True)
-        restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
-        # to simplify input
-        for k in extra.keys():
-            if k in restore_rules:
-                restore_rules[k]=extra[k]
-        #/
-
-       # process_t0=time.time()
-        
-        if self.run_for_hashe:
-            print(render("{BLUE}this analysis has to run for hashe!{/}"))
-            restore_rules['output_required']=True
-
-        # temp!
-        self.cache.statistics()
-
+    def process_checkin_assumptions(self):
         if self.assumptions!=[]:
             print("assumptions:",self.assumptions)
             print("non-trivial assumptions require copy of the analysis tree")
@@ -1360,10 +1340,113 @@ class DataAnalysis:
         else:
             print("no special assumptions") 
 
+    def process_checkout_assumptions(self):
+        if self.assumptions!=[]:
+            AnalysisFactory.WhatIfNot()
+
+    def process_restore_rules(self,restore_rules,extra):
+        restore_rules_default=dict(
+                    output_required=False,
+                    explicit_input_required=False,
+                    restore_complete=False,
+                    restore_noncached=False,
+                    run_if_haveto=True,
+                    can_delegate=False)
+        restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
+        # to simplify input
+        for k in extra.keys():
+            if k in restore_rules:
+                restore_rules[k]=extra[k]
+        
+        # always run to process
+        if self.run_for_hashe:
+            print(render("{BLUE}this analysis has to run for hashe!{/}"))
+            restore_rules['output_required']=True
         print("restore_rules:",restore_rules)
 
+    def process_restore_config(self):
+        rc=restore_config # this is for data restore modes, passed to cache
+        if restore_config is None:
+            rc={'datafile_restore_mode':'copy'}
+        
+        print('restore_config:',rc)
+
+
+    def process_timespent_interpret(self):
+        tspent=self.time_spent_in_main
+        if tspent<self.min_timespent_tocache and self.cached:
+            print(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
+            if self.allow_timespent_adjustment:
+                print(render("{MAGENTA}temporarily disabling caching for this analysis{/}"))
+                self.cached=False
+            else:
+                print("being ignorant about it")
+        
+            if tspent<self.min_timespent_tocache_hard and self.cached:
+                if self.hard_timespent_checks:
+                    estr=render("{RED}requested to cache fast analysis, hard limit reached!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache_hard))
+                    raise Exception(estr)
+                else:
+                    print("ignoring hard limit on request")
+
+        if tspent>self.max_timespent_tocache and not self.cached:
+            print(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
+
+    def process_run_main(self):
+        #self.runtime_update('running')
+        dll=self.default_log_level
+        self.default_log_level="main"
+
+        print(render("{RED}running main{/}"),'{log:top}')
+        t0=time.time()
+        mr=self.main()
+        tspent=time.time()-t0
+        self.time_spent_in_main=tspent
+        print(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
+        self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
+
+        self.default_log_level=dll
+        #self.runtime_update("storing")
+
+        if mr is not None:
+            print("main returns",mr,"attaching to the object as list")
+
+            if isinstance(mr, collections.Iterable):
+                mr=list(mr)
+            else:
+                mr=[mr]
+            for r in mr:
+                if isinstance(r,DataAnalysis):
+                    print("returned dataanalysis:",r,"assumptions:",r.assumptions)
+            setattr(self,'output',mr)
+
+    def process_find_output_objects(self):
+        da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
+        if da!=[]:
+            print(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
+            print(render("{RED}carefull!{/} it will substitute the object!"),da)
+    
+            if len(da)==1:
+                da=da[0]
+        return da
+
+
+    def process(self,process_function=None,restore_rules=None,restore_config=None,**extra):
+        print(render("{BLUE}PROCESS{/}"))
+
+        restore_config=self.process_restore_config(restore_config)
+        restore_rules=self.process_restore_rules(restore_rules,extra)
+
+        #self.cache.statistics()
+        self.process_checkin_assumptions()
+
         rr= dict(restore_rules.items() + dict(output_required=False).items()) # no need to request input results unless see below
-        input_hash,input=self.process_input(obj=None,process_function=process_function,restore_rules=rr) 
+
+        #### process input
+        input_hash,input=self.process_input(obj=None,
+                                            process_function=process_function,
+                                            restore_rules=update_dict(restore_rules,dict(output_required=False)) ) 
+        #### /process input
         
         process_t0=time.time()
 
@@ -1371,17 +1454,14 @@ class DataAnalysis:
         print("input objects:",input)
         
         fih=('analysis',input_hash,self.get_version()) # construct hash
-        print("full input hash:",fih)
+        print("full hash:",fih)
 
         substitute_object=None
 
         if restore_rules['output_required']: # 
-            #self.get(fih)
-            print("output required, GET from cache")
+            print("output required, try to GET from cache")
             if self.retrieve_cache(fih,rc):
                 print("cache found and retrieved",'{log:top}')
-                #print("restored object is promoted",id(self))
-                #self.promote()
             else:
                 print("no cache",'{log:top}')
 
@@ -1389,84 +1469,38 @@ class DataAnalysis:
                     print("exclicite input is available")
                 else:
                     print("need to guarantee that explicit input is available")
-                    rr= dict(restore_rules.items() + dict(output_required=True,explicit_input_required=True).items())
-                    return self.process(process_function=process_function,restore_rules=rr)
 
+                    ## if output has to be generated, but explicite input was not prepared, do it
+                    ## process
+                    return self.process(process_function=process_function,
+                                        restore_rules=update_dict(restore_rules,ict(output_required=True,explicit_input_required=True)) )
+                    ##  /process
 
-                #self.runtime_update('running')
-                dll=self.default_log_level
-                self.default_log_level="main"
+                if restore_rules['can_delegate'] and self.cached:
+                    print("will delegate this analysis") 
+                    print("togather with input, delegations:")
+                    print(delegated)
+                    return fih,self,delegated # RETURN!
+
                 if restore_rules['run_if_haveto']:
-                    print(render("{RED}running main{/}"),'{log:top}')
-                    t0=time.time()
-                    mr=self.main()
-                    tspent=time.time()-t0
-                    print(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
-                    self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
+                    mr=self.process_run_main()
+                    self.process_timespent_interpret()
                 else:
                     raise Exception("not allowed to run but has to!")
-                self.default_log_level=dll
-                #self.runtime_update("storing")
-                    
 
-                if tspent<self.min_timespent_tocache and self.cached:
-                    print(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
-                    if self.allow_timespent_adjustment:
-                        print(render("{MAGENTA}temporarily disabling caching for this analysis{/}"))
-                        self.cached=False
-                    else:
-                        print("being ignorant about it")
-                
-                    if tspent<self.min_timespent_tocache_hard and self.cached:
-                        if self.hard_timespent_checks:
-                            estr=render("{RED}requested to cache fast analysis, hard limit reached!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache_hard))
-                            raise Exception(estr)
-                        else:
-                            print("ignoring hard limit on request")
-
-                if tspent>self.max_timespent_tocache and not self.cached:
-                    print(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
-
-                if mr is not None:
-                    print("main returns",mr,"attaching to the object as list")
-
-                    if isinstance(mr, collections.Iterable):
-                        mr=list(mr)
-                    else:
-                        mr=[mr]
-                    for r in mr:
-                        if isinstance(r,DataAnalysis):
-                            print("returned dataanalysis:",r,"assumptions:",r.assumptions)
-                    setattr(self,'output',mr)
-
-                
-                    
                 print("new output:",self.export_data())
 
-                print(render("{MAGENTA}storing cache{/}"))
                 self.store_cache(fih)
                 #self.runtime_update("done")
 
-            da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
-
+            da=self.process_find_output_objects()
             if da!=[]:
-                print(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
-                print(render("{RED}carefull!{/} it will substitute the object!"),da)
-        
-                if len(da)==1:
-                    da=da[0]
-
                 if self.cached:
                     print(render("{RED}can not be cached - can not save non-virtual objects!{/}"),da)
                     self.cached=False
 
-                #rr= dict(restore_rules.items() + dict(output_required=False).items()) 
                 rh,ro=self.process_input(da,restore_rules=restore_rules)
                 print(render("substitute the object with dynamic input:"),rh,ro)
-                #if self.assumptions!=[]: #?????????
-                 #   AnalysisFactory.WhatIfNot()
-                #return r[0] # here??
-
 
                 print("--- old input hash:",fih)
                 if self.allow_alias:
@@ -1486,13 +1520,11 @@ class DataAnalysis:
                 if self.retrieve_cache(fih,rc):
                     print("cache found and retrieved",'{log:top}')
                     print("processing finished, object is locally complete")
-                    self._da_locally_complete=True # here??
+                    self._da_locally_complete=True 
                 else:
                     print("NO cache found",'{log:top}')
         
-        if self.assumptions!=[]:
-            AnalysisFactory.WhatIfNot()
-
+        self.process_checkout_assumptions()
 
         process_tspent=time.time()-process_t0
         print(render("{MAGENTA}process took in total{/}"),process_tspent)
@@ -1543,7 +1575,6 @@ class DataAnalysis:
                 restore_rules[k]=extra[k]
         #/
 
-    
         if restore_config is None:
             restore_config={}
         if self.copy_cached_input:
@@ -1589,6 +1620,7 @@ class DataAnalysis:
             # process given input structure
             print("parse and get",obj,obj.__class__)
 
+            # list or tuple
             if isinstance(obj,list) or isinstance(obj,tuple):
                 print("parse list")
                 hashes=[]
