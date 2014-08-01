@@ -333,8 +333,11 @@ class AnalysisFactoryClass: # how to unify this with caches?..
                 print("     stored object:",storeditem)
 
                 if not item.virtual: # careful!
-                    print("     offered object is non-virtual, forcing it") 
-                    update=True
+                    print("     offered object is non-virtual, simply returning") 
+                    #print("     offered object is non-virtual, forcing it") 
+                    # update=True #!!!!
+## think about this! update??
+                    return item
 
                 if update:
                     print("recommendation is to force update")
@@ -372,8 +375,14 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         print("cache stack of size",len(self.cache_stack))
         print("cache stack last entry:",self.cache_stack[-1])
         for i,o in self.cache_stack[-1].items():
-            print("promoting",i)
-            o.__class__()
+            print("promoting",i,'assumptions',o.assumptions)
+            if o.virtual:
+                print("virtual object, constructing empty copy")
+                o.__class__(assume=o.assumptions) # assume??
+            else:
+                print("non-virtual object! promoting object itself")
+                o.promote() # assume??
+
         #self.cache=copy.deepcopy(self.cache_stack[-1]) # dangerous copy!
         print("current cache copied:",self.cache)
 
@@ -658,6 +667,8 @@ class MemCache: #d
         print("content:",content)
                     
         cached_path=self.construct_cached_file_path(hashe,obj)
+
+        obj._da_cached_path=cached_path
         print("storing in",cached_path)
                     
         dn=os.path.dirname(cached_path)
@@ -816,8 +827,11 @@ class MemCacheSqlite(MemCache):
 
             print("SELECT * FROM cacheindex"+selection_string+nlast_string)
 
+            t0=time.time()
             self.retry_execute(cur,"SELECT * FROM cacheindex"+selection_string+nlast_string)
             rows = cur.fetchall()
+            print("mysql request took",time.time()-t0,"{log:top}")
+
 
             print("found rows",len(rows))
             for h,c in rows:
@@ -1025,10 +1039,15 @@ class MemCacheMySQL(MemCacheSqlite):
         c=cPickle.dumps(content)
         print("content as",c)
 
+        if "_da_cached_path" in content:
+            aux1=content['_da_cached_path']
+        else:
+            aux1=""
+
         with db:
             cur = db.cursor()    
             self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS cacheindex(hashe TEXT, fullhashe TEXT, content TEXT)")
-            self.retry_execute(cur,"INSERT INTO cacheindex VALUES(%s,%s,%s)",(self.hashe2signature(hashe),json.dumps(hashe),c))
+            self.retry_execute(cur,"INSERT INTO cacheindex (hashe,fullhashe,content,timestamp,refdir) VALUES(%s,%s,%s,%s,%s)",(self.hashe2signature(hashe),json.dumps(hashe),c,time.time(),aux1))
 
             print("now rows",cur.rowcount)
 
@@ -1133,7 +1152,12 @@ class MemCacheNoIndex(MemCache):
         cached_path=self.construct_cached_file_path(hashe,None)
         if os.path.exists(cached_path+"/cache.pickle.gz"):
             print("found cache file:",cached_path+"/cache.pickle.gz")
-            return self.load_content(hashe,None)
+
+            try:
+                return self.load_content(hashe,None)
+            except Exception as e:
+                print("faild to load content!")
+                return None
 
         print("no file found in",cached_path)
         return None
@@ -1195,7 +1219,7 @@ class DataAnalysis:
 
         self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update"]) # exclude registered
         
-        if 'assume' in args:
+        if 'assume' in args and args['assume']!=[]:
             self.assumptions=args['assume']
             if not isinstance(self.assumptions,list): # iteratable?
                 self.assumptions=[self.assumptions]
@@ -1416,6 +1440,7 @@ class DataAnalysis:
             print("no special assumptions") 
 
     def process_checkout_assumptions(self):
+        print("assumptions checkout")
         if self.assumptions!=[]:
             AnalysisFactory.WhatIfNot()
 
@@ -1427,7 +1452,8 @@ class DataAnalysis:
                     restore_noncached=False,
                     run_if_haveto=True,
                     can_delegate=False,
-                    can_delegate_input=False)
+                    can_delegate_input=False,
+                    run_if_can_not_delegate=True)
         restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
         # to simplify input
         for k in extra.keys():
@@ -1518,6 +1544,8 @@ class DataAnalysis:
             return self._da_main_delegated
     
     def process_list_delegated_inputs(self,input):
+        return [] # disabled
+
         # walk input recursively
         if isinstance(input,list) or isinstance(input,tuple):
             delegated_inputs=[]
@@ -1546,6 +1574,10 @@ class DataAnalysis:
             if not input._da_locally_complete:
                 print("input is not completed! this should not happen!",input)
                 raise("input is not completed! this should not happen!")
+            return
+
+        if input is None:
+            print("input is None, it is fine")
             return
 
         raise Exception("can not understand input: "+repr(input))
