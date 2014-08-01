@@ -51,6 +51,7 @@ global_suppress_output=False
 global_all_output=False
 global_readonly_caches=False
 
+
 sprint=print
 def print(*a):
     if global_suppress_output:
@@ -246,6 +247,7 @@ class AnalysisFactoryClass: # how to unify this with caches?..
     __metaclass__ = decorate_all_methods
 # dictionary of current object names, aliases?..
     cache={} 
+    dda_modules_used=[]
 
     def __repr__(self):
         return "[AnalysisFactory: %i]"%len(self.cache)
@@ -256,6 +258,10 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         if not obj.infactory:
             print("object is not in-factory, not putting")
             return obj
+
+        module_record=sys.modules[obj.__module__]
+        if self.dda_modules_used==[] or self.dda_modules_used[-1]!=module_record:
+            self.dda_modules_used.append(module_record)
 
         if isinstance(obj,type):
             print("requested to put class, it will be constructed")
@@ -407,6 +413,18 @@ def hashe_replace_object(hashe,what,witha):
         raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
     if hashe==what: return witha
     return hashe
+
+def hashe_list_objects(hashe):
+    if isinstance(hashe,tuple):
+        if hashe[0]=='analysis':
+            return [hashe[2]]+hashe_list_objects(hashe[1])
+        if hashe[0]=='list':
+            l=[]
+            for h in hashe[1:]:
+                l+=hashe_list_objects(h)
+            return l
+        raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
+    return []
 
 #LogStream(None,lambda x:True)                                                                                               
 #LogStream("alllog.txt",lambda x:True)
@@ -724,6 +742,36 @@ class MemCache: #d
         else:
             print("file to load does not exist:",target)
 
+    def make_delegation_record(self,hashe,module_description,dependencies):
+        return self.parent.make_delegation_record(hashe,module_description,dependencies)
+
+    def register_delegation(self,obj,hashe):
+        print("requested to register delegation of",obj)
+        print("hashe:",obj)
+
+        print("modules used in dda factory:")
+        
+        module_description=[]
+        for m in AnalysisFactory.dda_modules_used:
+            print("module",m)
+            if hasattr(m,"__dda_module_global_name__"):
+                print("dda module global name", m.__dda_module_global_name__)
+                module_description.append(['cache',m.__name__,m.__dda_module_global_name__])
+            else:
+                module_description.append(['filesystem',m.__name__,m.__file__])
+
+        dependencies=obj._da_delegated_input
+
+        print ("will store hashe       ",hashe)
+        print ("will store modules     ",module_description,dependencies)
+        print ("will store dependencies",dependencies)
+
+        return self.make_delegation_record(hashe,module_description,dependencies)
+
+        # check
+        #for m in sys.modules:
+        #    print("all modules:",m,sys.modules[m],sys.modules[m].__file__ if hasattr(sys.modules[m],'__file__') else "no file??")
+
 
         
 import sqlite3 as lite
@@ -967,7 +1015,6 @@ class MemCacheMySQL(MemCacheSqlite):
 
 
     def make_record(self,hashe,content):
-        import sqlite3 as lite
         import sys,json
 
         print("will store",hashe,content)
@@ -989,6 +1036,30 @@ class MemCacheMySQL(MemCacheSqlite):
         print("restoring from sqlite")
         print("content",c['content'])
         return c['content']
+    
+    def make_delegation_record(self,hashe,module_description,dependencies):
+        import sys,json
+
+        print("will store",hashe,module_description)
+
+        #con = lite.connect(self.filecacheroot+'/index.db')
+        db=self.connect()
+
+        shorthashe=self.hashe2signature(hashe)
+
+        if dependencies is not None and dependencies!=[]: # two??..
+            status="waiting for:"+",".join(dependencies) # comas?
+        else: 
+            status="ready to run"
+
+        with db:
+            cur = db.cursor()    
+            self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS delegationindex(id MEDIUMINT NOT NULL AUTO_INCREMENT, timestamp DOUBLE, hashe TEXT, fullhashe TEXT, modules TEXT, status TEXT, PRIMARY KEY (id))")
+            self.retry_execute(cur,"INSERT INTO delegationindex (timestamp,hashe,fullhashe,modules,status) VALUES(%s,%s,%s,%s,%s)",(time.time(),shorthashe,json.dumps(hashe),json.dumps(module_description),status))
+
+            print("now rows",cur.rowcount)
+
+        return shorthashe
 
 Cache=MemCache
 
@@ -1109,6 +1180,8 @@ class DataAnalysis:
 
     _da_restored=None
     _da_locally_complete=None
+    _da_main_delegated=None
+    _da_delegated_input=None
 
     #def get_dynamic_input(self):
      #   if hasattr(self,'input_dynamic'):
@@ -1353,7 +1426,8 @@ class DataAnalysis:
                     restore_complete=False,
                     restore_noncached=False,
                     run_if_haveto=True,
-                    can_delegate=False)
+                    can_delegate=False,
+                    can_delegate_input=False)
         restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
         # to simplify input
         for k in extra.keys():
@@ -1434,6 +1508,47 @@ class DataAnalysis:
                 da=da[0]
         return da
 
+    def get_delegation(self):
+    #def list_delegated(self):
+        #if self._da_delegated_input is not None:
+        #   if self._da_main_delegated is not None:
+        #       raise Exception("core design error! main is delegated as well as input! ")
+        #   return self._da_delagated_input
+        if self._da_main_delegated is not None:
+            return self._da_main_delegated
+    
+    def process_list_delegated_inputs(self,input):
+        # walk input recursively
+        if isinstance(input,list) or isinstance(input,tuple):
+            delegated_inputs=[]
+            for input_item in input:
+                delegated_inputs+=self.process_list_delegated_inputs(input_item)
+            return delegated_inputs
+            
+        if isinstance(input,DataAnalysis):
+            d=input.get_delegation()
+            if d is not None:
+                print("input delegated:",input,d)
+                return [d]
+            return []
+
+        raise Exception("can not understand input: "+repr(input))
+
+    def process_verify_inputs(self,input):
+        # walk input recursively
+        if isinstance(input,list) or isinstance(input,tuple):
+            for input_item in input:
+                self.process_verify_inputs(input_item)
+            return
+
+        if isinstance(input,DataAnalysis):
+            print("will verify:",input)
+            if not input._da_locally_complete:
+                print("input is not completed! this should not happen!",input)
+                raise("input is not completed! this should not happen!")
+            return
+
+        raise Exception("can not understand input: "+repr(input))
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,**extra):
         print(render("{BLUE}PROCESS{/}"))
@@ -1449,13 +1564,17 @@ class DataAnalysis:
         #### process input
         input_hash,input=self.process_input(obj=None,
                                             process_function=process_function,
-                                            restore_rules=update_dict(restore_rules,dict(output_required=False)) ) 
+                                            restore_rules=update_dict(restore_rules,dict(
+                                                                                            output_required=False,
+                                                                                            can_delegate=restore_rules['can_delegate_input'])) ) 
         #### /process input
         
         process_t0=time.time()
 
         print("input hash:",input_hash)
         print("input objects:",input)
+
+                
         
         fih=('analysis',input_hash,self.get_version()) # construct hash
         print("full hash:",fih)
@@ -1480,11 +1599,32 @@ class DataAnalysis:
                                         restore_rules=update_dict(restore_rules,dict(output_required=True,explicit_input_required=True)) )
                     ##  /process
 
+                delegated_inputs=self.process_list_delegated_inputs(input)
+                if delegated_inputs!=[]:
+                    print("some input was delegated:",delegated_inputs)
+                    print(render("{RED}waiting for delegated input!{/}"))
+                    self._da_delegated_input=delegated_inputs
+
                 if restore_rules['can_delegate'] and self.cached:
                     print("will delegate this analysis") 
-                    print("togather with input, delegations:")
-                    print(delegated)
-                    return fih,self,delegated # RETURN!
+                    hashekey=self.cache.register_delegation(self,fih)
+                    self._da_main_delegated=hashekey
+                    return fih,self # RETURN!
+
+             # check if can and inpust  relaxe
+
+                if delegated_inputs!=[]:
+                    print("analysis design problem! input was delegated but the analysis can not be. wait until the input is done!")
+                    raise
+
+                self.process_verify_inputs(input)
+                
+                if restore_rules['run_if_can_not_delegate']:
+                    print("no way was able to delegate, but all ready to run and allowed. will run")
+                else:
+                    print("not allowed to run here. hopefully will run as part of higher-level delegation") 
+                    raise
+                    return fih,self # RETURN!
 
                 if restore_rules['run_if_haveto']:
                     mr=self.process_run_main()
@@ -1740,6 +1880,7 @@ class DataHandle(DataAnalysis):
 
     def process(self,**args):
         print("datahandle is hash",self)
+        self._da_locally_complete=True
         return self.handle,self
 
     def __repr__(self):
@@ -1847,7 +1988,9 @@ def load_by_name(m):
             m1="master"
 
         print("as",m0,m1)
-        return import_analysis_module(m0,m1),m0
+        result=import_analysis_module(m0,m1),m0
+        result[0].__dda_module_global_name__=(m0,m1)
+        return result
     else:
         fp, pathname, description=imp.find_module(m,["."]+sys.path)
         print("found as",  fp, pathname, description)
