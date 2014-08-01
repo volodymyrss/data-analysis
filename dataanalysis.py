@@ -51,6 +51,7 @@ global_suppress_output=False
 global_all_output=False
 global_readonly_caches=False
 
+
 sprint=print
 def print(*a):
     if global_suppress_output:
@@ -246,6 +247,7 @@ class AnalysisFactoryClass: # how to unify this with caches?..
     __metaclass__ = decorate_all_methods
 # dictionary of current object names, aliases?..
     cache={} 
+    dda_modules_used=[]
 
     def __repr__(self):
         return "[AnalysisFactory: %i]"%len(self.cache)
@@ -256,6 +258,10 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         if not obj.infactory:
             print("object is not in-factory, not putting")
             return obj
+
+        module_record=sys.modules[obj.__module__]
+        if self.dda_modules_used==[] or self.dda_modules_used[-1]!=module_record:
+            self.dda_modules_used.append(module_record)
 
         if isinstance(obj,type):
             print("requested to put class, it will be constructed")
@@ -327,8 +333,11 @@ class AnalysisFactoryClass: # how to unify this with caches?..
                 print("     stored object:",storeditem)
 
                 if not item.virtual: # careful!
-                    print("     offered object is non-virtual, forcing it") 
-                    update=True
+                    print("     offered object is non-virtual, simply returning") 
+                    #print("     offered object is non-virtual, forcing it") 
+                    # update=True #!!!!
+## think about this! update??
+                    return item
 
                 if update:
                     print("recommendation is to force update")
@@ -366,8 +375,7 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         print("cache stack of size",len(self.cache_stack))
         print("cache stack last entry:",self.cache_stack[-1])
         for i,o in self.cache_stack[-1].items():
-            print("promoting",i,'assumptions',o.assumptions) 
-## !!! test
+            print("promoting",i,'assumptions',o.assumptions)
             if o.virtual:
                 print("virtual object, constructing empty copy")
                 o.__class__(assume=o.assumptions) # assume??
@@ -413,6 +421,18 @@ def hashe_replace_object(hashe,what,witha):
         raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
     if hashe==what: return witha
     return hashe
+
+def hashe_list_objects(hashe):
+    if isinstance(hashe,tuple):
+        if hashe[0]=='analysis':
+            return [hashe[2]]+hashe_list_objects(hashe[1])
+        if hashe[0]=='list':
+            l=[]
+            for h in hashe[1:]:
+                l+=hashe_list_objects(h)
+            return l
+        raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
+    return []
 
 #LogStream(None,lambda x:True)                                                                                               
 #LogStream("alllog.txt",lambda x:True)
@@ -732,6 +752,36 @@ class MemCache: #d
         else:
             print("file to load does not exist:",target)
 
+    def make_delegation_record(self,hashe,module_description,dependencies):
+        return self.parent.make_delegation_record(hashe,module_description,dependencies)
+
+    def register_delegation(self,obj,hashe):
+        print("requested to register delegation of",obj)
+        print("hashe:",obj)
+
+        print("modules used in dda factory:")
+        
+        module_description=[]
+        for m in AnalysisFactory.dda_modules_used:
+            print("module",m)
+            if hasattr(m,"__dda_module_global_name__"):
+                print("dda module global name", m.__dda_module_global_name__)
+                module_description.append(['cache',m.__name__,m.__dda_module_global_name__])
+            else:
+                module_description.append(['filesystem',m.__name__,m.__file__])
+
+        dependencies=obj._da_delegated_input
+
+        print ("will store hashe       ",hashe)
+        print ("will store modules     ",module_description,dependencies)
+        print ("will store dependencies",dependencies)
+
+        return self.make_delegation_record(hashe,module_description,dependencies)
+
+        # check
+        #for m in sys.modules:
+        #    print("all modules:",m,sys.modules[m],sys.modules[m].__file__ if hasattr(sys.modules[m],'__file__') else "no file??")
+
 
         
 import sqlite3 as lite
@@ -776,8 +826,11 @@ class MemCacheSqlite(MemCache):
 
             print("SELECT * FROM cacheindex"+selection_string+nlast_string)
 
+            t0=time.time()
             self.retry_execute(cur,"SELECT * FROM cacheindex"+selection_string+nlast_string)
             rows = cur.fetchall()
+            print("mysql request took",time.time()-t0,"{log:top}")
+
 
             print("found rows",len(rows))
             for h,c in rows:
@@ -969,13 +1022,14 @@ class MemCacheMySQL(MemCacheSqlite):
         
         if len(rows)>1:
             print("multiple entries for same cache!")
-            raise Exception("confused cache! mupltile entries!")
+            print(rows)
+            return None
+            #raise Exception("confused cache! mupltile entries!")
 
         return cPickle.loads(str(rows[0][0]))
 
 
     def make_record(self,hashe,content):
-        import sqlite3 as lite
         import sys,json
 
         print("will store",hashe,content)
@@ -1002,6 +1056,30 @@ class MemCacheMySQL(MemCacheSqlite):
         print("restoring from sqlite")
         print("content",c['content'])
         return c['content']
+    
+    def make_delegation_record(self,hashe,module_description,dependencies):
+        import sys,json
+
+        print("will store",hashe,module_description)
+
+        #con = lite.connect(self.filecacheroot+'/index.db')
+        db=self.connect()
+
+        shorthashe=self.hashe2signature(hashe)
+
+        if dependencies is not None and dependencies!=[]: # two??..
+            status="waiting for:"+",".join(dependencies) # comas?
+        else: 
+            status="ready to run"
+
+        with db:
+            cur = db.cursor()    
+            self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS delegationindex(id MEDIUMINT NOT NULL AUTO_INCREMENT, timestamp DOUBLE, hashe TEXT, fullhashe TEXT, modules TEXT, status TEXT, PRIMARY KEY (id))")
+            self.retry_execute(cur,"INSERT INTO delegationindex (timestamp,hashe,fullhashe,modules,status) VALUES(%s,%s,%s,%s,%s)",(time.time(),shorthashe,json.dumps(hashe),json.dumps(module_description),status))
+
+            print("now rows",cur.rowcount)
+
+        return shorthashe
 
 Cache=MemCache
 
@@ -1087,6 +1165,9 @@ class MemCacheNoIndex(MemCache):
     def make_record(self,hashe,content):
         raise Exception("please write to index!")
 
+def update_dict(a,b):
+    return dict(a.items()+b.items())
+
 #@for_all_methods(decorate_method)
 class DataAnalysis:
     __metaclass__ = decorate_all_methods
@@ -1123,6 +1204,8 @@ class DataAnalysis:
 
     _da_restored=None
     _da_locally_complete=None
+    _da_main_delegated=None
+    _da_delegated_input=None
 
     #def get_dynamic_input(self):
      #   if hasattr(self,'input_dynamic'):
@@ -1136,7 +1219,7 @@ class DataAnalysis:
 
         self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update"]) # exclude registered
         
-        if 'assume' in args:
+        if 'assume' in args and args['assume']!=[]:
             self.assumptions=args['assume']
             if not isinstance(self.assumptions,list): # iteratable?
                 self.assumptions=[self.assumptions]
@@ -1249,7 +1332,8 @@ class DataAnalysis:
     store output with
         """
 
-        print("storing in cache",fih)
+        print(render("{MAGENTA}storing in cache{/}"))
+        print("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
         print(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
@@ -1320,33 +1404,9 @@ class DataAnalysis:
 
     def get(self):
         return self.process(output_required=True)[1]
-    
-    def process(self,process_function=None,restore_rules=None,restore_config=None,**extra):
-        print(render("{BLUE}PROCESS{/}"))
-
-        rc=restore_config # this is for data restore modes, passed to cache
-        if restore_config is None:
-            rc={'datafile_restore_mode':'copy'}
         
-        print('restore_config:',rc)
 
-        restore_rules_default=dict(output_required=False,explicit_input_required=False,restore_complete=False,restore_noncached=False,run_if_haveto=True)
-        restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
-        # to simplify input
-        for k in extra.keys():
-            if k in restore_rules:
-                restore_rules[k]=extra[k]
-        #/
-
-       # process_t0=time.time()
-        
-        if self.run_for_hashe:
-            print(render("{BLUE}this analysis has to run for hashe!{/}"))
-        #    restore_rules['output_required']=True
-
-        # temp!
-        self.cache.statistics()
-
+    def process_checkin_assumptions(self):
         if self.assumptions!=[]:
             print("assumptions:",self.assumptions)
             print("non-trivial assumptions require copy of the analysis tree")
@@ -1356,28 +1416,186 @@ class DataAnalysis:
         else:
             print("no special assumptions") 
 
+    def process_checkout_assumptions(self):
+        print("assumptions checkout")
+        if self.assumptions!=[]:
+            AnalysisFactory.WhatIfNot()
+
+    def process_restore_rules(self,restore_rules,extra):
+        restore_rules_default=dict(
+                    output_required=False,
+                    explicit_input_required=False,
+                    restore_complete=False,
+                    restore_noncached=False,
+                    run_if_haveto=True,
+                    can_delegate=False,
+                    can_delegate_input=False,
+                    run_if_can_not_delegate=True)
+        restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
+        # to simplify input
+        for k in extra.keys():
+            if k in restore_rules:
+                restore_rules[k]=extra[k]
+        
+        # always run to process
+        if self.run_for_hashe:
+            print(render("{BLUE}this analysis has to run for hashe!{/}"))
+        #    restore_rules['output_required']=True
+            restore_rules['output_required']=True
+
         print("restore_rules:",restore_rules)
+        return restore_rules
+
+    def process_restore_config(self,restore_config):
+        rc=restore_config # this is for data restore modes, passed to cache
+        if restore_config is None:
+            rc={'datafile_restore_mode':'copy'}
+        
+        print('restore_config:',rc)
+        return restore_config
+
+
+    def process_timespent_interpret(self):
+        tspent=self.time_spent_in_main
+        if tspent<self.min_timespent_tocache and self.cached:
+            print(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
+            if self.allow_timespent_adjustment:
+                print(render("{MAGENTA}temporarily disabling caching for this analysis{/}"))
+                self.cached=False
+            else:
+                print("being ignorant about it")
+        
+            if tspent<self.min_timespent_tocache_hard and self.cached:
+                if self.hard_timespent_checks:
+                    estr=render("{RED}requested to cache fast analysis, hard limit reached!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache_hard))
+                    raise Exception(estr)
+                else:
+                    print("ignoring hard limit on request")
+
+        if tspent>self.max_timespent_tocache and not self.cached:
+            print(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
+
+    def process_run_main(self):
+        #self.runtime_update('running')
+        dll=self.default_log_level
+        self.default_log_level="main"
+
+        print(render("{RED}running main{/}"),'{log:top}')
+        t0=time.time()
+        mr=self.main()
+        tspent=time.time()-t0
+        self.time_spent_in_main=tspent
+        print(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
+        self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
+
+        self.default_log_level=dll
+        #self.runtime_update("storing")
+
+        if mr is not None:
+            print("main returns",mr,"attaching to the object as list")
+
+            if isinstance(mr, collections.Iterable):
+                mr=list(mr)
+            else:
+                mr=[mr]
+            for r in mr:
+                if isinstance(r,DataAnalysis):
+                    print("returned dataanalysis:",r,"assumptions:",r.assumptions)
+            setattr(self,'output',mr)
+
+    def process_find_output_objects(self):
+        da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
+        if da!=[]:
+            print(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
+            print(render("{RED}carefull!{/} it will substitute the object!"),da)
+    
+            if len(da)==1:
+                da=da[0]
+        return da
+
+    def get_delegation(self):
+    #def list_delegated(self):
+        #if self._da_delegated_input is not None:
+        #   if self._da_main_delegated is not None:
+        #       raise Exception("core design error! main is delegated as well as input! ")
+        #   return self._da_delagated_input
+        if self._da_main_delegated is not None:
+            return self._da_main_delegated
+    
+    def process_list_delegated_inputs(self,input):
+        return [] # disabled
+
+        # walk input recursively
+        if isinstance(input,list) or isinstance(input,tuple):
+            delegated_inputs=[]
+            for input_item in input:
+                delegated_inputs+=self.process_list_delegated_inputs(input_item)
+            return delegated_inputs
+            
+        if isinstance(input,DataAnalysis):
+            d=input.get_delegation()
+            if d is not None:
+                print("input delegated:",input,d)
+                return [d]
+            return []
+
+        raise Exception("can not understand input: "+repr(input))
+
+    def process_verify_inputs(self,input):
+        # walk input recursively
+        if isinstance(input,list) or isinstance(input,tuple):
+            for input_item in input:
+                self.process_verify_inputs(input_item)
+            return
+
+        if isinstance(input,DataAnalysis):
+            print("will verify:",input)
+            if not input._da_locally_complete:
+                print("input is not completed! this should not happen!",input)
+                raise("input is not completed! this should not happen!")
+            return
+
+        if input is None:
+            print("input is None, it is fine")
+            return
+
+        raise Exception("can not understand input: "+repr(input))
+
+    def process(self,process_function=None,restore_rules=None,restore_config=None,**extra):
+        print(render("{BLUE}PROCESS{/}"))
+
+        restore_config=self.process_restore_config(restore_config)
+        restore_rules=self.process_restore_rules(restore_rules,extra)
+
+        #self.cache.statistics()
+        self.process_checkin_assumptions()
 
         rr= dict(restore_rules.items() + dict(output_required=False).items()) # no need to request input results unless see below
-        input_hash,input=self.process_input(obj=None,process_function=process_function,restore_rules=rr) 
+
+        #### process input
+        input_hash,input=self.process_input(obj=None,
+                                            process_function=process_function,
+                                            restore_rules=update_dict(restore_rules,dict(
+                                                                                            output_required=False,
+                                                                                            can_delegate=restore_rules['can_delegate_input'])) ) 
+        #### /process input
         
         process_t0=time.time()
 
         print("input hash:",input_hash)
         print("input objects:",input)
+
+                
         
         fih=('analysis',input_hash,self.get_version()) # construct hash
-        print("full input hash:",fih)
+        print("full hash:",fih)
 
         substitute_object=None
 
-        if restore_rules['output_required'] or self.run_for_hashe: # 
-            #self.get(fih)
-            print("output required, GET from cache")
-            if self.retrieve_cache(fih,rc) and not self.run_for_hashe:
+        if restore_rules['output_required']: # 
+            print("output required, try to GET from cache")
+            if self.retrieve_cache(fih,restore_config):
                 print("cache found and retrieved",'{log:top}')
-                #print("restored object is promoted",id(self))
-                #self.promote()
             else:
                 print("no cache",'{log:top}')
 
@@ -1385,85 +1603,59 @@ class DataAnalysis:
                     print("exclicite input is available")
                 else:
                     print("need to guarantee that explicit input is available")
-                    rr= dict(restore_rules.items() + dict(explicit_input_required=True).items())
-                    #rr= dict(restore_rules.items() + dict(output_required=True,explicit_input_required=True).items())
-                    return self.process(process_function=process_function,restore_rules=rr)
 
+                    ## if output has to be generated, but explicite input was not prepared, do it
+                    ## process
+                    return self.process(process_function=process_function,
+                                        restore_rules=update_dict(restore_rules,dict(output_required=True,explicit_input_required=True)) )
+                    ##  /process
 
-                #self.runtime_update('running')
-                dll=self.default_log_level
-                self.default_log_level="main"
+                delegated_inputs=self.process_list_delegated_inputs(input)
+                if delegated_inputs!=[]:
+                    print("some input was delegated:",delegated_inputs)
+                    print(render("{RED}waiting for delegated input!{/}"))
+                    self._da_delegated_input=delegated_inputs
+
+                if restore_rules['can_delegate'] and self.cached:
+                    print("will delegate this analysis") 
+                    hashekey=self.cache.register_delegation(self,fih)
+                    self._da_main_delegated=hashekey
+                    return fih,self # RETURN!
+
+             # check if can and inpust  relaxe
+
+                if delegated_inputs!=[]:
+                    print("analysis design problem! input was delegated but the analysis can not be. wait until the input is done!")
+                    raise
+
+                self.process_verify_inputs(input)
+                
+                if restore_rules['run_if_can_not_delegate']:
+                    print("no way was able to delegate, but all ready to run and allowed. will run")
+                else:
+                    print("not allowed to run here. hopefully will run as part of higher-level delegation") 
+                    raise
+                    return fih,self # RETURN!
+
                 if restore_rules['run_if_haveto']:
-                    print(render("{RED}running main{/}"),'{log:top}')
-                    t0=time.time()
-                    mr=self.main()
-                    tspent=time.time()-t0
-                    print(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
-                    self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
+                    mr=self.process_run_main()
+                    self.process_timespent_interpret()
                 else:
                     raise Exception("not allowed to run but has to!")
-                self.default_log_level=dll
-                #self.runtime_update("storing")
-                    
 
-                if tspent<self.min_timespent_tocache and self.cached:
-                    print(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
-                    if self.allow_timespent_adjustment:
-                        print(render("{MAGENTA}temporarily disabling caching for this analysis{/}"))
-                        self.cached=False
-                    else:
-                        print("being ignorant about it")
-                
-                    if tspent<self.min_timespent_tocache_hard and self.cached:
-                        if self.hard_timespent_checks:
-                            estr=render("{RED}requested to cache fast analysis, hard limit reached!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache_hard))
-                            raise Exception(estr)
-                        else:
-                            print("ignoring hard limit on request")
-
-                if tspent>self.max_timespent_tocache and not self.cached:
-                    print(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
-
-                if mr is not None:
-                    print("main returns",mr,"attaching to the object as list")
-
-                    if isinstance(mr, collections.Iterable):
-                        mr=list(mr)
-                    else:
-                        mr=[mr]
-                    for r in mr:
-                        if isinstance(r,DataAnalysis):
-                            print("returned dataanalysis:",r,"assumptions:",r.assumptions)
-                    setattr(self,'output',mr)
-
-                
-                    
                 print("new output:",self.export_data())
 
-                print(render("{MAGENTA}storing cache{/}"))
                 self.store_cache(fih)
                 #self.runtime_update("done")
 
-            da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
-
+            da=self.process_find_output_objects()
             if da!=[]:
-                print(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
-                print(render("{RED}carefull!{/} it will substitute the object!"),da)
-        
-                if len(da)==1:
-                    da=da[0]
-
                 if self.cached:
                     print(render("{RED}can not be cached - can not save non-virtual objects!{/}"),da)
                     self.cached=False
 
-                #rr= dict(restore_rules.items() + dict(output_required=False).items()) 
                 rh,ro=self.process_input(da,restore_rules=restore_rules)
                 print(render("substitute the object with dynamic input:"),rh,ro)
-                #if self.assumptions!=[]: #?????????
-                 #   AnalysisFactory.WhatIfNot()
-                #return r[0] # here??
-
 
                 print("--- old input hash:",fih)
                 if self.allow_alias:
@@ -1483,13 +1675,11 @@ class DataAnalysis:
                 if self.retrieve_cache(fih,rc):
                     print("cache found and retrieved",'{log:top}')
                     print("processing finished, object is locally complete")
-                    self._da_locally_complete=True # here??
+                    self._da_locally_complete=True 
                 else:
                     print("NO cache found",'{log:top}')
         
-        if self.assumptions!=[]:
-            AnalysisFactory.WhatIfNot()
-
+        self.process_checkout_assumptions()
 
         process_tspent=time.time()-process_t0
         print(render("{MAGENTA}process took in total{/}"),process_tspent)
@@ -1540,7 +1730,6 @@ class DataAnalysis:
                 restore_rules[k]=extra[k]
         #/
 
-    
         if restore_config is None:
             restore_config={}
         if self.copy_cached_input:
@@ -1586,6 +1775,7 @@ class DataAnalysis:
             # process given input structure
             print("parse and get",obj,obj.__class__)
 
+            # list or tuple
             if isinstance(obj,list) or isinstance(obj,tuple):
                 print("parse list")
                 hashes=[]
@@ -1701,6 +1891,7 @@ class DataHandle(DataAnalysis):
 
     def process(self,**args):
         print("datahandle is hash",self)
+        self._da_locally_complete=True
         return self.handle,self
 
     def __repr__(self):
@@ -1808,7 +1999,9 @@ def load_by_name(m):
             m1="master"
 
         print("as",m0,m1)
-        return import_analysis_module(m0,m1),m0
+        result=import_analysis_module(m0,m1),m0
+        result[0].__dda_module_global_name__=(m0,m1)
+        return result
     else:
         fp, pathname, description=imp.find_module(m,["."]+sys.path)
         print("found as",  fp, pathname, description)
