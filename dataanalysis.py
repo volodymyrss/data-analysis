@@ -366,8 +366,14 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         print("cache stack of size",len(self.cache_stack))
         print("cache stack last entry:",self.cache_stack[-1])
         for i,o in self.cache_stack[-1].items():
-            print("promoting",i)
-            o.__class__()
+            print("promoting",i,'assumptions',o.assumptions) 
+## !!! test
+            if o.virtual:
+                print("virtual object, constructing empty copy")
+                o.__class__(assume=o.assumptions) # assume??
+            else:
+                print("non-virtual object! promoting object itself")
+                o.promote() # assume??
         #self.cache=copy.deepcopy(self.cache_stack[-1]) # dangerous copy!
         print("current cache copied:",self.cache)
 
@@ -475,7 +481,7 @@ class MemCache: #d
 
         try:
             return cPickle.load(gzip.open(cached_path+"/cache.pickle.gz"))
-        except IOError:
+        except IOError,cPickle.UnpicklingError:
             print("problem loading cache! corrupt cache!")
             raise
 
@@ -640,6 +646,8 @@ class MemCache: #d
         print("content:",content)
                     
         cached_path=self.construct_cached_file_path(hashe,obj)
+
+        obj._da_cached_path=cached_path
         print("storing in",cached_path)
                     
         dn=os.path.dirname(cached_path)
@@ -946,7 +954,9 @@ class MemCacheMySQL(MemCacheSqlite):
             print("now rows",cur.rowcount)
 
             try:
+                t0=time.time()
                 self.retry_execute(cur,"SELECT content FROM cacheindex WHERE hashe=%s",(self.hashe2signature(hashe),))
+                print("mysql request took",time.time()-t0,"{log:top}")
             except Exception as e:
                 print("failed:",e)
                 return None
@@ -976,10 +986,15 @@ class MemCacheMySQL(MemCacheSqlite):
         c=cPickle.dumps(content)
         print("content as",c)
 
+        if "_da_cached_path" in content:
+            aux1=content['_da_cached_path']
+        else:
+            aux1=""
+
         with db:
             cur = db.cursor()    
             self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS cacheindex(hashe TEXT, fullhashe TEXT, content TEXT)")
-            self.retry_execute(cur,"INSERT INTO cacheindex VALUES(%s,%s,%s)",(self.hashe2signature(hashe),json.dumps(hashe),c))
+            self.retry_execute(cur,"INSERT INTO cacheindex (hashe,fullhashe,content,timestamp,refdir) VALUES(%s,%s,%s,%s,%s)",(self.hashe2signature(hashe),json.dumps(hashe),c,time.time(),aux1))
 
             print("now rows",cur.rowcount)
 
@@ -1060,7 +1075,11 @@ class MemCacheNoIndex(MemCache):
         cached_path=self.construct_cached_file_path(hashe,None)
         if os.path.exists(cached_path+"/cache.pickle.gz"):
             print("found cache file:",cached_path+"/cache.pickle.gz")
-            return self.load_content(hashe,None)
+            try:
+                return self.load_content(hashe,None)
+            except Exception as e:
+                print("faild to load content!")
+                return None
 
         print("no file found in",cached_path)
         return None
@@ -1142,29 +1161,6 @@ class DataAnalysis:
 
         r=AnalysisFactory.get(self,update=update)
         return r
-
-# ///////
-        r=AnalysisFactory.get(self)
-        if r is not None:
-            print("found this analysis in the dict",r)
-            print("stored class:",r.__class__,"my class",self.__class__)
-            
-            if r.__class__!=self.__class__:
-                print("this version of the class diffewrent in storage than in suggested")
-                print("this version of the class is newer, will construct and promote new version")
-                #raise Exception("updated class!")
-            else:
-                print("found this analysis in the dict, returing",r)
-                return r
-        else:
-            print("NOT found this analysis in the dict, registering new object!")
-            try:
-                print("declaring object",name,"attributes",args)
-            except:
-                print("declaring object",name)
-
-        self.promote()
-        return self
 
     def promote(self):
         print("promoting to the factory",self)
@@ -1346,7 +1342,7 @@ class DataAnalysis:
         
         if self.run_for_hashe:
             print(render("{BLUE}this analysis has to run for hashe!{/}"))
-            restore_rules['output_required']=True
+        #    restore_rules['output_required']=True
 
         # temp!
         self.cache.statistics()
@@ -1375,10 +1371,10 @@ class DataAnalysis:
 
         substitute_object=None
 
-        if restore_rules['output_required']: # 
+        if restore_rules['output_required'] or self.run_for_hashe: # 
             #self.get(fih)
             print("output required, GET from cache")
-            if self.retrieve_cache(fih,rc):
+            if self.retrieve_cache(fih,rc) and not self.run_for_hashe:
                 print("cache found and retrieved",'{log:top}')
                 #print("restored object is promoted",id(self))
                 #self.promote()
@@ -1389,7 +1385,8 @@ class DataAnalysis:
                     print("exclicite input is available")
                 else:
                     print("need to guarantee that explicit input is available")
-                    rr= dict(restore_rules.items() + dict(output_required=True,explicit_input_required=True).items())
+                    rr= dict(restore_rules.items() + dict(explicit_input_required=True).items())
+                    #rr= dict(restore_rules.items() + dict(output_required=True,explicit_input_required=True).items())
                     return self.process(process_function=process_function,restore_rules=rr)
 
 
