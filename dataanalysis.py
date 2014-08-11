@@ -11,6 +11,8 @@ import collections
 
 # TODO:
 
+# ##### FIX SOON: run_for_hashe  makes returned analysis also run, should not!
+
 # transient cache no work as expected? call same analysis?
 
 # fallback cache, no index 
@@ -1083,18 +1085,31 @@ class MemCacheMySQL(MemCacheSqlite):
 
 Cache=MemCache
 
+
 class TransientCache(MemCache): #d
     # currently store each cache in a file; this is not neccesary 
     __metaclass__ = decorate_all_methods
     cache={}
 
-    parent=Cache
+    parent=None
+
+    def load(self):
+        pass
+    
+    def save(self):
+        pass
 
     def __repr__(self):
         return "[TransientCache of size %i at %s]"%(len(self.cache.keys()),str(id(self)))
 
+    def list(self):
+        for a,b in self.cache.items():
+            print(a,":",b)
+
     def restore(self,hashe,obj,rc=None):
         # check if updated
+
+        self.list()
 
         c=self.find(hashe)
         if c is None:
@@ -1106,6 +1121,7 @@ class TransientCache(MemCache): #d
         print("transient cache stores results in the memory, found:",c)
 
         for k,i in c.items():
+            print("restoring",k,i)
             setattr(obj,k,i)
         
         print("also files restores are ignored")
@@ -1114,16 +1130,17 @@ class TransientCache(MemCache): #d
         return True
 
     def store_to_parent(self,hashe,obj):
+        return
         if not obj.cached:
             print("object is not cached, i.e. only transient level cache; not leading to parent")
             return
 
-        if self.parent is None:
+        #if self.parent is None:
             print("no parent to push up to")
-            return
+         #   return
 
-        print("parent to push up to:",self.parent)
-        self.parent.store(hashe,obj)
+        #print("parent to push up to:",self.parent)
+        #self.parent.store(hashe,obj)
 
     def store(self,hashe,obj):
         print("storing in memory cache:",hashe)
@@ -1137,7 +1154,10 @@ class TransientCache(MemCache): #d
 
         self.cache[hashe]=content
 
-        self.store_to_parent(hashe,obj)
+        print("stored")
+        self.list()
+
+        #self.store_to_parent(hashe,obj)
 
 class MemCacheNoIndex(MemCache):
     def __init__(self,*a,**aa):
@@ -1167,6 +1187,8 @@ class MemCacheNoIndex(MemCache):
 
 def update_dict(a,b):
     return dict(a.items()+b.items())
+
+TransientCacheInstance=TransientCache()
 
 #@for_all_methods(decorate_method)
 class DataAnalysis:
@@ -1336,7 +1358,8 @@ class DataAnalysis:
         print("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
-        print(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
+        #print(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
+        TransientCacheInstance.store(fih,self)
         self.cache.store(fih,self)
         #c=MemCacheLocal.store(oh,self.export_data())
     
@@ -1353,16 +1376,25 @@ class DataAnalysis:
                 #raise Exception("hm, changing analysis dictionary?")
                 print("hm, changing analysis dictionary?","{thoughts}")
                 return None
-        if not self.cached:
-            print(render("{MAGENTA}not cached, will not attempt to restore{/}"))
-            return None
-        # discover through different caches
-        #c=MemCacheLocal.find(fih)
 
         if rc is None:
             rc={}
+            
+        r=TransientCacheInstance.restore(fih,self,rc)
+        
+        if r and r is not None:
+            print("restored from transient: this object will be considered restored and complete: will not do again",self)
+            self._da_locally_complete=True # info save
+            return r
+
+        if not self.cached:
+            print(render("{MAGENTA}not cached restore only from transient{/}"))
+            return None # only transient! 
+        # discover through different caches
+        #c=MemCacheLocal.find(fih)
 
         r=self.cache.restore(fih,self,rc)
+
         if r and r is not None:
             print("this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=True # info save
@@ -1439,9 +1471,8 @@ class DataAnalysis:
         
         # always run to process
         if self.run_for_hashe:
-            print(render("{BLUE}this analysis has to run for hashe!{/}"))
+            print(render("{BLUE}this analysis has to run for hashe! this will be treated later{/}"))
         #    restore_rules['output_required']=True
-            restore_rules['output_required']=True
 
         print("restore_rules:",restore_rules)
         return restore_rules
@@ -1592,9 +1623,9 @@ class DataAnalysis:
 
         substitute_object=None
 
-        if restore_rules['output_required']: # 
+        if restore_rules['output_required'] or self.run_for_hashe: # 
             print("output required, try to GET from cache")
-            if self.retrieve_cache(fih,restore_config):
+            if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
                 print("cache found and retrieved",'{log:top}')
             else:
                 print("no cache",'{log:top}')
@@ -1607,7 +1638,8 @@ class DataAnalysis:
                     ## if output has to be generated, but explicite input was not prepared, do it
                     ## process
                     return self.process(process_function=process_function,
-                                        restore_rules=update_dict(restore_rules,dict(output_required=True,explicit_input_required=True)) )
+                                        restore_rules=update_dict(restore_rules,dict(explicit_input_required=True)) )
+                                        #restore_rules=update_dict(restore_rules,dict(output_required=True,explicit_input_required=True)) )
                     ##  /process
 
                 delegated_inputs=self.process_list_delegated_inputs(input)
@@ -1638,7 +1670,7 @@ class DataAnalysis:
                     return fih,self # RETURN!
 
                 if restore_rules['run_if_haveto']:
-                    mr=self.process_run_main()
+                    mr=self.process_run_main() # MAIN!
                     self.process_timespent_interpret()
                 else:
                     raise Exception("not allowed to run but has to!")
@@ -1651,10 +1683,13 @@ class DataAnalysis:
             da=self.process_find_output_objects()
             if da!=[]:
                 if self.cached:
-                    print(render("{RED}can not be cached - can not save non-virtual objects!{/}"),da)
+                    print(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
+                    
+                restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
+                print(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
 
-                rh,ro=self.process_input(da,restore_rules=restore_rules)
+                rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute)
                 print(render("substitute the object with dynamic input:"),rh,ro)
 
                 print("--- old input hash:",fih)
@@ -1667,6 +1702,8 @@ class DataAnalysis:
                     print("+++ new input hash:",fih)
             
             print("processing finished, main, object is locally complete")
+            print("locally complete:",id(self))
+            print("locally complete:",fih)
             self._da_locally_complete=fih
         else:
             print("NO output is strictly required, will not attempt to get")
