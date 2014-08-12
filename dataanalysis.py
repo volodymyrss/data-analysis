@@ -1454,8 +1454,10 @@ class DataAnalysis:
             AnalysisFactory.WhatIfNot()
 
     def process_restore_rules(self,restore_rules,extra):
+        print("suggested restore rules:",restore_rules)
         restore_rules_default=dict(
                     output_required=False,
+                    substitute_output_required=False,
                     explicit_input_required=False,
                     restore_complete=False,
                     restore_noncached=False,
@@ -1470,11 +1472,13 @@ class DataAnalysis:
                 restore_rules[k]=extra[k]
         
         # always run to process
+        restore_rules['substitute_output_required']=restore_rules['output_required']
         if self.run_for_hashe:
             print(render("{BLUE}this analysis has to run for hashe! this will be treated later{/}"))
-        #    restore_rules['output_required']=True
+            restore_rules['output_required']=True
+            restore_rules['explicit_input_required']=True
 
-        print("restore_rules:",restore_rules)
+        print("will use restore_rules:",restore_rules)
         return restore_rules
 
     def process_restore_config(self,restore_config):
@@ -1623,7 +1627,7 @@ class DataAnalysis:
 
         substitute_object=None
 
-        if restore_rules['output_required'] or self.run_for_hashe: # 
+        if restore_rules['output_required']: # 
             print("output required, try to GET from cache")
             if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
                 print("cache found and retrieved",'{log:top}')
@@ -1686,7 +1690,8 @@ class DataAnalysis:
                     print(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
                     
-                restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
+                #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
+                restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
                 print(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
 
                 rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute)
