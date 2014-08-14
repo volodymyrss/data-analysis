@@ -8,10 +8,13 @@ import time,gzip,cPickle,socket,sys,os,shutil,re,copy
 from subprocess import check_call
 import subprocess
 import collections
+import StringIO
+from datetime import datetime
 
 # TODO:
 
-# ##### FIX SOON: run_for_hashe  makes returned analysis also run, should not!
+# data intergity: prevent corruption during copying to/from hashe
+# save log of the last operation
 
 # transient cache no work as expected? call same analysis?
 
@@ -168,7 +171,9 @@ def decorate_method(f):
             if hasattr(s,'default_log_level') and s.default_log_level is not None:
                 text+='{log:%s}'%s.default_log_level
 
-            processed_text='[%10s'%render("{BLUE}"+fileName[-10:].strip()+":%4s"%lineText+"{/}")+ \
+            ct=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-5]
+
+            processed_text=render('{CYAN}'+ct+'{/} ')+'[%10s'%render("{BLUE}"+fileName[-10:].strip()+":%4s"%lineText+"{/}")+ \
                                  render("{YEL}%30s{/}"%repr(s))+ \
                                  '; %30s'%render("{CYAN}"+funcName+"{/}")+': '+\
                                  text
@@ -215,6 +220,9 @@ class LogStream:
                 return
         LogStreams.append(self)
 
+    def forget(self):
+        LogStreams.remove(self)
+
     def check_levels(self,inlevels):
         if isinstance(self.levels,list):
             # exclusive levels
@@ -233,7 +241,8 @@ class LogStream:
     def output(self,text):
         if self.target is None or global_all_output:
             return text
-        if isinstance(self.target,file):
+        if hasattr(self.target,'write'): # callable?
+        #if isinstance(self.target,file) or:
             self.target.write(text+"\n")
             return
         if isinstance(self.target,str):
@@ -507,25 +516,46 @@ class MemCache: #d
             print("problem loading cache! corrupt cache!")
             raise
 
-    def restore_file(self,origin,dest):
+    def restore_file(self,origin,dest,obj,hashe):
        # statistics 
         print("restore file:")
         print("< ",origin)
         print("> ",dest)
 
+        dest_unique=dest+"."+self.hashe2signature(hashe)
+        
+        print("as",dest_unique)
+
         fsize=os.path.getsize(origin)/1024./1024.
         print("restoring file of",fsize,'{log:resources}','{log:cache}')
 
         t0=time.time()
-        shutil.copyfile(origin,dest) # just by name? # gzip optional
+        check_call("gunzip -c "+origin+" > "+dest_unique,shell=True) # just by name? # gzip optional
+        #shutil.copyfile(origin,dest_unique) # just by name? # gzip optional
+        #shutil.copyfile(origin,dest) # just by name? # gzip optional
         tspent=time.time()-t0
 
         print("restoring took",tspent,"seconds, speed",fsize/tspent,'MB/s','{log:resources}','{log:cache}')
 
-        t0=time.time()
-        check_call(['gunzip','-f',dest])
-        tspentc=time.time()-t0
-        print("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
+        #t0=time.time()
+        #check_call(['gunzip','-f',dest_unique])
+        tspentc=0
+        #print("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
+
+        print("here should verify integrity")
+
+        print("successfully restored:",dest_unique)
+
+        if os.path.exists(dest):
+            print("destination exists:",dest)
+            savedname=dest+"."+time.strftime("%s")
+            print("saving as",savedname)
+            shutil.move(dest,savedname)
+
+        shutil.copyfile(dest_unique,dest)
+        #check_call(['ln',dest_unique,dest])
+        
+        print("successfully copied to",dest)
 
         return {'size':fsize,'copytime':tspent,'compressiontime':tspentc}
 
@@ -582,7 +612,7 @@ class MemCache: #d
         if isinstance(c,dict):
             for a,b in c.items(): 
                 if isinstance(b,DataFile):
-                    print("requested to restore DataFile",b,"mode",restore_config['datafile_restore_mode'])
+                    print("requested to restore DataFile",b,"mode",restore_config['datafile_restore_mode'],'{log:top}')
 
                     prefix=restore_config['datafile_target_dir']
                     if prefix is not None:
@@ -594,10 +624,15 @@ class MemCache: #d
                     else:
                         prefix=""
 
+                    stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                    if not os.path.exists(stored_filename): # and
+                        print("file from cache does not exist, while cache record exists! inconsistent cache!",stored_filename)
+                        return None
+
                     # other way
                     if restore_config['datafile_restore_mode']=="copy":
                         try:
-                            stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+ #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
 
                             if not os.path.exists(stored_filename):
                                 print("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename)
@@ -607,7 +642,7 @@ class MemCache: #d
 
                             print("stored file:",stored_filename,"will save as",prefix+b.path+".gz") 
 
-                            b.restore_stats=self.restore_file(stored_filename,prefix+b.path+".gz")
+                            b.restore_stats=self.restore_file(stored_filename,prefix+b.path,obj,hashe)
                             obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
 
                         except IOError:
@@ -678,6 +713,7 @@ class MemCache: #d
         cPickle.dump(content,gzip.open(cached_path+"cache.pickle.gz","w"))
         cPickle.dump(hashe,gzip.open(cached_path+"hash.pickle.gz","w"))
         open(cached_path+"hash.txt","w").write(pprint.pformat(hashe)+"\n")
+        gzip.open(cached_path+"log.txt.gz","w").write(obj._da_main_log_content)
 
         if hasattr(obj,'alias'):
             print('object has alias:',obj.alias)
@@ -1397,7 +1433,8 @@ class DataAnalysis:
 
         if r and r is not None:
             print("this object will be considered restored and complete: will not do again",self)
-            self._da_locally_complete=True # info save
+            self._da_locally_complete=fih # info save
+            print("locally complete:",fih,'{log:top}')
             return r
         return r # twice
 
@@ -1517,7 +1554,15 @@ class DataAnalysis:
 
         print(render("{RED}running main{/}"),'{log:top}')
         t0=time.time()
-        mr=self.main()
+        main_log=StringIO.StringIO()
+        main_logstream=LogStream(main_log,lambda x:True)
+
+        mr=self.main() # main!
+
+        main_logstream.forget()
+        self._da_main_log_content=main_log.getvalue()
+        main_log.close()
+
         tspent=time.time()-t0
         self.time_spent_in_main=tspent
         print(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
@@ -1708,7 +1753,7 @@ class DataAnalysis:
             
             print("processing finished, main, object is locally complete")
             print("locally complete:",id(self))
-            print("locally complete:",fih)
+            print("locally complete:",fih,'{log:top}')
             self._da_locally_complete=fih
         else:
             print("NO output is strictly required, will not attempt to get")
@@ -1717,7 +1762,8 @@ class DataAnalysis:
                 if self.retrieve_cache(fih,rc):
                     print("cache found and retrieved",'{log:top}')
                     print("processing finished, object is locally complete")
-                    self._da_locally_complete=True 
+                    self._da_locally_complete=fih
+                    print("locally complete:",fih,'{log:top}')
                 else:
                     print("NO cache found",'{log:top}')
         
@@ -1867,6 +1913,7 @@ class DataAnalysis:
         
         total_cachetime=sum([a['stats']['copytime'] for a in self._da_resource_stats if a['resource_type']=='cache'])
         print(render("collected resource stats, total {MAGENTA}cache copy time{/}"),total_cachetime,'{log:resources}')
+
 
     def __call__(self):
         return self
