@@ -88,7 +88,7 @@ def isdataanalysis(obj,alsofile=False):
         return False
     if isinstance(obj,DataAnalysis):
         return True
-    if isinstance(obj,type) and issubclass(DataAnalysis):
+    if isinstance(obj,type) and issubclass(obj,DataAnalysis):
         return True
     return False
 
@@ -1275,7 +1275,8 @@ class DataAnalysis:
 
         # otherwise construct object, test if already there
 
-        self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update"]) # exclude registered
+        self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and not a.startswith("use_")]) # exclude registered
+        
         
         if 'assume' in args and args['assume']!=[]:
             self.assumptions=args['assume']
@@ -1295,6 +1296,12 @@ class DataAnalysis:
                 print("input in the constructor:",a,b)
                 setattr(self,a,b)
                 print("explicite input require non-virtual") # differently!
+                self.virtual=False
+            
+            if a.startswith("use"):
+                print("use in the constructor:",a,b)
+                setattr(self,a.replace("use_",""),b)
+                print("explicite use require non-virtual") # differently!
                 self.virtual=False
 
         name=self.get_signature()
@@ -1348,7 +1355,7 @@ class DataAnalysis:
         if self.explicit_output is not None:
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
-            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("input") and not a.startswith('assumptions')])
+            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
 
         print("resulting output:",r)
         return r
@@ -1409,8 +1416,14 @@ class DataAnalysis:
                 return True
             else:
                 print("state of this object isincompatible with the requested!")
+                print(" was: ",self._da_locally_complete)
+                print(" now: ",fih)
                 #raise Exception("hm, changing analysis dictionary?")
-                print("hm, changing analysis dictionary?","{thoughts}")
+                print("hm, changing analysis dictionary?","{log:thoughts}")
+    
+                if self.run_for_hashe:
+                    print("object is run_for_hashe, this is probably the reason")
+        
                 return None
 
         if rc is None:
@@ -1556,12 +1569,14 @@ class DataAnalysis:
         t0=time.time()
         main_log=StringIO.StringIO()
         main_logstream=LogStream(main_log,lambda x:True)
+        print("starting main log stream",main_log,main_logstream)
 
         mr=self.main() # main!
 
         main_logstream.forget()
         self._da_main_log_content=main_log.getvalue()
         main_log.close()
+        print("closing main log stream",main_log,main_logstream)
 
         tspent=time.time()-t0
         self.time_spent_in_main=tspent
