@@ -519,8 +519,8 @@ class MemCache: #d
     def restore_file(self,origin,dest,obj,hashe):
        # statistics 
         print("restore file:")
-        print("< ",origin)
-        print("> ",dest)
+        print("< ",origin,'{log:top}')
+        print("> ",dest,'{log:top}')
 
         dest_unique=dest+"."+self.hashe2signature(hashe)
         
@@ -562,8 +562,8 @@ class MemCache: #d
 
     def store_file(self,origin,dest):
         print("store file:")
-        print("< ",origin)
-        print("> ",dest)
+        print("< ",origin,'{log:top}')
+        print("> ",dest,'{log:top}')
 
         fsize=os.path.getsize(origin)/1024./1024.
         print("storing file of",fsize,'{log:resources}','{log:cache}')
@@ -601,6 +601,8 @@ class MemCache: #d
         print("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
         print("cached path:",cached_path)
+
+        obj._da_cache_path_root=cached_path
 
         try:
             c=self.load_content(hashe,c)
@@ -1353,6 +1355,7 @@ class DataAnalysis:
         print("new keys:",updates)
 
         if self.explicit_output is not None:
+            print("explicit output requested",self.explicit_output)
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
             r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
