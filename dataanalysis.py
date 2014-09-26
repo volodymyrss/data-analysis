@@ -511,7 +511,10 @@ class MemCache: #d
         print("restoring from",cached_path+"/cache.pickle.gz")
 
         try:
-            return cPickle.load(gzip.open(cached_path+"/cache.pickle.gz"))
+            print("loading from pickle")
+            content=cPickle.load(gzip.open(cached_path+"/cache.pickle.gz"))
+            print("done loading from pickle")
+            return content
         except IOError,cPickle.UnpicklingError:
             print("problem loading cache! corrupt cache!")
             raise
