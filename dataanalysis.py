@@ -16,7 +16,7 @@ from datetime import datetime
 
 # optional input
 # cache migration
-
+# track all exceptions!!!
 
 # delegation simple, in scripts
 
@@ -115,7 +115,7 @@ def objwalk(obj, path=(), memo=None, sel=lambda x:True):
         #if global_log_enabled: print("walk end",path,obj)
         if sel(obj):
          #   if global_log_enabled: print("walk selected",path,obj)
-            yield obj
+            yield path,obj
 
 #/objwalk
 
@@ -396,6 +396,12 @@ class AnalysisFactoryClass: # how to unify this with caches?..
     comment=""
 
     def WhatIfCopy(self,description,new_assumptions):
+        if isinstance(new_assumptions,tuple):
+            new_assumptions=list(new_assumptions)
+        if not isinstance(new_assumptions,list):
+            new_assumptions=[new_assumptions]
+
+
         if global_log_enabled: print(render("{RED}go deeper! what if?{/} stack of size %i"%len(self.cache_stack)))
         if self.comment==description:
             if global_log_enabled: print("will not push copy, already in the assumption",description)
@@ -563,6 +569,8 @@ class MemCache: #d
 
     filebackend=FileBackend()
 
+    can_url_to_cache=True
+
     def statistics(self):
         pass
 
@@ -637,10 +645,11 @@ class MemCache: #d
     def restore_file(self,origin,dest,obj,hashe):
        # statistics 
         if global_log_enabled: print("restore file:")
-        if global_log_enabled: print("< ",origin,'{log:top}')
-        if global_log_enabled: print("> ",dest,'{log:top}')
+        print("< ",origin,'{log:top}',level='top')
+        print("> ",dest,'{log:top}',level='top')
 
         dest_unique=dest+"."+self.hashe2signature(hashe)
+        print("> ",dest_unique,'{log:top}',level='top')
         
         if global_log_enabled: print("as",dest_unique)
 
@@ -676,7 +685,7 @@ class MemCache: #d
         
         if global_log_enabled: print("successfully copied to",dest)
 
-        return {'size':fsize,'copytime':tspent,'compressiontime':tspentc}
+        return {'size':fsize,'copytime':tspent,'compressiontime':tspentc},dest_unique
 
 
     def store_file(self,origin,dest):
@@ -739,6 +748,10 @@ class MemCache: #d
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
             return self.restore_from_parent(hashe,obj)
 
+        if not self.can_url_to_cache:
+            print("cache can not be url, will copy all output",level="cache")
+            restore_config['datafile_restore_mode']="copy"
+
         if isinstance(c,dict):
             for a,b in c.items(): 
                 if isinstance(b,DataFile):
@@ -759,9 +772,11 @@ class MemCache: #d
                         if global_log_enabled: print("file from cache does not exist, while cache record exists! inconsistent cache!",stored_filename)
                         return None
 
+                    b.cached_path_valid_url=False
                     # other way
                     if restore_config['datafile_restore_mode']=="copy":
                         try:
+                            print("attempt to restore file",stored_filename,level='top')
  #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
 
                             if not self.filebackend.exists(stored_filename):
@@ -772,8 +787,11 @@ class MemCache: #d
 
                             if global_log_enabled: print("stored file:",stored_filename,"will save as",prefix+b.path+".gz") 
 
-                            b.restore_stats=self.restore_file(stored_filename,prefix+b.path,obj,hashe)
+                            b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+b.path,obj,hashe)
                             obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
+                            b._da_unique_local_path=restored_file
+
+                            print("restored as",b._da_unique_local_path)
 
                         except IOError:
                             if IOError.errno==20:
@@ -789,15 +807,20 @@ class MemCache: #d
                     elif restore_config['datafile_restore_mode']=="symlink":
                         self.filebackend.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+b.path+".gz") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfile":
+                        b.cached_path_valid_url=True
                         open(prefix+b.path+".url.txt","w").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfileappend":
                         open(prefix+b.path+".urls.txt","a").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        b.cached_path_valid_url=True
                     elif restore_config['datafile_restore_mode']=="url_in_object":
                         b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        b.cached_path_valid_url=True
+                        print("stored url:",b.cached_path,b.cached_path_valid_url)
                     else:
                         raise Exception("datafile restore mode not understood!")
 
                     b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                    b.restored_mode=restore_config['datafile_restore_mode']
 
             for k,i in c.items():
                 setattr(obj,k,i)
@@ -1463,6 +1486,7 @@ class MemCacheNoIndex(MemCache):
         return
 
 class MemCacheIRODS(MemCacheNoIndex):
+    can_url_to_cache=False
     filebackend=IRODSFileBackend()
 
 def update_dict(a,b):
@@ -1524,13 +1548,14 @@ class DataAnalysis:
       #      return self.input_dynamic
       #  return []
 
+    _da_settings=None
+
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
         self=object.__new__(self)
 
         # otherwise construct object, test if already there
 
-        self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_")]) # exclude registered
-        
+        self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_") and not a.startswith("set_")]) # exclude registered
         
         
         update=False
@@ -1553,6 +1578,18 @@ class DataAnalysis:
                 if global_log_enabled: print("explicite use require non-virtual") # differently!
                 self.virtual=False
                 self._da_virtual_reason='explicit use:'+repr(a)+" = "+repr(b)
+            
+            if a.startswith("set"):
+                if global_log_enabled: print("set in the constructor:",a,b)
+                setting_name=a.replace("set_","")
+                setattr(self,setting_name,b)
+                if self._da_settings is None:
+                    self._da_settings=[]
+                self._da_settings.append(setting_name)
+                print('settings:',self,self._da_settings,level='top')
+                #if global_log_enabled: print("explicite use require non-virtual") # differently!
+                #self.virtual=False
+                #self._da_virtual_reason='explicit use:'+repr(a)+" = "+repr(b)
 
         name=self.get_signature()
         if global_log_enabled: print("requested object",name,"attributes",self._da_attributes)
@@ -1561,18 +1598,18 @@ class DataAnalysis:
             print("not dynamic object:",self,level='dynamic')
             r=self
         else:
-            print("dynamic object, from",self)
+            print("dynamic object, from",self,level='dynamic')
             r=AnalysisFactory.get(self,update=update)
-            print("dynamic object, to",r)
+            print("dynamic object, to",r,level='dynamic')
         
         if 'assume' in args and args['assume']!=[]:
-            print("replacing with a copy: < ",r)
+            print("replacing with a copy: < ",r,level='dynamic')
             r=r.__class__(dynamic=False) # replace with a copy
-            print("replacing with a copy: > ",r)
+            print("replacing with a copy: > ",r,level='dynamic')
             r.assumptions=args['assume']
             if not isinstance(r.assumptions,list): # iteratable?
                 r.assumptions=[r.assumptions]
-            print("assuming with a copy: > ",r)
+            print("assuming with a copy: > ",r,level='dynamic')
             if global_log_enabled: print("requested assumptions:",self.assumptions)
             if global_log_enabled: print("explicite assumptions require non-virtual") # differently!
             #self.virtual=False
@@ -1626,7 +1663,7 @@ class DataAnalysis:
             if global_log_enabled: print("explicit output requested",self.explicit_output)
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
-            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
+            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
 
         if global_log_enabled: print("resulting output:",r)
         return r
@@ -1643,7 +1680,8 @@ class DataAnalysis:
             return ""
 
     def get_version(self):
-        return self.get_signature()+"."+self.version
+        ss="_".join(["%s:%s"%(a,repr(getattr(self,a))) for a in self._da_settings]) if self._da_settings is not None else ""
+        return self.get_signature()+"."+self.version+("."+ss if ss!="" else "")
 
     def get_signature(self):
         a=self.get_formatted_attributes()
@@ -1886,6 +1924,17 @@ class DataAnalysis:
             if len(da)==1:
                 da=da[0]
         return da
+    
+    def process_implement_output_objects(self,output_objects,implemented_objects):
+        print("was",output_objects,level='top')
+        print("has",implemented_objects,level='top')
+
+        for newobj,path,obj in zip(implemented_objects,*zip(*output_objects)):
+            print("replace",obj,"with",newobj,level='top')
+
+            #for key in newobj.))dir: 
+            for key in newobj.export_data().keys(): # or all??
+                setattr(obj,key,getattr(newobj,key))
 
     def get_delegation(self):
     #def list_delegated(self):
@@ -2037,22 +2086,28 @@ class DataAnalysis:
                 self.store_cache(fih)
                 #self.runtime_update("done")
 
-            da=self.process_find_output_objects()
-            if da!=[]:
+            output_objects=self.process_find_output_objects()
+            if output_objects!=[]:
                 if self.cached:
                     if global_log_enabled: print(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
+
+                print("output:",output_objects)
+                da=output_objects[1] if isinstance(output_objects[1],DataAnalysis) else [o[1] for o in output_objects] 
                     
                 #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
                 if global_log_enabled: print(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
 
                 rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute,requested_by=['output_of']+requested_by)
-                if global_log_enabled: print(render("substitute the object with dynamic input:"),rh,ro)
+                if global_log_enabled: print(render("substitute the object with dynamic input. rh:"),rh)
+                if global_log_enabled: print(render("substitute the object with dynamic input. ro:"),ro)
+
 
                 if global_log_enabled: print("--- old input hash:",fih)
                 if self.allow_alias:
                     self.register_alias(fih,rh)
+                    self.process_implement_output_objects(output_objects,ro)
                 else:
                     if global_log_enabled: print("alias is not allowed: using full input hash!")
                     fih=rh
@@ -2150,8 +2205,8 @@ class DataAnalysis:
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
 
                     if l is not None: 
-                        if global_log_enabled: print("implemented input item",a,l)
-                        if global_log_enabled: print("implemented input item",h)
+                        if global_log_enabled: print("input item",a)
+                        if global_log_enabled: print("implemented as",h,l)
                         setattr(self,a,l)
                     else:
                         if global_log_enabled: print("input item None!",a,l)
@@ -2230,6 +2285,12 @@ class DataAnalysis:
         total_cachetime=sum([a['stats']['copytime'] for a in self._da_resource_stats if a['resource_type']=='cache'])
         if global_log_enabled: print(render("collected resource stats, total {MAGENTA}cache copy time{/}"),total_cachetime,'{log:resources}')
 
+        self.resource_stats={
+                                'total_usertime':total_usertime,
+                                'total_runtime':total_runtime,
+                                'total_cachetime':total_cachetime
+                            }
+
 
     def __call__(self):
         return self
@@ -2258,6 +2319,12 @@ class DataFile(DataAnalysis):
 
     def get_cached_path(self): # not work properly if many run!
         return self.cached_path if hasattr(self,'cached_path') else self.path
+    
+    def get_path(self): # not work properly if many run!
+        print("get path:",self,self.cached_path,self.cached_path_valid_url,self.restored_mode)
+        if hasattr(self,'cached_path') and self.cached_path_valid_url:
+            return self.cached_path
+        return self._da_unique_local_path
 
     def open(self):
         return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
