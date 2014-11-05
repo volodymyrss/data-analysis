@@ -17,6 +17,8 @@ from datetime import datetime
 # optional input
 # cache migration
 # track all exceptions!!!
+# hashe to picture
+# deleting files: cleanup after analysis
 
 # delegation simple, in scripts
 
@@ -115,7 +117,7 @@ def objwalk(obj, path=(), memo=None, sel=lambda x:True):
         #if global_log_enabled: print("walk end",path,obj)
         if sel(obj):
          #   if global_log_enabled: print("walk selected",path,obj)
-            yield path,obj
+            yield obj
 
 #/objwalk
 
@@ -676,9 +678,9 @@ class MemCache: #d
 
         if os.path.exists(dest):
             if global_log_enabled: print("destination exists:",dest)
-            savedname=dest+"."+time.strftime("%s")
-            if global_log_enabled: print("saving as",savedname)
-            shutil.move(dest,savedname)
+            #savedname=dest+"."+time.strftime("%s")
+            #if global_log_enabled: print("saving as",savedname)
+            #shutil.remove(dest) #,savedname)
 
         shutil.copyfile(dest_unique,dest)
         #check_call(['ln',dest_unique,dest])
@@ -1929,7 +1931,7 @@ class DataAnalysis:
         print("was",output_objects,level='top')
         print("has",implemented_objects,level='top')
 
-        for newobj,path,obj in zip(implemented_objects,*zip(*output_objects)):
+        for newobj,obj in zip(implemented_objects,output_objects):
             print("replace",obj,"with",newobj,level='top')
 
             #for key in newobj.))dir: 
@@ -2092,8 +2094,7 @@ class DataAnalysis:
                     if global_log_enabled: print(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
 
-                print("output:",output_objects)
-                da=output_objects[1] if isinstance(output_objects[1],DataAnalysis) else [o[1] for o in output_objects] 
+                da=output_objects
                     
                 #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
@@ -2314,6 +2315,8 @@ class Data(DataAnalysis):
 class DataFile(DataAnalysis):
     infactory=False
 
+    cached_path_valid_url=False
+
     def __init__(self,fn=None):
         self.path=fn
 
@@ -2321,7 +2324,7 @@ class DataFile(DataAnalysis):
         return self.cached_path if hasattr(self,'cached_path') else self.path
     
     def get_path(self): # not work properly if many run!
-        print("get path:",self,self.cached_path,self.cached_path_valid_url,self.restored_mode)
+        print("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
         return self._da_unique_local_path
