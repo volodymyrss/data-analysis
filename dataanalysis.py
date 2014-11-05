@@ -2464,7 +2464,13 @@ class find_module_cached(DataAnalysis):
         if global_log_enabled: print("find module as ",self.input_module_name)
 
         pathname=self.input_module_name.handle+".py"
+
+        if not os.path.exists(pathname):
+            pathname=imp.find_module(self.input_module_name.handle)[1]
+            print(pathname)
+
         hashedfn=self.input_module_name.handle+"."+self.get_version()+"."+hash_for_file(open(pathname))[:8]+".py"
+
 
         shutil.copyfile(pathname,hashedfn)
 
