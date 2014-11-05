@@ -2403,6 +2403,30 @@ class CacheModule(MemCache):
             return hashe[2]+"/"+shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
+
+class CacheModuleIRODS(MemCache):
+    filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS']
+    filebackend=IRODSFileBackend()
+
+    def construct_cached_file_path(self,hashe,obj):
+        print("requested path for",hashe,obj)
+
+        def hash_to_path(hashe):
+            if isinstance(hashe,tuple):
+                if hashe[0]=="analysis": # more universaly
+                    return hash_to_path(hashe[2])+"/"+hash_to_path(hashe[1])
+                if hashe[0]=="list": # more universaly
+                    return "..".join(map(hash_to_path,hashe[1:]))
+                raise Exception("unknown tuple in the hash:"+str(hashe))
+            if isinstance(hashe,str):
+                return hashe
+            raise Exception("unknown class in the hash:"+str(hashe))
+
+        def hash_to_path2(hashe):
+            #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
+            return hashe[2]+"/"+shhash(repr(hashe[1]))
+
+        return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
     
 class find_module_standard(DataAnalysis):
     cached=False # never    
@@ -2422,6 +2446,8 @@ class find_module_standard(DataAnalysis):
         self.module_path=pathname
 
 cm=CacheModule()
+cmi=CacheModuleIRODS()
+cm.parent=cmi
 
 class find_module_cached(DataAnalysis):
     cached=True
