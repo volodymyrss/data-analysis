@@ -19,6 +19,7 @@ from datetime import datetime
 # track all exceptions!!!
 # hashe to picture
 # deleting files: cleanup after analysis
+# cache module not irods but git
 
 # delegation simple, in scripts
 
