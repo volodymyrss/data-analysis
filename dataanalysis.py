@@ -2405,7 +2405,7 @@ class CacheModule(MemCache):
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
 
-class CacheModuleIRODS(MemCache):
+class CacheModuleIRODS(MemCacheNoIndex):
     filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS']
     filebackend=IRODSFileBackend()
 
