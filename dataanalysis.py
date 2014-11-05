@@ -723,12 +723,14 @@ class MemCache: #d
 
         if not any([isinstance(self,c) for c in obj.read_caches]):
             if global_log_enabled: print("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
-            return self.restore_from_parent(hashe,obj)
+            return self.restore_from_parent(hashe,obj,restore_config)
 
         if restore_config is None:
             restore_config={}
         restore_config_default=dict(datafile_restore_mode="copy",datafile_target_dir=None) # no string
         restore_config=dict(restore_config_default.items()+(restore_config.items() if restore_config is not None else []))
+
+        print("will restore",self,obj,"restore_config",restore_config)
 
         if obj.datafile_restore_mode is not None:
             restore_config['datafile_restore_mode']=obj.datafile_restore_mode
@@ -736,7 +738,7 @@ class MemCache: #d
         c=self.find(hashe)
         if c is None:
             if global_log_enabled: print("normal restore failed.")
-            return self.restore_from_parent(hashe,obj)
+            return self.restore_from_parent(hashe,obj,restore_config)
 
         if global_log_enabled: print("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
@@ -749,7 +751,7 @@ class MemCache: #d
         except Exception as e:
             if global_log_enabled: print("can not laod content from cache, while cache record exists! inconsistent cache!") #???
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
-            return self.restore_from_parent(hashe,obj)
+            return self.restore_from_parent(hashe,obj,restore_config)
 
         if not self.can_url_to_cache:
             print("cache can not be url, will copy all output",level="cache")
@@ -2187,8 +2189,10 @@ class DataAnalysis:
         if restore_config is None:
             restore_config={}
         if self.copy_cached_input:
+            print("will copy cached input")
             restore_config['datafile_restore_mode']="copy"
         else:
+            print("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
         
         if global_log_enabled: print("input restore_rules:",restore_rules)
