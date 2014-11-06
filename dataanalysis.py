@@ -2189,10 +2189,10 @@ class DataAnalysis:
         if restore_config is None:
             restore_config={}
         if self.copy_cached_input:
-            print("will copy cached input")
+            #print("will copy cached input")
             restore_config['datafile_restore_mode']="copy"
         else:
-            print("will NOT copy cached input")
+            #print("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
         
         if global_log_enabled: print("input restore_rules:",restore_rules)
