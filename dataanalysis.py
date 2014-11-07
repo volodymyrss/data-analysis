@@ -1322,7 +1322,7 @@ class TransientCache(MemCache): #d
             if global_log_enabled: print(a,":",b)
 
     def restore(self,hashe,obj,rc=None):
-        return # problem with files
+        #return # problem with files
 
         if obj.run_for_hashe or obj.mutating:
             return 
@@ -1362,7 +1362,7 @@ class TransientCache(MemCache): #d
         #self.parent.store(hashe,obj)
 
     def store(self,hashe,obj):
-        return # problem with files
+       # return # problem with files
 
         if global_log_enabled: print("storing in memory cache:",hashe)
         if obj.run_for_hashe or obj.mutating:
