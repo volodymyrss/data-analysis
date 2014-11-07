@@ -819,6 +819,8 @@ class MemCache: #d
                         b.cached_path_valid_url=True
                     elif restore_config['datafile_restore_mode']=="url_in_object":
                         b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        if not os.path.exists(b.cached_path):
+                            raise Exception("cached file does not exist!")
                         b.cached_path_valid_url=True
                         print("stored url:",b.cached_path,b.cached_path_valid_url)
                     else:
@@ -829,6 +831,7 @@ class MemCache: #d
 
             for k,i in c.items():
                 setattr(obj,k,i)
+            self._da_recovered_restore_config=restore_config
 
             if global_log_enabled: print("restored")
             return True
@@ -1319,6 +1322,8 @@ class TransientCache(MemCache): #d
             if global_log_enabled: print(a,":",b)
 
     def restore(self,hashe,obj,rc=None):
+        return # problem with files
+
         if obj.run_for_hashe or obj.mutating:
             return 
         # check if updated
@@ -1357,6 +1362,8 @@ class TransientCache(MemCache): #d
         #self.parent.store(hashe,obj)
 
     def store(self,hashe,obj):
+        return # problem with files
+
         if global_log_enabled: print("storing in memory cache:",hashe)
         if obj.run_for_hashe or obj.mutating:
             return 
@@ -1727,7 +1734,8 @@ class DataAnalysis:
             if global_log_enabled: print("this object has been already restored and complete",self)
             if self._da_locally_complete == fih:
                 if global_log_enabled: print("this object has been completed with the neccessary hash: no need to recover state",self)
-                return True
+                if not hasattr(self,'_da_recovered_restore_config') or rc==self._da_recovered_restore_config:
+                    return True
             else:
                 if global_log_enabled: print("state of this object isincompatible with the requested!")
                 if global_log_enabled: print(" was: ",self._da_locally_complete)
@@ -1893,7 +1901,12 @@ class DataAnalysis:
         main_logstream=LogStream(main_log,lambda x:True)
         if global_log_enabled: print("starting main log stream",main_log,main_logstream)
 
-        mr=self.main() # main!
+        try:
+            mr=self.main() # main!
+        except Exception as e:
+            os.system("ls -ltor")
+            os.system("echo current dir;pwd")
+            raise
 
         main_logstream.forget()
         self._da_main_log_content=main_log.getvalue()
