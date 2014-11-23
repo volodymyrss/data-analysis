@@ -644,6 +644,9 @@ class MemCache: #d
         except IOError,cPickle.UnpicklingError:
             if global_log_enabled: print("problem loading cache! corrupt cache!")
             raise
+        except Exception:
+            if global_log_enabled: print("problem loading cache! corrupt cache!")
+            raise
 
     def restore_file(self,origin,dest,obj,hashe):
        # statistics 
@@ -809,6 +812,11 @@ class MemCache: #d
                  #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                             # just reproduce?
                             return None
+                        except Exception:
+                            if global_log_enabled: print("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
+                 #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                            # just reproduce?
+                            return None
                     elif restore_config['datafile_restore_mode']=="symlink":
                         self.filebackend.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+b.path+".gz") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfile":
@@ -831,9 +839,9 @@ class MemCache: #d
 
             for k,i in c.items():
                 setattr(obj,k,i)
-            self._da_recovered_restore_config=restore_config
+            obj._da_recovered_restore_config=copy.copy(restore_config)
 
-            if global_log_enabled: print("restored")
+            if global_log_enabled: print("restored with",obj._da_recovered_restore_config)
             return True
         raise Exception("content from cache is not dict! "+str(c))
 
@@ -909,6 +917,8 @@ class MemCache: #d
                         p=cached_path+os.path.basename(b.path)
                         b.cached_path=p+".gz"
                         b.store_stats=self.store_file(b.path,p)
+                        b._da_cached_path=cached_path
+                        b.cached_path_valid_url=True
                         obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.store_stats,'operation':'store'})
 
             import socket
@@ -993,6 +1003,34 @@ class MemCache: #d
         print ("will store dependencies",dependencies)
 
         return self.make_delegation_record(hashe,module_description,dependencies)
+
+    def report_exception(self,obj,e):
+        exception_dir_root=self.filecacheroot+"/exception_reports/"
+        exception_dir=exception_dir_root+"/"+obj.get_signature()
+        
+        try:
+            os.makedirs(exception_dir)
+        except os.error:
+            print("unable to create exception dir!") # exissst?
+
+        exception_ticket_fn=repr(obj)+"_"+time.strftime("%Y%m%d_%H%M%S")+".txt"
+        exception_ticket_fn=exception_ticket_fn.replace("]","")
+        exception_ticket_fn=exception_ticket_fn.replace("[","")
+        exception_ticket_fn=exception_ticket_fn.replace(":","_")
+
+        f=open(exception_dir+"/"+exception_ticket_fn,"w")
+        f.write("-"*80+"\n")
+        f.write(repr(e)+"\n\n")
+        f.write(socket.gethostname()+"\n\n")
+        f.write(time.strftime("%Y-%m-%dT%H:%M:%S %a %d %B")+"\n\n")
+
+        if hasattr(obj,'_da_requested_by'):
+            f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
+
+        try:
+            f.write("factory knows: "+repr(AnalysisFactory.cache)+"\n\n")
+        except Exception as e:
+            print(e)
 
         # check
         #for m in sys.modules:
@@ -1335,6 +1373,10 @@ class TransientCache(MemCache): #d
             if not obj.cached:
                 if global_log_enabled: print("object is not cached, i.e. only transient level cache; not leading to parent")
                 return
+            return self.restore_from_parent(hashe,obj,rc)
+
+        if hasattr(c,'_da_recovered_restore_confi') and c._da_recovered_restore_config!=rc:
+            if global_log_enabled: print("object in Transient cache was recovered with a different restore config: need to restore from parent")
             return self.restore_from_parent(hashe,obj,rc)
 
         if global_log_enabled: print("transient cache stores results in the memory, found:",c)
@@ -1734,8 +1776,13 @@ class DataAnalysis:
             if global_log_enabled: print("this object has been already restored and complete",self)
             if self._da_locally_complete == fih:
                 if global_log_enabled: print("this object has been completed with the neccessary hash: no need to recover state",self)
-                if not hasattr(self,'_da_recovered_restore_config') or rc==self._da_recovered_restore_config:
+                if not hasattr(self,'_da_recovered_restore_config'):
+                    if global_log_enabled: print("the object has not record of restore config",level='top')
                     return True
+                if rc==self._da_recovered_restore_config:
+                    if global_log_enabled: print("the object was recovered with the same restore config:",rc,self._da_recovered_restore_config,level='top')
+                    return True
+                if global_log_enabled: print("the object was recovered with a different restore config:",self._da_recovered_restore_config,'became',rc,level='top')
             else:
                 if global_log_enabled: print("state of this object isincompatible with the requested!")
                 if global_log_enabled: print(" was: ",self._da_locally_complete)
@@ -1906,6 +1953,7 @@ class DataAnalysis:
         except Exception as e:
             os.system("ls -ltor")
             os.system("echo current dir;pwd")
+            self.cache.report_exception(self,e)
             raise
 
         main_logstream.forget()
@@ -2018,6 +2066,8 @@ class DataAnalysis:
         
         if global_log_enabled: print(render("{BLUE}requested "+("OUTPUT" if restore_rules['output_required'] else "")+" by{/} "+" ".join(requested_by)),'{log:top}')
         requested_by=[("+" if restore_rules['output_required'] else "-")+self.get_version()]+requested_by
+
+        self._da_requested_by=requested_by
 
         #self.cache.statistics()
         self.process_checkin_assumptions()
@@ -2342,10 +2392,17 @@ class DataFile(DataAnalysis):
         return self.cached_path if hasattr(self,'cached_path') else self.path
     
     def get_path(self): # not work properly if many run!
-        print("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
+# confis
+        #print("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
+
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
-        return self._da_unique_local_path
+
+        if not hasattr(self,'restored_mode'):
+            return self.path
+
+        if self.restored_mode=="copy":
+            return self._da_unique_local_path
 
     def open(self):
         return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
