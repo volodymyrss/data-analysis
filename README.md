@@ -18,7 +18,7 @@ The strong points of this approach are:
 
 weak points are:
 
-* special effort is needed to design the pipeline in the form of the pure funtions. however, there are not restrictions on the design within a single DataAnalysis
+* special effort is needed to design the pipeline in the form of the pure funtions. however, there are not restrictions on the design within a single DataAnalysis. the effort to design is equivalnet to design any data analysis in any reusable way. 
 * changing analysis graph handled specially
 * very large analysis is described by very complex graph
 
