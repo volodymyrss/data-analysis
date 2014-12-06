@@ -4,7 +4,7 @@ data-analysis
 Framework to facilitate development of the (scientific) data analysis pipelines.
 Designed to handle organized processing and storing results of  different stages of analysis for moderate-scale (~10Tb) data archive.
 
-The principal idea is to organize the pipeline in blocks (classes, inheriting from DataAnalysis) without side effects. Resulf of a DataAnalysis is some data. Data is transofrmed by analysis to other data. Any Data is identified by a tree of connected DataAnalysis that where used to produce it.
+The principal idea is to organize the pipeline in blocks (classes, inheriting from DataAnalysis) without side effects. Result of a DataAnalysis is some Data. Data is transofrmed by analysis to other data. Any Data is identified by a tree of connected DataAnalysis that where used to produce it.
 
 Many (but not all) Data is cached: it will not be recomputed if requested, instead it will be retrieved from a storage backend (Cache). Since every DataAnalysis is a pure function of it's input, Data is uniquely characterized by the analysis graph that lead to it.
 
