@@ -14,6 +14,8 @@ from datetime import datetime
 
 # TODO:
 
+
+# reporting classes
 # optional input
 # cache migration
 # track all exceptions!!!
@@ -131,6 +133,9 @@ def for_all_methods(decorator):
     return decorate
 
 AnalysisFactory=None
+
+class AnalysisException(Exception):
+    pass
 
 class DataAnalysis:
     pass
@@ -688,11 +693,42 @@ class MemCache: #d
 
         shutil.copyfile(dest_unique,dest)
         #check_call(['ln',dest_unique,dest])
+
+        if obj.test_files:
+            self.test_file(dest)
         
         if global_log_enabled: print("successfully copied to",dest)
 
         return {'size':fsize,'copytime':tspent,'compressiontime':tspentc},dest_unique
 
+# this should be elsewhere!
+    def test_file(self,fn):
+        if fn.endswith('fits') or fn.endswith('fits.gz'):
+            print("fits, will test it")
+            import pyfits
+            try:
+                pyfits.open(fn)
+            except:
+                print("corrupt fits file",fn)
+                raise Exception('corrupt fits file in cache: '+fn)
+        
+        if fn.endswith('npy'):
+            print("npy, will test it")
+            import numpy
+            try:
+                numpy.load(fn)
+            except:
+                print("corrupt npy file",fn)
+                raise Exception('corrupt fits file in cache: '+fn)
+        
+        if fn.endswith('npy.gz'):
+            print("npy.gz, will test it")
+            import numpy
+            try:
+                numpy.load(gzip.open(fn))
+            except:
+                print("corrupt npy.gz file",fn)
+                raise Exception('corrupt fits file in cache: '+fn)
 
     def store_file(self,origin,dest):
         if global_log_enabled: print("store file:")
@@ -784,22 +820,24 @@ class MemCache: #d
                     # other way
                     if restore_config['datafile_restore_mode']=="copy":
                         try:
-                            print("attempt to restore file",stored_filename,level='top')
+                            print("attempt to restore file",stored_filename,b,id(b),level='top')
  #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
 
                             if not self.filebackend.exists(stored_filename):
-                                if global_log_enabled: print("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename)
+                                if global_log_enabled: print("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename,level='top')
                                 #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                                 # just reproduce?
                                 return None
 
-                            if global_log_enabled: print("stored file:",stored_filename,"will save as",prefix+b.path+".gz") 
+                            if global_log_enabled: print("stored file:",stored_filename,"will restore as",prefix+b.path+".gz",level='top') 
 
                             b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+b.path,obj,hashe)
+                            print("restored as",restored_file)
+
                             obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
                             b._da_unique_local_path=restored_file
-
-                            print("restored as",b._da_unique_local_path)
+                        
+                            print("note unique file name",b._da_unique_local_path)
 
                         except IOError:
                             if IOError.errno==20:
@@ -831,6 +869,12 @@ class MemCache: #d
                             raise Exception("cached file does not exist!")
                         b.cached_path_valid_url=True
                         print("stored url:",b.cached_path,b.cached_path_valid_url)
+
+                        if obj.test_files:
+                            try:
+                                self.test_file(b.cached_path)
+                            except:
+                                return 
                     else:
                         raise Exception("datafile restore mode not understood!")
 
@@ -842,6 +886,15 @@ class MemCache: #d
             obj._da_recovered_restore_config=copy.copy(restore_config)
 
             if global_log_enabled: print("restored with",obj._da_recovered_restore_config)
+    
+            try:
+                a=obj.verify_content()
+                if a is None:
+                    raise Exception("returned none")
+            except Exception as e:
+                print("verify_content failed",e)
+                return
+
             return True
         raise Exception("content from cache is not dict! "+str(c))
 
@@ -1567,6 +1620,8 @@ class DataAnalysis:
 
     schema_hidden=False
 
+    test_files=True
+
     assumptions=[]
 
     essential_deep_inputs=()
@@ -1675,6 +1730,8 @@ class DataAnalysis:
         if global_log_enabled: print("promoting to the factory",self)
         return AnalysisFactory.put(self)
 
+    def verify_content(self):
+        return True
 
 #   implements:
 #       caching
@@ -1816,7 +1873,7 @@ class DataAnalysis:
         if r and r is not None:
             if global_log_enabled: print("this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=fih # info save
-            if global_log_enabled: print("locally complete:",fih,'{log:top}')
+            print("locally complete:",fih)
             return r
         return r # twice
 
@@ -1934,6 +1991,19 @@ class DataAnalysis:
         if tspent>self.max_timespent_tocache and not self.cached:
             if global_log_enabled: print(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
 
+    def treat_input_analysis_exceptions(self,analysis_exceptions):
+        return False
+
+    def get_exceptions(self):
+        if not hasattr(self,'analysis_exceptions'):
+            return []
+        return self.analysis_exceptions
+
+    def note_analysis_exception(self,ae):
+        if not hasattr(self,'analysis_exceptions'):
+            self.analysis_exceptions=[]
+        self.analysis_exceptions.append((self.get_signature(),ae))
+
     def process_run_main(self):
         #self.runtime_update('running')
         if self.abstract:
@@ -1950,8 +2020,11 @@ class DataAnalysis:
 
         try:
             mr=self.main() # main!
+        except AnalysisException as ae:
+            self.note_analysis_exception(ae)
+            mr=None
         except Exception as e:
-            os.system("ls -ltor")
+            #os.system("ls -ltor")
             os.system("echo current dir;pwd")
             self.cache.report_exception(self,e)
             raise
@@ -1995,6 +2068,14 @@ class DataAnalysis:
         print("was",output_objects,level='top')
         print("has",implemented_objects,level='top')
 
+
+        try:
+            for newobj,obj in zip(implemented_objects,output_objects):
+                print("replace",obj,"with",newobj,level='top')
+        except TypeError:
+            implemented_objects=[implemented_objects]
+            output_objects=[output_objects]
+
         for newobj,obj in zip(implemented_objects,output_objects):
             print("replace",obj,"with",newobj,level='top')
 
@@ -2026,6 +2107,25 @@ class DataAnalysis:
             if d is not None:
                 if global_log_enabled: print("input delegated:",input,d)
                 return [d]
+            return []
+
+        raise Exception("can not understand input: "+repr(input))
+    
+    def process_list_analysis_exceptions(self,input):
+        # walk input recursively
+        if isinstance(input,list) or isinstance(input,tuple):
+            l=[]
+            for input_item in input:
+                l+=self.process_list_analysis_exceptions(input_item)
+            return l
+            
+        if isinstance(input,DataAnalysis):
+            if hasattr(input,'analysis_exceptions'):
+                return input.analysis_exceptions
+            return []
+        
+        if input is None:
+            if global_log_enabled: print("input is None, it is fine")
             return []
 
         raise Exception("can not understand input: "+repr(input))
@@ -2135,24 +2235,38 @@ class DataAnalysis:
                     raise
 
                 self.process_verify_inputs(input)
+
+                # check if input had exceptions
+                analysis_exceptions=self.process_list_analysis_exceptions(input)
+                if analysis_exceptions!=[]:
+                    print("found analysis exceptions in the input:",analysis_exceptions)
+                    if not self.treat_input_analysis_exceptions(analysis_exceptions):
+                        if not hasattr(self,'analysis_exceptions'):
+                            self.analysis_exceptions=[]
+                        self.analysis_exceptions+=analysis_exceptions
+                        print("analysis exceptions:",analysis_exceptions)
+                    else:
+                        analysis_exceptions=[]
+                # exceptions
                 
-                if restore_rules['run_if_can_not_delegate']:
-                    if global_log_enabled: print("no way was able to delegate, but all ready to run and allowed. will run")
-                else:
-                    if global_log_enabled: print("not allowed to run here. hopefully will run as part of higher-level delegation") 
-                    raise Exception("not allowed to run but has to (delegation)!")
-                    return fih,self # RETURN!
+                if analysis_exceptions==[]:
+                    if restore_rules['run_if_can_not_delegate']:
+                        if global_log_enabled: print("no way was able to delegate, but all ready to run and allowed. will run")
+                    else:
+                        if global_log_enabled: print("not allowed to run here. hopefully will run as part of higher-level delegation") 
+                        raise Exception("not allowed to run but has to (delegation)!")
+                        return fih,self # RETURN!
 
-                if restore_rules['run_if_haveto'] or self.run_for_hashe:
-                    mr=self.process_run_main() # MAIN!
-                    self.process_timespent_interpret()
-                else:
-                    raise Exception("not allowed to run but has to! at "+repr(self))
+                    if restore_rules['run_if_haveto'] or self.run_for_hashe:
+                        mr=self.process_run_main() # MAIN!
+                        self.process_timespent_interpret()
+                    else:
+                        raise Exception("not allowed to run but has to! at "+repr(self))
 
-                if global_log_enabled: print("new output:",self.export_data())
+                    if global_log_enabled: print("new output:",self.export_data())
 
-                self.store_cache(fih)
-                #self.runtime_update("done")
+                    self.store_cache(fih)
+                    #self.runtime_update("done")
 
             output_objects=self.process_find_output_objects()
             if output_objects!=[]:
@@ -2181,9 +2295,9 @@ class DataAnalysis:
                     substitute_object=ro
                     if global_log_enabled: print("+++ new input hash:",fih)
             
-            if global_log_enabled: print("processing finished, main, object is locally complete")
-            if global_log_enabled: print("locally complete:",id(self))
-            if global_log_enabled: print("locally complete:",fih,'{log:top}')
+            print("processing finished, main, object is locally complete")
+            print("locally complete:",id(self))
+            print("locally complete:",fih,'{log:top}')
             self._da_locally_complete=fih
         else:
             if global_log_enabled: print("NO output is strictly required, will not attempt to get")
@@ -2193,7 +2307,7 @@ class DataAnalysis:
                     if global_log_enabled: print("cache found and retrieved",'{log:top}')
                     if global_log_enabled: print("processing finished, object is locally complete")
                     self._da_locally_complete=fih
-                    if global_log_enabled: print("locally complete:",fih,'{log:top}')
+                    print("locally complete:",fih,'{log:top}')
                 else:
                     if global_log_enabled: print("NO cache found",'{log:top}')
         
@@ -2402,7 +2516,12 @@ class DataFile(DataAnalysis):
             return self.path
 
         if self.restored_mode=="copy":
-            return self._da_unique_local_path
+            if hasattr(self,'_da_unique_local_path'):
+                return self._da_unique_local_path
+            print("datafile copied by no local path?",self,id(self))
+            raise Exception("inconsistency!")
+ #       raise Exception("inconsistency!")
+            
 
     def open(self):
         return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
