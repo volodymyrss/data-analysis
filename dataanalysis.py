@@ -75,6 +75,11 @@ def print(*a,**aa):
 #AnalysisDict={}
 
 def shhash(x):
+
+    try:
+        x=hashe_replace_object(x,None,'None')
+    except:
+        pass
     return sha224(str(hash(x))).hexdigest()
 
 # dual python 2/3 compatability, inspired by the "six" library
@@ -88,6 +93,8 @@ class DataHandle:
 class DataFile:
     pass
 
+class NoAnalysis:
+    pass
             
 def isdataanalysis(obj,alsofile=False):
     if isinstance(obj,DataFile) and not alsofile:
@@ -183,8 +190,8 @@ def decorate_method(f):
             ct=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-5]
 
             processed_text=render('{CYAN}'+ct+'{/} ')+'[%10s'%render("{BLUE}"+fileName[-10:].strip()+":%4s"%lineText+"{/}")+ \
-                                 render("{YEL}%30s{/}"%repr(s))+ \
-                                 '; %30s'%render("{CYAN}"+funcName+"{/}")+': '+\
+                                 render("{YEL}%20s{/}"%repr(s)[:20])+ \
+                                 '; %20s'%render("{CYAN}"+funcName[:20]+"{/}")+': '+\
                                  text
             
             r=""
@@ -476,6 +483,11 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         if self.aliases is None: self.aliases=[]
         self.aliases.append((h1,h2))
 
+    definitions=[]
+
+    def register_definition(self,c,h):
+        self.definitions.append([c,h])
+
     def list_relevant_aliases(self,obj):
         h0=obj.get_version()
 
@@ -488,8 +500,11 @@ class AnalysisFactoryClass: # how to unify this with caches?..
                 if graph[0]=='list':
                     return any([contains(k,key) for k in graph[1:]])
 
-        print('aliases:',self.aliases)
+        #print('aliases:',self.aliases)
         return self.aliases   
+
+    def get_definitions(self):
+        return self.definitions
 
      #   return [[a,b] for a,b in self.aliases if contains(h0,a)]
 
@@ -947,9 +962,21 @@ class MemCache: #d
             self.filebackend.open(cached_path+"hash.txt","w").write(pprint.pformat(hashe)+"\n")
             self.filebackend.open(cached_path+"log.txt.gz","w",gz=True).write(obj._da_main_log_content)
             
-     #       aliases=AnalysisFactory.list_relevant_aliases(obj)
-    #        if aliases!=[]:
-                #open(cached_path+"aliases.txt","w").write("\n".join([("="*80)+"\n"+pprint.pformat(a)+"\n"+("-"*80)+"\n"+pprint.pformat(b)+"\n" for a,b in aliases]))
+            aliases=AnalysisFactory.list_relevant_aliases(obj)
+
+            try:
+                if aliases!=[]:
+                    open(cached_path+"aliases.txt","w").write("\n".join([("="*80)+"\n"+pprint.pformat(a)+"\n"+("-"*80)+"\n"+pprint.pformat(b)+"\n" for a,b in aliases]))
+            except:
+                pass # fix!
+            
+            definitions=AnalysisFactory.get_definitions()
+            try:
+                if definitions!=[]:
+                    open(cached_path+"definitions.txt","w").write("\n".join([("="*80)+"\n"+pprint.pformat(a)+"\n"+("-"*80)+"\n"+pprint.pformat(b)+"\n" for a,b in definitions]))
+            except:
+                pass # fix!
+                
 
             self.filebackend.open(cached_path+"modules.txt","w").write(pprint.pformat(AnalysisFactory.get_module_description())+"\n")
 
@@ -967,7 +994,13 @@ class MemCache: #d
                     if isinstance(b,DataFile):
                         if global_log_enabled: print("requested to store DataFile",b)
 
-                        p=cached_path+os.path.basename(b.path)
+                        try:
+                            p=cached_path+os.path.basename(b.path)
+                        except Exception as e:
+                            print("failed:",e)
+                            print("path:",b.path)
+                            print("b:",b)
+                            raise
                         b.cached_path=p+".gz"
                         b.store_stats=self.store_file(b.path,p)
                         b._da_cached_path=cached_path
@@ -1056,6 +1089,39 @@ class MemCache: #d
         print ("will store dependencies",dependencies)
 
         return self.make_delegation_record(hashe,module_description,dependencies)
+    
+    def report_analysis_state(self,obj,state):
+        state_dir_root=self.filecacheroot+"/state_reports/"
+        state_dir=state_dir_root+"/"+obj.get_signature()
+        
+        try:
+            os.makedirs(state_dir)
+        except os.error:
+            print("unable to create state dir!") # exissst?
+
+        state_ticket_fn=repr(obj)+"_"+time.strftime("%Y%m%d_%H%M%S")+".txt"
+        state_ticket_fn=state_ticket_fn.replace("]","")
+        state_ticket_fn=state_ticket_fn.replace("[","")
+        state_ticket_fn=state_ticket_fn.replace(":","_")
+
+        f=open(state_dir+"/"+state_ticket_fn,"w")
+        f.write("-"*80+"\n")
+        f.write(repr(state)+"\n\n")
+        f.write(socket.gethostname()+"\n\n")
+        f.write(time.strftime("%Y-%m-%dT%H:%M:%S %a %d %B")+"\n\n")
+
+        if hasattr(obj,'_da_requested_by'):
+            f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
+
+        if hasattr(obj,'_da_expected_full_hashe'):
+            f.write("expected as: "+repr(obj._da_expected_full_hashe)+"\n\n")
+ 
+
+        try:
+            f.write("factory knows: "+repr(AnalysisFactory.cache)+"\n\n")
+        except Exception as e:
+            print(e)
+        
 
     def report_exception(self,obj,e):
         exception_dir_root=self.filecacheroot+"/exception_reports/"
@@ -1389,7 +1455,6 @@ class MemCacheMySQL(MemCacheSqlite):
 
         return shorthashe
 
-Cache=MemCache
 
 
 class TransientCache(MemCache): #d
@@ -1592,6 +1657,8 @@ class MemCacheNoIndex(MemCache):
         #raise Exception("please write to index!")
         return
 
+Cache=MemCacheNoIndex
+
 class MemCacheIRODS(MemCacheNoIndex):
     can_url_to_cache=False
     filebackend=IRODSFileBackend()
@@ -1658,6 +1725,10 @@ class DataAnalysis:
       #  return []
 
     _da_settings=None
+
+    def str(self):
+        if hasattr(self,'handle'): return self.handle
+        return repr(self)
 
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
         self=object.__new__(self)
@@ -1801,8 +1872,12 @@ class DataAnalysis:
         state=self.get_state()
         if state is not None:
             a=a+"."+state
-
-        return self.__class__.__name__+a
+        
+        if hasattr(self,'name'):
+            name=self.name
+        else:
+            name=self.__class__.__name__
+        return name+a
 
     def get_state(self):
         if not hasattr(self,'_da_state'):
@@ -2004,10 +2079,22 @@ class DataAnalysis:
             self.analysis_exceptions=[]
         self.analysis_exceptions.append((self.get_signature(),ae))
 
+    watched_analysis=False
+        
+    def start_main_watchdog(self):
+        if not self.watched_analysis: return
+        # do it?
+        self.cache.report_analysis_state(self,"running")
+        
+    
+    def stop_main_watchdog(self):
+        if not self.watched_analysis: return
+        self.cache.report_analysis_state(self,"done")
+
     def process_run_main(self):
         #self.runtime_update('running')
         if self.abstract:
-            raise Exception("attempting run abstract!")
+            raise Exception("attempting to run abstract! :"+repr(self))
 
         dll=self.default_log_level
         self.default_log_level="main"
@@ -2016,7 +2103,9 @@ class DataAnalysis:
         t0=time.time()
         main_log=StringIO.StringIO()
         main_logstream=LogStream(main_log,lambda x:True)
-        if global_log_enabled: print("starting main log stream",main_log,main_logstream)
+        print("starting main log stream",main_log,main_logstream,level='logstreams')
+
+        self.start_main_watchdog()
 
         try:
             mr=self.main() # main!
@@ -2025,14 +2114,16 @@ class DataAnalysis:
             mr=None
         except Exception as e:
             #os.system("ls -ltor")
+            self.stop_main_watchdog()
             os.system("echo current dir;pwd")
             self.cache.report_exception(self,e)
             raise
+        self.stop_main_watchdog()
 
         main_logstream.forget()
         self._da_main_log_content=main_log.getvalue()
         main_log.close()
-        if global_log_enabled: print("closing main log stream",main_log,main_logstream)
+        print("closing main log stream",main_log,main_logstream,level="logstreams")
 
         tspent=time.time()-t0
         self.time_spent_in_main=tspent
@@ -2065,8 +2156,8 @@ class DataAnalysis:
         return da
     
     def process_implement_output_objects(self,output_objects,implemented_objects):
-        print("was",output_objects,level='top')
-        print("has",implemented_objects,level='top')
+        print("was",output_objects,level='output_objects')
+        print("has",implemented_objects,level='output_objects')
 
 
         try:
@@ -2193,6 +2284,8 @@ class DataAnalysis:
         fih=('analysis',input_hash,self.get_version()) # construct hash
         if global_log_enabled: print("full hash:",fih)
 
+        self._da_expected_full_hashe=fih
+
         substitute_object=None
 
         if restore_rules['output_required']: # 
@@ -2203,6 +2296,10 @@ class DataAnalysis:
             else:
                 if global_log_enabled: print("no cache",'{log:top}')
                 if global_log_enabled: print(fih,'{log:top}')
+                        
+                if hasattr(self,'produce_disabled') and self.produce_disabled:
+                    raise Exception("not allowed to produce but has to! at "+repr(self))
+
 
                 if restore_rules['explicit_input_required']:
                     if global_log_enabled: print("exclicite input is available")
@@ -2258,6 +2355,7 @@ class DataAnalysis:
                         return fih,self # RETURN!
 
                     if restore_rules['run_if_haveto'] or self.run_for_hashe:
+                        
                         mr=self.process_run_main() # MAIN!
                         self.process_timespent_interpret()
                     else:
@@ -2270,11 +2368,11 @@ class DataAnalysis:
 
             output_objects=self.process_find_output_objects()
             if output_objects!=[]:
+                da=output_objects
                 if self.cached:
                     if global_log_enabled: print(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
 
-                da=output_objects
                     
                 #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
@@ -2383,6 +2481,8 @@ class DataAnalysis:
                 if a.startswith("input"):
                     o=getattr(self,a)
                     if global_log_enabled: print("input item",a,o)
+                    if o is NoAnalysis:
+                        continue # yes?
                     if o is None:
                         raise Exception("input is None: vortual class: "+repr(self)+" input "+a)
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
@@ -2545,9 +2645,35 @@ class FileHashed(DataAnalysis):
     infactory=False
     run_for_hashe=True
 
+
     def main(self): # pointless unless fine has known hashe!
         self.md5=hash_for_file(open(self.input_filename.handle))
         return DataHandle(self.input_filename.handle+":md5:"+self.md5[:8])
+
+    def get_filename(self):
+        return self.input_filename.str()
+
+class HashedFile(DataAnalysis):
+    filename=None
+    md5=None
+
+    cached=False # never
+    infactory=False
+
+    def get_signature(self):
+        return "File:"+os.path.basename(self.filename)+":"+self.md5[:5]
+
+class HasheForFile(DataAnalysis):
+    input_filename=None
+
+    cached=False # never
+    infactory=False
+    run_for_hashe=True
+
+
+    def main(self):
+        md5=hash_for_file(open(self.input_filename.str()))
+        return HashedFile(use_md5=md5,use_filename=self.input_filename.str())
 
 class DataHandle(DataAnalysis):
     infactory=False
@@ -2719,4 +2845,5 @@ def import_analysis_module(name,version):
 class AnyAnalysis(DataAnalysis):
     def main(self):
         raise Exception("requested to run abstract any analysis!")
+
 
