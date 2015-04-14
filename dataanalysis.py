@@ -683,31 +683,21 @@ class MemCache: #d
         if global_log_enabled: print("restoring file of",fsize,'{log:resources}','{log:cache}')
 
         t0=time.time()
-        #check_call("gunzip -c "+origin+" > "+dest_unique,shell=True) # just by name? # gzip optional
         self.filebackend.get(origin,dest_unique,gz=True)
 
-        #shutil.copyfile(origin,dest_unique) # just by name? # gzip optional
-        #shutil.copyfile(origin,dest) # just by name? # gzip optional
         tspent=time.time()-t0
 
         if global_log_enabled: print("restoring took",tspent,"seconds, speed",fsize/tspent,'MB/s','{log:resources}','{log:cache}')
 
-        #t0=time.time()
-        #check_call(['gunzip','-f',dest_unique])
         tspentc=0
-        #if global_log_enabled: print("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
 
         if global_log_enabled: print("here should verify integrity")
         if global_log_enabled: print("successfully restored:",dest_unique)
 
         if os.path.exists(dest):
             if global_log_enabled: print("destination exists:",dest)
-            #savedname=dest+"."+time.strftime("%s")
-            #if global_log_enabled: print("saving as",savedname)
-            #shutil.remove(dest) #,savedname)
 
         shutil.copyfile(dest_unique,dest)
-        #check_call(['ln',dest_unique,dest])
 
         if obj.test_files:
             self.test_file(dest)
@@ -1707,6 +1697,8 @@ class DataAnalysis:
 
     virtual=True
 
+    rename_output_unique=False
+
     def is_virtual(self):
         #if self.run_for_hashe: return False
         return self.virtual
@@ -1886,6 +1878,19 @@ class DataAnalysis:
 
     def compute_state(self):
         return None
+
+    def process_output_files(self,hashe):
+        """
+        rename output files to unique filenames
+        """
+        content=self.export_data()
+        if isinstance(content,dict):
+            for a,b in content.items(): 
+                if isinstance(b,DataFile):
+                    dest_unique=b.path+"."+self.cache.hashe2signature(hashe) # will it always?
+                    b._da_unique_local_path=dest_unique
+                    shutil.copyfile(b.path,dest_unique)
+                    print("post-processing DataFile",b,"as",b._da_unique_local_path,log='datafile')
 
     def store_cache(self,fih):
         """
@@ -2363,6 +2368,9 @@ class DataAnalysis:
 
                     if global_log_enabled: print("new output:",self.export_data())
 
+                    if self.rename_output_unique:
+                        self.process_output_files(fih)
+
                     self.store_cache(fih)
                     #self.runtime_update("done")
 
@@ -2611,13 +2619,14 @@ class DataFile(DataAnalysis):
 
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
+            
+        if hasattr(self,'_da_unique_local_path'):
+            return self._da_unique_local_path
 
         if not hasattr(self,'restored_mode'):
             return self.path
 
         if self.restored_mode=="copy":
-            if hasattr(self,'_da_unique_local_path'):
-                return self._da_unique_local_path
             print("datafile copied by no local path?",self,id(self))
             raise Exception("inconsistency!")
  #       raise Exception("inconsistency!")
