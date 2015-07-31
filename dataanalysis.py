@@ -525,13 +525,16 @@ AnalysisFactory=AnalysisFactoryClass()
 
 
 def hashe_replace_object(hashe,what,witha):
+    if hashe==what:
+        return witha
     if isinstance(hashe,tuple):
         if hashe[0]=='analysis':
-            return ('analysis',hashe_replace_object(hashe[1],what,witha),hashe[2])
+            return ('analysis',hashe_replace_object(hashe[1],what,witha),hashe_replace_object(hashe[2],what,witha))
         if hashe[0]=='list':
             return ('list',)+tuple([hashe_replace_object(h,what,witha) for h in hashe[1:]])
         raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
-    if hashe==what: return witha
+    #if hashe==what:
+    #    return witha
     return hashe
 
 def hashe_list_objects(hashe):
@@ -612,7 +615,7 @@ class MemCache: #d
             self.filecacheroot=rootdir
 
     def __repr__(self):
-        return "["+self.__class__.__name__+" of size %i]"%len(self.cache.keys())
+        return "["+self.__class__.__name__+" of size %i at %s]"%(len(self.cache.keys()),self.filecacheroot)
 
     def find(self,hashe):
         #for c in self.cache.keys():
@@ -841,6 +844,7 @@ class MemCache: #d
 
                             obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
                             b._da_unique_local_path=restored_file
+                            b.restored_path_prefix=os.getcwd()+"/"+prefix
                         
                             print("note unique file name",b._da_unique_local_path)
 
@@ -875,7 +879,7 @@ class MemCache: #d
                         b.cached_path_valid_url=True
                         print("stored url:",b.cached_path,b.cached_path_valid_url)
 
-                        if obj.test_files:
+                        if restore_config['test_files']:
                             try:
                                 self.test_file(b.cached_path)
                             except:
@@ -967,8 +971,12 @@ class MemCache: #d
             except:
                 pass # fix!
                 
-
-            self.filebackend.open(cached_path+"modules.txt","w").write(pprint.pformat(AnalysisFactory.get_module_description())+"\n")
+            modules=AnalysisFactory.get_module_description()
+            filtered_modules=[]
+            for m in reversed(modules):
+                if m not in filtered_modules:
+                    filtered_modules.append(m)
+            self.filebackend.open(cached_path+"modules.txt","w").write(pprint.pformat(filtered_modules)+"\n")
 
             self.filebackend.flush()
 
@@ -1483,7 +1491,7 @@ class TransientCache(MemCache): #d
                 return
             return self.restore_from_parent(hashe,obj,rc)
 
-        if hasattr(c,'_da_recovered_restore_confi') and c._da_recovered_restore_config!=rc:
+        if hasattr(c,'_da_recovered_restore_config') and c._da_recovered_restore_config!=rc:
             if global_log_enabled: print("object in Transient cache was recovered with a different restore config: need to restore from parent")
             return self.restore_from_parent(hashe,obj,rc)
 
@@ -1640,7 +1648,7 @@ class MemCacheNoIndex(MemCache):
                 if global_log_enabled: print("faild to load content! :"+repr(e))
                 return None
 
-        if global_log_enabled: print("no file found",cached_path)
+        if global_log_enabled: print("no file found in",cached_path)
         return None
 
     def make_record(self,hashe,content):
@@ -2277,6 +2285,7 @@ class DataAnalysis:
                                                                                             output_required=False,
                                                                                             can_delegate=restore_rules['can_delegate_input'])), 
                                             requested_by=["input_of"]+requested_by) 
+        # TODO: defaults, alternatives
         #### /process input
         
         process_t0=time.time()
@@ -2303,7 +2312,7 @@ class DataAnalysis:
                 if global_log_enabled: print(fih,'{log:top}')
                         
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
-                    raise Exception("not allowed to produce but has to! at "+repr(self))
+                    raise Exception("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
 
 
                 if restore_rules['explicit_input_required']:
@@ -2477,6 +2486,10 @@ class DataAnalysis:
         else:
             #print("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
+        if self.test_files:
+            restore_config['test_files']=True
+        else:
+            restore_config['test_files']=False
         
         if global_log_enabled: print("input restore_rules:",restore_rules)
         if global_log_enabled: print("input restore_config:",restore_config)
@@ -2631,12 +2644,40 @@ class DataFile(DataAnalysis):
             raise Exception("inconsistency!")
  #       raise Exception("inconsistency!")
             
+    def get_full_path(self):
+        if hasattr(self,'restored_path_prefix'):
+            return self.restored_path_prefix+"/"+self.get_path()
+        else:
+            if hasattr(self,'cached_path') and self.cached_path_valid_url:
+                return self.cached_path
+            else:
+                raise Exception("unable to construct full path!")
 
     def open(self):
         return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
 
     def __repr__(self):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
+
+class DataFileStatic(DataFile):
+    infactory=False
+
+    cached_path_valid_url=False
+
+    def __init__(self,fn=None):
+        self.path=fn
+
+    def get_cached_path(self): # not work properly if many run!
+        return self.path
+    
+    def get_path(self): # not work properly if many run!
+        return self.path
+
+    def open(self):
+        return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
+
+    def __repr__(self):
+        return "[DataFileStatic:%s]"%(self.path if hasattr(self,'path') else 'undefined')
 
 def hash_for_file(f, block_size=2**20):
     md5 = hashlib.md5()
