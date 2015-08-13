@@ -7,6 +7,7 @@ import pprint
 import time,gzip,cPickle,socket,sys,os,shutil,re,copy
 from subprocess import check_call
 import subprocess
+import tempfile
 import collections
 import StringIO
 from datetime import datetime
@@ -86,6 +87,36 @@ def shhash(x):
 string_types = (str, unicode) if str is bytes else (str, bytes)
 iteritems = lambda mapping: getattr(mapping, 'iteritems', mapping.items)()
 
+def get_cwd():
+    tf=tempfile.NamedTemporaryFile()
+    ppw=subprocess.Popen(["pwd"],stdout=tf)
+    ppw.wait()
+
+    try:
+        ppw.terminate()
+    except OSError:
+        pass
+    tf.seek(0)
+    owd=tf.read()[:-1]
+    print("old pwd gives me",owd)
+    tf.close()
+    del tf
+    return owd
+
+
+def athostdir(f):
+    def wrapped(self,*a,**aa):
+        owd=get_cwd()
+        try:
+            os.chdir(self.hostdir)
+            r=f(self,*a,**aa)
+        except Exception as e:
+            print("exception in wrapped:",e)
+            os.chdir(owd)
+            raise
+        os.chdir(owd)
+        return r
+    return wrapped
 
 class DataHandle:
     pass
@@ -522,6 +553,9 @@ class AnalysisFactoryClass: # how to unify this with caches?..
 
 AnalysisFactory=AnalysisFactoryClass()
 
+def get_object(a):
+    return AnalysisFactory[a]
+
 
 
 def hashe_replace_object(hashe,what,witha):
@@ -676,6 +710,8 @@ class MemCache: #d
         if global_log_enabled: print("restore file:")
         print("< ",origin,'{log:top}',level='top')
         print("> ",dest,'{log:top}',level='top')
+        
+        print(dest,self.hashe2signature(hashe))
 
         dest_unique=dest+"."+self.hashe2signature(hashe)
         print("> ",dest_unique,'{log:top}',level='top')
@@ -804,6 +840,10 @@ class MemCache: #d
             print("cache can not be url, will copy all output",level="cache")
             restore_config['datafile_restore_mode']="copy"
 
+        if obj.only_verify_cache_record:
+            print("established cache record: will not acutally restore",level="cache")
+            return True
+
         if isinstance(c,dict):
             for a,b in c.items(): 
                 if isinstance(b,DataFile):
@@ -837,6 +877,7 @@ class MemCache: #d
                                 # just reproduce?
                                 return None
 
+                            if global_log_enabled: print("stored file:",stored_filename,"will restore as",prefix,b.path,".gz",level='top') 
                             if global_log_enabled: print("stored file:",stored_filename,"will restore as",prefix+b.path+".gz",level='top') 
 
                             b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+b.path,obj,hashe)
@@ -859,8 +900,9 @@ class MemCache: #d
                  #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                             # just reproduce?
                             return None
-                        except Exception:
+                        except Exception as e:
                             if global_log_enabled: print("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
+                            if global_log_enabled: print("details:"+repr(e))
                  #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                             # just reproduce?
                             return None
@@ -1540,6 +1582,11 @@ class TransientCache(MemCache): #d
         if global_log_enabled: print("stored")
         self.list()
 
+#        self.guarantee_unique_names(obj)
+        
+ #   def guarantee_unique_names(self,obj):
+  #      pass
+
         #self.store_to_parent(hashe,obj)
 
 class MemCacheIndex(MemCache):
@@ -1683,6 +1730,8 @@ class DataAnalysis:
     copy_cached_input=True
     datafile_restore_mode=None
 
+    only_verify_cache_record=False
+
     schema_hidden=False
 
     test_files=True
@@ -1705,6 +1754,8 @@ class DataAnalysis:
 
     virtual=True
 
+    noanalysis=False
+    
     rename_output_unique=False
 
     def is_virtual(self):
@@ -1965,11 +2016,6 @@ class DataAnalysis:
             return r
         return r # twice
 
-       # if global_log_enabled: print(c)
-
-       # if c is not None:
-        #    self.import_data(c)
-        #    return True
 
     def plot_schema(self,fn="schema.png"):
         self.get_schema().write_png(fn)
@@ -2379,6 +2425,8 @@ class DataAnalysis:
 
                     if self.rename_output_unique:
                         self.process_output_files(fih)
+                    else:
+                        print("disabled self.rename_output_unique",level='cache')
 
                     self.store_cache(fih)
                     #self.runtime_update("done")
@@ -2503,10 +2551,16 @@ class DataAnalysis:
                     o=getattr(self,a)
                     if global_log_enabled: print("input item",a,o)
                     if o is NoAnalysis:
+                        print("NoAnalysis:",o,o.__class__)
                         continue # yes?
+
                     if o is None:
-                        raise Exception("input is None: vortual class: "+repr(self)+" input "+a)
+                        raise Exception("input is None: vortual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+
+                    if hasattr(l,'noanalysis') and l.noanalysis:
+                        print("NoAnalysis:",o,o.__class__)
+                        continue # yes?
 
                     if l is not None: 
                         if global_log_enabled: print("input item",a)
@@ -2549,9 +2603,13 @@ class DataAnalysis:
                     
                 return tuple(['list']+hashes),nitems
 
-            # we are down to the input item finally
+       # we are down to the input item finally
         
         item=self.interpret_item(obj)  # this makes DataAnalysis object
+        if hasattr(item,'noanalysis') and item.noanalysis:
+            print("noanalysis!")
+            return None,item
+
         rr=dict(restore_rules.items()+dict(explicit_input_required=False,output_required=restore_rules['explicit_input_required']).items())
         if self.run_for_hashe:
             if global_log_enabled: print("for run_for_hashe, input need a right to run")
@@ -2572,6 +2630,11 @@ class DataAnalysis:
     #    return shhash(tuple(sorted(self.export_data().items())))
 
     _da_resource_stats=None
+
+    def is_noanalysis(self):
+        if not hasattr(self,'noanalysis'): return False
+        if isinstance(self,NoAnalysis): return True
+        return self.noanalysis
 
     def note_resource_stats(self,info):
         if self._da_resource_stats is None:
