@@ -108,6 +108,8 @@ def athostdir(f):
     def wrapped(self,*a,**aa):
         owd=get_cwd()
         try:
+            if not os.path.exists(self.hostdir):
+                os.makedirs(self.hostdir)
             os.chdir(self.hostdir)
             r=f(self,*a,**aa)
         except Exception as e:
@@ -2551,7 +2553,7 @@ class DataAnalysis:
                     o=getattr(self,a)
                     if global_log_enabled: print("input item",a,o)
                     if o is NoAnalysis:
-                        print("NoAnalysis:",o,o.__class__)
+                        print("NoAnalysis:",o) #,o.__class__)
                         continue # yes?
 
                     if o is None:
