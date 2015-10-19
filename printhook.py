@@ -1,5 +1,24 @@
+from __future__ import print_function
+
 import sys
 from bcolors import render
+
+global_suppress_output=False
+global_fancy_output=False
+global_output_levels=['top','cache']
+global_permissive_output=False
+
+if not hasattr(print,'replaced'):
+    sprint=print
+    def print(*a,**aa):
+        if global_suppress_output:
+            return
+        else:
+            level=aa['level'] if 'level' in aa else None 
+            #if level in global_output_levels:
+            if ((level is None) and global_permissive_output) or level in global_output_levels:
+                return sprint(level,*a)
+    print.replaced=True
 
 #this class gets all output directed to stdout(e.g by print statements)
 #and stderr and redirects it to a user defined function
@@ -84,3 +103,103 @@ class PrintHook:
                 
     def __getattr__(self, name):
         return getattr(self.get_origOut(),name)
+
+
+def decorate_method_log(f):
+    try:
+        if f.__name__=="__repr__":
+            return f
+    except:
+        return f
+
+    def nf(s,*a,**b):
+        #open("file.txt","a").write("decorate method of"+repr(s)+repr(f))
+
+        def MyHookOut(text,fileName,lineText,funcName):
+            # find 
+            if hasattr(s,'default_log_level') and s.default_log_level is not None:
+                text+='{log:%s}'%s.default_log_level
+
+            ct=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-5]
+
+            processed_text=render('{CYAN}'+ct+'{/} ')+'[%10s'%render("{BLUE}"+fileName[-10:].strip()+":%4s"%lineText+"{/}")+ \
+                                 render("{YEL}%20s{/}"%repr(s)[:20])+ \
+                                 '; %20s'%render("{CYAN}"+funcName[:20]+"{/}")+': '+\
+                                 text
+            
+            r=""
+            for l in LogStreams:
+                o=l.process(processed_text)
+                if isinstance(o,str):
+                    r+=o
+
+            return r
+
+        
+        def MyHookErr(text):
+            return ""
+
+        if global_fancy_output:
+            phOut = PrintHook(n=repr(f))
+            phOut.Start(MyHookOut)
+        
+            try:
+                r=f(s,*a,**b)
+            except Exception as e:
+                phOut.Stop()
+                raise
+        
+            phOut.Stop()
+        else:
+            r=f(s,*a,**b)
+
+        return r
+
+    return nf
+
+
+class LogStream:
+    def __init__(self,target,levels):
+        self.target=target
+        self.levels=levels
+
+        for i,l in enumerate(LogStreams):
+            if target==l.target:
+                LogStreams[i]=self
+                return
+        LogStreams.append(self)
+
+    def forget(self):
+        LogStreams.remove(self)
+
+    def check_levels(self,inlevels):
+        if isinstance(self.levels,list):
+            # exclusive levels
+            raise Exception("not implememtned")
+        if callable(self.levels):
+            return self.levels(inlevels)
+
+    def process(self,text):
+        levels=re.findall("{log:(.*?)}",text)
+        text=re.sub("{log:(.*?)}","",text)
+
+        if self.check_levels(levels):
+        #if any([l in levels for l in self.levels]):
+            return self.output(text)
+
+    def output(self,text):
+        if self.target is None or global_all_output:
+            return text
+        if hasattr(self.target,'write'): # callable?
+        #if isinstance(self.target,file) or:
+            self.target.write(text+"\n")
+            return
+        if isinstance(self.target,str):
+            self.targetfn=self.target
+            self.target=open(self.target,"a")
+            return self.output(text)
+        raise Exception("unknown target in logstream:"+repr(self.target))
+
+LogStreams=[]
+
+cprint=print

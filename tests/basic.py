@@ -1,7 +1,7 @@
 import unittest
 
 
-class TestStringMethods(unittest.TestCase): 
+class TestDDABasic(unittest.TestCase): 
     def test_import(self):
         import dataanalysis as da
 
@@ -75,6 +75,6 @@ class TestStringMethods(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestStringMethods)
-    unittest.TextTestRunner(verbosity=2).run(suite)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestDDABasic)
+    unittest.TextTestRunner(verbosity=5).run(suite)
 
