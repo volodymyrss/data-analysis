@@ -62,14 +62,16 @@ global_readonly_caches=False
 global_output_levels=('top')
 
 
-sprint=print
-def print(*a,**aa):
-    if global_suppress_output:
-        return
-    else:
-        level=aa['level'] if 'level' in aa else None 
-        if level is None or level in global_output_levels:
-            return sprint(*a)
+if not hasattr(print,'replaced'):
+    sprint=print
+    def print(*a,**aa):
+        if global_suppress_output:
+            return
+        else:
+            level=aa['level'] if 'level' in aa else None 
+            if level is None or level in global_output_levels:
+                return sprint(*a)
+    print.replaced=True
 
 #
 
