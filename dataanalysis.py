@@ -23,6 +23,8 @@ from hashtools import *
 Cache=caches.MemCacheNoIndex()
 TransientCacheInstance=caches.TransientCache()
 
+import analysisfactory
+
 # for name
 class DataFile:
     pass
@@ -450,6 +452,7 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         return module_description
 
 AnalysisFactory=AnalysisFactoryClass()
+analysisfactory.AnalysisFactory=AnalysisFactory
 
 def get_object(a):
     return AnalysisFactory[a]
@@ -1062,7 +1065,6 @@ class DataAnalysis(object):
 
         self._da_requested_by=requested_by
 
-        #self.cache.statistics()
         self.process_checkin_assumptions()
 
         rr= dict(restore_rules.items() + dict(output_required=False).items()) # no need to request input results unless see below
@@ -1083,9 +1085,11 @@ class DataAnalysis(object):
         cprint("input objects:",input)
 
                 
-        
         fih=('analysis',input_hash,self.get_version()) # construct hash
         cprint("full hash:",fih)
+
+        if hasattr(self,'substitute_hashe'):
+            fih=self.substitute_hashe
 
         self._da_expected_full_hashe=fih
 

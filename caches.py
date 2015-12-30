@@ -11,9 +11,12 @@ import gzip
 import copy
 import shutil
 import time
+import pprint
 
 
 from hashtools import *
+
+import analysisfactory
 
 global_readonly_caches=False
 
@@ -441,7 +444,7 @@ class MemCache(object): #d
             self.filebackend.open(cached_path+"hash.txt","w").write(pprint.pformat(hashe)+"\n")
             self.filebackend.open(cached_path+"log.txt.gz","w",gz=True).write(obj._da_main_log_content)
             
-            aliases=AnalysisFactory.list_relevant_aliases(obj)
+            aliases=analysisfactory.AnalysisFactory.list_relevant_aliases(obj)
 
             try:
                 if aliases!=[]:
@@ -449,14 +452,14 @@ class MemCache(object): #d
             except:
                 pass # fix!
             
-            definitions=AnalysisFactory.get_definitions()
+            definitions=analysisfactory.AnalysisFactory.get_definitions()
             try:
                 if definitions!=[]:
                     open(cached_path+"definitions.txt","w").write("\n".join([("="*80)+"\n"+pprint.pformat(a)+"\n"+("-"*80)+"\n"+pprint.pformat(b)+"\n" for a,b in definitions]))
             except:
                 pass # fix!
                 
-            modules=AnalysisFactory.get_module_description()
+            modules=analysisfactory.AnalysisFactory.get_module_description()
             filtered_modules=[]
             for m in reversed(modules):
                 if m not in filtered_modules:
@@ -563,7 +566,7 @@ class MemCache(object): #d
 
         cprint("modules used in dda factory:")
         
-        module_description=AnalysisFactory.get_module_description()
+        module_description=analysisfactory.AnalysisFactory.get_module_description()
 
         dependencies=obj._da_delegated_input
 
@@ -601,7 +604,7 @@ class MemCache(object): #d
  
 
         try:
-            f.write("factory knows: "+repr(AnalysisFactory.cache)+"\n\n")
+            f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
         except Exception as e:
             print(e)
         
@@ -630,7 +633,7 @@ class MemCache(object): #d
             f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
 
         try:
-            f.write("factory knows: "+repr(AnalysisFactory.cache)+"\n\n")
+            f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
         except Exception as e:
             print(e)
 
