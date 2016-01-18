@@ -18,6 +18,6 @@ class TestDDOSA(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    suite = unittest.TestLoader().loadTestsFromTestCase(TestDDABasic)
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestDDOSA)
     unittest.TextTestRunner(verbosity=5).run(suite)
 

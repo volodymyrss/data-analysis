@@ -23,16 +23,20 @@ import dataanalysis as da
 import dataanalysis
 
 if args.verbose:
-    dataanalysis.global_log_enabled=True
-    dataanalysis.global_fancy_output=True
+    print "will be chatty"
+    dataanalysis.printhook.global_log_enabled=True
+    dataanalysis.printhook.global_fancy_output=True
+    dataanalysis.printhook.global_permissive_output=True
 else:
-    dataanalysis.global_log_enabled=False
-    dataanalysis.global_fancy_output=False
+    dataanalysis.printhook.global_log_enabled=False
+    dataanalysis.printhook.global_fancy_output=False
 
 
 if args.quiet:
+    print "will be quiet"
     dataanalysis.printhook.LogStream(None,lambda x:set(x)&set(['top','main']))
 else:
+    print "will not be quiet"
     dataanalysis.printhook.LogStream(None,lambda x:True)
 
 modules=[m[0] for m in args.module]
@@ -82,5 +86,3 @@ A.process(output_required=True)
 #for a,b in dataanalysis.AnalysisFactory.aliases:
 #    print a,b
 
-if args.plotit:
-    A.plot_schema('schema.png')

@@ -2,9 +2,11 @@ from __future__ import print_function
 
 import sys
 from bcolors import render
+from datetime import datetime
+import re
 
 global_suppress_output=False
-global_fancy_output=False
+global_fancy_output=True
 global_output_levels=['top','cache']
 global_permissive_output=False
 

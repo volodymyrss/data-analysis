@@ -631,7 +631,6 @@ class DataAnalysis(object):
         for a,b in data.items():
             setattr(self,a,b)
 
-
     def export_data(self):
         empty_copy=self.__class__
         cprint("my class is",self.__class__)
@@ -793,7 +792,6 @@ class DataAnalysis(object):
     def get(self):
         return self.process(output_required=True)[1]
         
-
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
             cprint("cache assumptions:",AnalysisFactory.cache_assumptions)
@@ -1046,6 +1044,23 @@ class DataAnalysis(object):
 
         raise Exception("can not understand input: "+repr(input))
 
+    use_hashe=None
+
+    def process_substitute_hashe(self,fih):
+        if self.use_hashe is not None:
+            substitute_hashe=self.use_hashe[0]
+            hashe_mappings=self.use_hashe[1:]
+
+            for a,b in hashe_mappings:
+                cprint("mapping",a,b,getattr(self,b)._da_expected_full_hashe)
+                substitute_hashe=hashe_replace_object(substitute_hashe,a,getattr(self,b)._da_expected_full_hashe)
+
+            cprint("using substitute hashe:",substitute_hashe)
+            cprint("instead of:",fih)
+            return substitute_hashe
+        else:
+            return fih
+
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         cprint(render("{BLUE}PROCESS{/}"))
 
@@ -1054,7 +1069,6 @@ class DataAnalysis(object):
 
         cprint('cache assumptions:',AnalysisFactory.cache_assumptions,'{log:top}')
         cprint('object assumptions:',self.assumptions,'{log:top}')
-
 
 
         restore_config=self.process_restore_config(restore_config)
@@ -1084,12 +1098,10 @@ class DataAnalysis(object):
         cprint("input hash:",input_hash)
         cprint("input objects:",input)
 
-                
         fih=('analysis',input_hash,self.get_version()) # construct hash
         cprint("full hash:",fih)
 
-        if hasattr(self,'substitute_hashe'):
-            fih=self.substitute_hashe
+        fih=self.process_substitute_hashe(fih)
 
         self._da_expected_full_hashe=fih
 
@@ -1233,6 +1245,7 @@ class DataAnalysis(object):
             cprint("returning substituted object")
             return_object=substitute_object
 
+        cprint("PROCESS done",fih,return_object)
         return fih,return_object
 
     def register_alias(self,hash1,hash2):
@@ -1241,23 +1254,6 @@ class DataAnalysis(object):
         self.alias=hash2
         AnalysisFactory.register_alias(hash1,hash2)
 
-    def geta(self,fih): # run or recover
-        raise Exception("this is not used!")
-                       # guarantee globally up-to-date state: either run or get from cache
-        cprint("GET")
-        if self.retrieve_cache(fih):
-            cprint("cache found and retrieved",'{log:top}')
-        else:
-            cprint("no cache")
-            cprint(render("{RED}running main{/}"),level='top')
-            self.main()
-            cprint(render("{RED}finished main{/}"),level='top')
-            cprint("new output:",self.export_data())
-
-            self.store_cache(fih)
-
-
-        
     def process_input(self,obj=None,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         """
         walk over all input; apply process_function and implement if neccessary
