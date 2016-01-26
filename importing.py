@@ -1,9 +1,11 @@
 import os
 import sys
 import imp
+import shutil
 
-from dataanalysis import DataAnalysis
+from dataanalysis import DataAnalysis,DataFile
 import caches
+from hashtools import *
 
 from printhook import cprint
 

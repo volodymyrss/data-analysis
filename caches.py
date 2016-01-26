@@ -1088,7 +1088,7 @@ class IRODSFileBackend:
         subprocess.check_call(["iput","-f",orig,dest])
     
     def makedirs(self,dirs):
-        check_call(["imkdir","-p",dirs])
+        subprocess.check_call(["imkdir","-p",dirs])
 
     def open(self,fn,mode="r",gz=False):
         local_fn=os.path.basename(fn) # !!

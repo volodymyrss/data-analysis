@@ -454,6 +454,8 @@ class AnalysisFactoryClass: # how to unify this with caches?..
 AnalysisFactory=AnalysisFactoryClass()
 analysisfactory.AnalysisFactory=AnalysisFactory
 
+byname=lambda x:AnalysisFactory.byname(x)
+
 def get_object(a):
     return AnalysisFactory[a]
 
@@ -885,12 +887,15 @@ class DataAnalysis(object):
     watched_analysis=False
         
     def start_main_watchdog(self):
+        cprint("main watchdog")
+        self.report_runtime("starting")
         if not self.watched_analysis: return
         # do it?
         self.cache.report_analysis_state(self,"running")
         
     
     def stop_main_watchdog(self):
+        self.report_runtime("done")
         if not self.watched_analysis: return
         self.cache.report_analysis_state(self,"done")
 
@@ -920,6 +925,7 @@ class DataAnalysis(object):
             self.stop_main_watchdog()
             os.system("echo current dir;pwd")
             self.cache.report_exception(self,e)
+            self.report_runtime("failed "+repr(e))
             raise
         self.stop_main_watchdog()
 
@@ -931,6 +937,7 @@ class DataAnalysis(object):
         tspent=time.time()-t0
         self.time_spent_in_main=tspent
         cprint(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
+        self.report_runtime("done in %g seconds"%tspent)
         self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
 
         self.default_log_level=dll
@@ -1060,6 +1067,40 @@ class DataAnalysis(object):
             return substitute_hashe
         else:
             return fih
+
+    report_runtime_destination=None
+    runtime_id=None
+
+    def report_runtime(self,message): # separet
+        if self.report_runtime_destination is None: return
+        try:
+            if not self.report_runtime_destination.startswith("mysql://"): return
+            dbname,table=self.report_runtime_destination[8:].split(".")
+            print("state goes to",dbname,table)
+
+            import MySQLdb
+            db = MySQLdb.connect(host="apcclwn12",
+                      user="root",
+                      port=42512,
+                      #unix_socket="/workdir/savchenk/mysql/var/mysql.socket",
+                      passwd=open(os.environ['HOME']+"/.secret_mysql_password").read().strip(), # your password
+                      db=dbname)
+
+            import socket
+
+            if self.runtime_id is None:
+                import random
+                self.runtime_id=random.randint(0,10000000)
+
+            cur=db.cursor()
+            cur.execute("INSERT INTO "+table+" (analysis,host,date,message,id) VALUES (%s,%s,NOW(),%s,%s)",(self.get_version(),socket.gethostname(),message,self.runtime_id))
+
+            db.commit()
+            db.close()
+
+        except Exception as e:
+            print("failed:",e)
+
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         cprint(render("{BLUE}PROCESS{/}"))
