@@ -37,6 +37,53 @@ class TestDDABasic(unittest.TestCase):
             
         self.assertEqual(A.data, 'data')
     
+    def test_optional_object(self):
+        try:
+            import dataanalysis as da
+            da.AnalysisFactory.reset()
+           # da.printhook.global_all_output=True
+           # da.printhook.global_permissive_output=True
+           # da.printhook.LogStream(None,lambda x:True)
+
+
+            class aAnalysis(da.DataAnalysis):
+                def main(self):
+                    print "test"
+                    self.data="data"
+            
+            class bAnalysis(da.DataAnalysis):
+                produce_disabled=True
+                def main(self):
+                    print "test"
+                    self.data="data"
+            
+            aA=aAnalysis()
+            aA.get()
+            
+            class gAnalysis(da.DataAnalysis):
+                input_a=aAnalysis
+                input_b=bAnalysis
+        
+                force_complete_input=False
+
+                def main(self):
+                    print "test"
+                    self.data=self.input_a.data
+
+
+            A=gAnalysis()
+            A.get()
+                
+            self.assertEqual(A.data, 'data')
+            self.assertEqual(A.input_a.incomplete, False)
+            self.assertEqual(A.input_b.incomplete, True)
+            
+        except:
+            da.printhook.global_all_output=False
+            da.printhook.global_permissive_output=False
+            da.printhook.LogStreams=[]
+            raise
+    
     def test_caching(self):
         import dataanalysis as da
         import time

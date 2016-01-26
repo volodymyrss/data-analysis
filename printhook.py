@@ -19,7 +19,7 @@ if not hasattr(print,'replaced'):
         else:
             level=aa['level'] if 'level' in aa else None 
             #if level in global_output_levels:
-            if ((level is None) and global_permissive_output) or level in global_output_levels:
+            if ((level is None) and global_permissive_output) or level in global_output_levels or global_permissive_output:
                 return sprint(level,*a)
     print.replaced=True
 

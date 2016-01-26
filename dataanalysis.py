@@ -210,6 +210,9 @@ class AnalysisFactoryClass: # how to unify this with caches?..
     def __repr__(self):
         return "[AnalysisFactory: %i]"%len(self.cache)
 
+    def reset(self):
+        self.cache={}
+
     def put(self,obj,sig=None): 
         cprint("requested to put in factory:",obj,sig)  
         cprint("factory assumptions:",self.cache_assumptions)  
@@ -478,6 +481,8 @@ class DataAnalysis(object):
     copy_cached_input=True
     datafile_restore_mode=None
 
+    incomplete=False
+
     only_verify_cache_record=False
 
     schema_hidden=False
@@ -505,6 +510,8 @@ class DataAnalysis(object):
     noanalysis=False
     
     rename_output_unique=False
+
+    force_complete_input=True
 
     def is_virtual(self):
         #if self.run_for_hashe: return False
@@ -822,7 +829,9 @@ class DataAnalysis(object):
                     input_runs_if_haveto=False,
                     can_delegate=False,
                     can_delegate_input=False,
-                    run_if_can_not_delegate=True)
+                    run_if_can_not_delegate=True,
+                    force_complete=True,
+                    force_complete_input=True)
         restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
         # to simplify input
         for k in extra.keys():
@@ -838,6 +847,8 @@ class DataAnalysis(object):
             restore_rules['explicit_input_required']=True
             restore_rules['input_runs_if_haveto']=True
             restore_rules['run_if_haveto']=True
+
+        #restore_rules['force_complete_input']=self.force_complete_input
 
         cprint("will use restore_rules:",restore_rules)
         return restore_rules
@@ -1033,6 +1044,10 @@ class DataAnalysis(object):
 
     def process_verify_inputs(self,input):
         # walk input recursively
+        if not self.force_complete_input:
+            cprint("loose input evaluation - not forced")
+            return
+
         if isinstance(input,list) or isinstance(input,tuple):
             for input_item in input:
                 self.process_verify_inputs(input_item)
@@ -1158,7 +1173,11 @@ class DataAnalysis(object):
                 cprint(fih,'{log:top}')
                         
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
-                    raise Exception("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
+                    if restore_rules['force_complete']:
+                        raise Exception("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
+                    else:
+                        self.incomplete=True
+                        return fih,self
 
 
                 if restore_rules['explicit_input_required']:
@@ -1241,6 +1260,7 @@ class DataAnalysis(object):
                     
                 #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
+                self.force_complete_input=restore_rules['force_complete'] # ?.. !!!!
                 cprint(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
 
                 rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute,requested_by=['output_of']+requested_by)
@@ -1300,7 +1320,7 @@ class DataAnalysis(object):
         walk over all input; apply process_function and implement if neccessary
         """
 
-        cprint("PROCESS INPUT")
+        cprint("{CYAN}PROCESS INPUT{/}")
 
         restore_rules_default=dict(explicit_input_required=False,restore_complete=False)
         restore_rules=dict(restore_rules_default.items()+restore_rules.items() if restore_rules is not None else [])
@@ -1322,6 +1342,13 @@ class DataAnalysis(object):
             restore_config['test_files']=True
         else:
             restore_config['test_files']=False
+        
+        if self.force_complete_input:
+            restore_rules['force_complete']=True
+        else:
+            restore_rules['force_complete']=False
+            cprint("input will not be forced!")
+        
         
         cprint("input restore_rules:",restore_rules)
         cprint("input restore_config:",restore_config)
