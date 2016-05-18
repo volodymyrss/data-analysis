@@ -1,6 +1,9 @@
 data-analysis
 =============
 
+The ideas described below are related to that of the lambda-architecture.
+It is intended for ingesting and processing new data that are appended to existing data rather than overwriting them. State is determined from the natural ordering of the data.
+
 Framework to facilitate development of the (scientific) data analysis pipelines.
 Designed to handle organized processing and storing results of  different stages of analysis for moderate-scale (tens of Tb)  archive of very diverse data.
 
