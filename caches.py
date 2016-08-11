@@ -305,16 +305,20 @@ class MemCache(object): #d
                     else:
                         prefix=""
 
-                    stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                    try:
+                        stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        print("stored filename:",stored_filename)
+                    except Exception as e:
+                        cprint("wat",e)
                     if not self.filebackend.exists(stored_filename): # and
-                        cprint("file from cache does not exist, while cache record exists! inconsistent cache!",stored_filename)
+                        cprint("file from cache does not exist, while cache record exists! inconsistent cache!") #,stored_filename)
                         return None
 
                     b.cached_path_valid_url=False
                     # other way
                     if restore_config['datafile_restore_mode']=="copy":
                         try:
-                            print("attempt to restore file",stored_filename,b,id(b),level='top')
+                        #    print("attempt to restore file",stored_filename,b,id(b),level='top')
  #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
 
                             if not self.filebackend.exists(stored_filename):
@@ -326,7 +330,7 @@ class MemCache(object): #d
                             cprint("stored file:",stored_filename,"will restore as",prefix,b.path,".gz",level='top') 
                             cprint("stored file:",stored_filename,"will restore as",prefix+b.path+".gz",level='top') 
 
-                            b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+b.path,obj,hashe)
+                            b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+os.path.basename(b.path),obj,hashe)
                             print("restored as",restored_file)
 
                             obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
@@ -353,12 +357,12 @@ class MemCache(object): #d
                             # just reproduce?
                             return None
                     elif restore_config['datafile_restore_mode']=="symlink":
-                        self.filebackend.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+b.path+".gz") # just by name? # gzip optional
+                        self.filebackend.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+os.path.basename(b.path)+".gz") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfile":
                         b.cached_path_valid_url=True
-                        open(prefix+b.path+".url.txt","w").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        open(prefix+os.path.basename(b.path)+".url.txt","w").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfileappend":
-                        open(prefix+b.path+".urls.txt","a").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        open(prefix+os.path.basename(b.path)+".urls.txt","a").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
                         b.cached_path_valid_url=True
                     elif restore_config['datafile_restore_mode']=="url_in_object":
                         b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional

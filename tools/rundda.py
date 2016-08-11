@@ -11,6 +11,7 @@ parser.add_argument('-p', dest='plotit',  help='...',action='store_true', defaul
 parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default=False)
 parser.add_argument('-s', dest='silent',  help='...',action='store_true', default=False)
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
+parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', default=False)
 parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 #parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
@@ -30,6 +31,12 @@ if args.verbose:
 else:
     dataanalysis.printhook.global_log_enabled=False
     dataanalysis.printhook.global_fancy_output=False
+
+if args.failsafe:
+    print "will be chatty"
+    dataanalysis.printhook.global_log_enabled=True
+    dataanalysis.printhook.global_fancy_output=False
+    dataanalysis.printhook.global_permissive_output=True
 
 
 if args.quiet:

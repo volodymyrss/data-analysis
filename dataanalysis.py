@@ -173,6 +173,7 @@ AnalysisFactory=None
 
 class AnalysisException(Exception):
     pass
+    
 
 class DataAnalysis:
     pass
@@ -325,8 +326,8 @@ class AnalysisFactoryClass: # how to unify this with caches?..
                     self.put(item)
                     return item
                 else:
-                    cprint("attention! offered object is discarded:",item ,item.export_data())
-                    cprint("stored in factory (this will be the valid instance):",storeditem,storeditem.export_data())
+                    cprint("attention! offered object is discarded:",item) #,item.export_data())
+                    cprint("stored in factory (this will be the valid instance):",storeditem) #,storeditem.export_data())
                     return storeditem
 
             cprint("no such object registered! registering") # attention!
@@ -798,8 +799,8 @@ class DataAnalysis(object):
         # do it all from hash, no need to construct again
         return graph
 
-    def get(self):
-        return self.process(output_required=True)[1]
+    def get(self,**aa):
+        return self.process(output_required=True,**aa)[1]
         
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
@@ -913,7 +914,7 @@ class DataAnalysis(object):
     def process_run_main(self):
         #self.runtime_update('running')
         if self.abstract:
-            raise Exception("attempting to run abstract! :"+repr(self))
+            raise Exception("attempting to run abstract! :"+repr(self)+" requested by "+(" ".join(self._da_requested_by)))
 
         dll=self.default_log_level
         self.default_log_level="main"
@@ -1220,7 +1221,7 @@ class DataAnalysis(object):
                         if not hasattr(self,'analysis_exceptions'):
                             self.analysis_exceptions=[]
                         self.analysis_exceptions+=analysis_exceptions
-                        cprint("analysis exceptions:",analysis_exceptions)
+                        cprint(render("{RED}ANALYSIS EXCEPTIONS:{/}"),analysis_exceptions,level='top')
                     else:
                         analysis_exceptions=[]
                 # exceptions
@@ -1240,7 +1241,7 @@ class DataAnalysis(object):
                     else:
                         raise Exception("not allowed to run but has to! at "+repr(self))
 
-                    cprint("new output:",self.export_data())
+                    #cprint("new output:",self.export_data())
 
                     if self.rename_output_unique:
                         self.process_output_files(fih)

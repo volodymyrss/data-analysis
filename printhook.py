@@ -10,6 +10,7 @@ global_fancy_output=True
 global_output_levels=['top','cache']
 global_permissive_output=False
 global_all_output=False
+global_log_enabled=True
 
 if not hasattr(print,'replaced'):
     sprint=print
