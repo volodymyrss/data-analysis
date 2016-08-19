@@ -338,8 +338,10 @@ class AnalysisFactoryClass: # how to unify this with caches?..
             cprint("considering string data handle")
             return DataHandle(item)
          
+        
         cprint("unable to interpret item: "+repr(item))
-        return None
+        raise Exception("unable to interpret item: "+repr(item))
+        #return None
 
     cache_stack=[]
     cache_assumptions=[]
@@ -1429,7 +1431,11 @@ class DataAnalysis(object):
 
         
         cprint("proceeding to run",item,"rules",restore_rules)
-        cprint("item:",item._da_locally_complete)
+
+        try:
+            cprint("item:",item._da_locally_complete)
+        except Exception as e:
+            raise Exception(str(item)+" has no locally complete!")
         input_hash,newitem=item.process(process_function=process_function,restore_rules=rr,restore_config=restore_config,requested_by=requested_by) # recursively for all inputs process input
         cprint("process_input finishing at the end",input_hash,newitem)
         
