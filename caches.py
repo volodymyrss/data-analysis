@@ -120,7 +120,13 @@ class MemCache(object): #d
             return None
         
         cprint("there is a parent available to call for:",self.parent)
-        return self.parent.restore(hashe,obj,rc)
+        from_parent=self.parent.restore(hashe,obj,rc)
+            
+        if from_parent is not None:
+            print("storing what restored from parent")
+            self.store(hashe,obj)
+
+        return from_parent
 
     def store_to_parent(self,hashe,obj):
         if self.parent is None:
@@ -252,7 +258,8 @@ class MemCache(object): #d
 
         if not any([isinstance(self,c) for c in obj.read_caches]):
             cprint("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
-            return self.restore_from_parent(hashe,obj,restore_config)
+            from_parent=self.restore_from_parent(hashe,obj,restore_config)
+            return from_parent
 
         if restore_config is None:
             restore_config={}

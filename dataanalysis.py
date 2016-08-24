@@ -525,6 +525,8 @@ class DataAnalysis(object):
     _da_main_delegated=None
     _da_delegated_input=None
 
+    _da_main_log_content=""
+
     write_caches=[caches.MemCache]
     read_caches=[caches.MemCache]
 
@@ -643,7 +645,7 @@ class DataAnalysis(object):
         for a,b in data.items():
             setattr(self,a,b)
 
-    def export_data(self):
+    def export_data(self,embed_datafiles=False):
         empty_copy=self.__class__
         cprint("my class is",self.__class__)
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
@@ -654,6 +656,15 @@ class DataAnalysis(object):
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
             r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
+            if embed_datafiles:
+                res=[]
+                for a,b in r.items():
+                    if isinstance(b,DataFile):
+                        res.append([a,str(b)]) 
+                    else:
+                        res.append([a,b])
+                r=dict(res)
+
 
         cprint("resulting output:",r)
         return r
