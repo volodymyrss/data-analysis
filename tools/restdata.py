@@ -1,4 +1,5 @@
 #!flask/bin/python
+import sys
 from flask import Flask, url_for, jsonify, send_file, request
 import pylru
 import requests
@@ -25,7 +26,7 @@ def run_da(object,modules,assumptions):
     print "run command:",runcommand
     os.system(command+runcommand)
 
-    return json.load(open("object_dump.json"))
+    return json.load(open(td+"/object_data.json"))
 
 
 @app.route('/analysis/api/v1.0/<string:object>', methods=['GET'])
@@ -41,5 +42,5 @@ def get_analysis(object):
     return jsonify(run_da(object,modules,assumptions))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True,port=int(sys.argv[1]))
 

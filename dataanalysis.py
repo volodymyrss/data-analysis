@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import collections
 import StringIO
+import json
 from datetime import datetime
 
 from printhook import PrintHook,decorate_method_log,LogStream
@@ -660,7 +661,21 @@ class DataAnalysis(object):
                 res=[]
                 for a,b in r.items():
                     if isinstance(b,DataFile):
-                        res.append([a,str(b)]) 
+                        if b.size<100e3:
+                            try:
+                                content=json.load(b.open())
+                            except:    
+                                content=b.open().read()
+                            
+                            try:
+                                json.dumps(content)
+                            except:
+                                content=b.open().read()
+                                content=str(b)+" can not encode "+str(b.size)
+
+                            res.append([a,content]) 
+                        else:
+                            res.append([a,str(b)+" too big "+str(b.size)]) 
                     else:
                         res.append([a,b])
                 r=dict(res)
@@ -1582,8 +1597,11 @@ class DataFile(DataAnalysis):
 
     infactory=False
 
+    size=None
+
     def __init__(self,fn=None):
         self.path=fn
+        self.size=os.path.getsize(fn)
 
     def get_cached_path(self): # not work properly if many run!
         return self.cached_path if hasattr(self,'cached_path') else self.path
