@@ -92,7 +92,7 @@ A.process(output_required=True)
 
 if args.json:
     print "will dump state json"
-    json.dump(A.export_data(embed_datafiles=True),open("object_data.json","w"), sort_keys=True,
+    json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
                       indent=4, separators=(',', ': '))
 
 #print "aliases:"
