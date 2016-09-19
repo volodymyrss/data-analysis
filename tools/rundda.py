@@ -2,12 +2,13 @@
 
 import argparse
 import importing
+import json
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
 parser.add_argument('-m', dest='module', metavar='MODULE_NAME', type=str, help='module to load', nargs='+', action='append', default=[])
 parser.add_argument('-a', dest='assume', metavar='ASSUME', type=str, help='...', nargs='+', action='append', default=[])
-parser.add_argument('-p', dest='plotit',  help='...',action='store_true', default=False)
+parser.add_argument('-j', dest='json',  help='...',action='store_true', default=False)
 parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default=False)
 parser.add_argument('-s', dest='silent',  help='...',action='store_true', default=False)
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
@@ -88,6 +89,11 @@ for a in args.disable_run:
     b.__class__.produce_disabled=True
 
 A.process(output_required=True)
+
+if args.json:
+    print "will dump state json"
+    json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
+                      indent=4, separators=(',', ': '))
 
 #print "aliases:"
 #for a,b in dataanalysis.AnalysisFactory.aliases:

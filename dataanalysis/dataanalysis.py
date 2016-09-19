@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import collections
 import StringIO
+import json
 from datetime import datetime
 
 from printhook import PrintHook,decorate_method_log,LogStream
@@ -337,6 +338,10 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         if isinstance(item,str):
             cprint("considering string data handle")
             return DataHandle(item)
+        
+        if isinstance(item,unicode):
+            cprint("considering unicode string data handle")
+            return DataHandle(str(item))
          
         
         cprint("unable to interpret item: "+repr(item))
@@ -527,6 +532,8 @@ class DataAnalysis(object):
     _da_delegated_input=None
     _da_ignore_output_objects=False
 
+    _da_main_log_content=""
+
     write_caches=[caches.MemCache]
     read_caches=[caches.MemCache]
 
@@ -645,7 +652,7 @@ class DataAnalysis(object):
         for a,b in data.items():
             setattr(self,a,b)
 
-    def export_data(self):
+    def export_data(self,embed_datafiles=False,verify_jsonifiable=False):
         empty_copy=self.__class__
         cprint("my class is",self.__class__)
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
@@ -657,7 +664,15 @@ class DataAnalysis(object):
         else:
             r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
 
-        #cprint("resulting output:",r)
+        if verify_jsonifiable:
+            res=[]
+            for a,b in r.items():
+                res.append([a,jsonify(b)])
+            r=dict(res)
+
+
+
+        cprint("resulting output:",r)
         return r
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
@@ -1594,14 +1609,79 @@ class AnyAnalysis(DataAnalysis):
     def main(self):
         raise Exception("requested to run abstract any analysis!")
 
+## to fits io-related!!
+import numpy as np
+import pyfits
+
+def jsonify_image(data):
+    if data is None:
+        return None
+    return [jsonify_image(d) if isinstance(d,np.array) else d for d in data]
+
+def totype(v):
+    if isinstance(v,str): return v
+    if isinstance(v,int): return v
+    if isinstance(v,float): return v
+
+    if hasattr(v,'dtype'):
+        if v.dtype in (np.int16,np.int32,np.int64):
+            return int(v)
+        if v.dtype in (np.float16,np.float32,np.int64):
+            return float(v)
+    
+    if isinstance(v,dict):
+        return dict([[a,totype(b)] for a,b in v.items()])
+    
+    if isinstance(v,list):
+        return [totype(b) for b in v]
+
+    try:
+        return float(v)
+    except:
+        return str(v)
+
+
+def jsonify_fits_header(h):
+    return dict([(k,str(h[k])) for k in h.keys()])
+            
+def jsonify_array(arr):
+    return [totype(v) for v in arr]
+
+def jsonify_fits_table(d):
+    r=[]
+    for c in d.columns:
+        try:
+            arr=jsonify_array(c.array[:])
+            r.append([c.name,arr])
+        except:
+            print(c,arr)
+            raise
+    return r
+
+
+def jsonify_fits(fits):
+    if isinstance(fits,pyfits.HDUList):
+        return [jsonify_fits(f) for f in fits]
+    
+    if isinstance(fits,pyfits.ImageHDU) or isinstance(fits,pyfits.PrimaryHDU):
+        return (jsonify_fits_header(fits.header),jsonify_image(fits.data))
+    
+    if isinstance(fits,pyfits.TableHDU) or isinstance(fits,pyfits.BinTableHDU):
+        return (jsonify_fits_header(fits.header),jsonify_fits_table(fits.data))
+
+    return str(fits)
+    
 
 class DataFile(DataAnalysis):
     cached_path_valid_url=False
 
     infactory=False
 
+    size=None
+
     def __init__(self,fn=None):
         self.path=fn
+        self.size=os.path.getsize(fn)
 
     def get_cached_path(self): # not work properly if many run!
         return self.cached_path if hasattr(self,'cached_path') else self.path
@@ -1638,6 +1718,38 @@ class DataFile(DataAnalysis):
 
     def __repr__(self):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
+                        
+
+    def jsonify(self):
+        if self.size<100e3:
+            try:
+                return json.load(self.open())
+            except:    
+                content=self.open().read()
+
+            try:
+                f=pyfits.open(self.open())
+                return jsonify_fits(f)
+            except Exception as e:
+                print("can not interpret as fits:",e)
+            
+            try:
+                json.dumps(content)
+                return content
+            except:
+                content=self.open().read()
+                return str(self)+" can not encode "+str(self.size)+" fits error "+str(e)
+        else:
+            return str(self)+" too big "+str(self.size)
+
+def jsonify(item):
+    if isinstance(item,DataFile):
+        return item.jsonify()
+    
+    if isinstance(item,np.ndarray):
+        return jsonify_array(item)
+
+    return totype(item)
 
 class DataFileStatic(DataFile):
     cached_path_valid_url=False
