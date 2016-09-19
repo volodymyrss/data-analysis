@@ -6,10 +6,11 @@ from datetime import datetime
 import re
 
 global_suppress_output=False
-global_fancy_output=True
+global_fancy_output=False
 global_output_levels=['top','cache']
-global_permissive_output=False
-global_all_output=False
+global_permissive_output=True
+#global_permissive_output=False
+global_all_output=True
 global_log_enabled=True
 
 if not hasattr(print,'replaced'):
@@ -207,3 +208,4 @@ class LogStream:
 LogStreams=[]
 
 cprint=print
+

@@ -431,7 +431,7 @@ class MemCache(object): #d
 
             content=obj.export_data()
 
-            cprint("content:",content)
+            #cprint("content:",content)
                         
             cached_path=self.construct_cached_file_path(hashe,obj)
 
@@ -504,7 +504,7 @@ class MemCache(object): #d
             if found is None:
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content})
             else:
-                cprint("record already found:",found,'{log:reflections}')
+                #cprint("record already found:",found,'{log:reflections}')
                 cprint("these results will be ignored! (why would we do this?..)","{log:reflections}") # current behavior is to replace
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content}) # twice same!
             
@@ -516,7 +516,7 @@ class MemCache(object): #d
         # and save
 
     def make_record(self,hashe,content):
-        cprint("make record",hashe,content)
+        #cprint("make record",hashe,content)
         self.cache[hashe]=content
         self.save()
         cprint("now entries",len(self.cache))
@@ -1028,7 +1028,7 @@ class TransientCache(MemCache): #d
         self.cache[hashe]=content
 
         cprint("stored")
-        self.list()
+        #self.list()
 
 #        self.guarantee_unique_names(obj)
         
@@ -1158,7 +1158,7 @@ class MemCacheIRODS(MemCacheNoIndex):
 
 
 class CacheModule(MemCache):
-    filecacheroot=os.environ['DDA_MODULE_CACHE']
+    filecacheroot=os.environ['DDA_MODULE_CACHE'] if 'DDA_MODULE_CACHE' in os.environ else ""
 
     def construct_cached_file_path(self,hashe,obj):
         print("requested path for",hashe,obj)
@@ -1181,7 +1181,7 @@ class CacheModule(MemCache):
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
 
 class CacheModuleIRODS(MemCacheNoIndex):
-    filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS']
+    filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS'] if 'DDA_MODULE_CACHE_IRODS' in os.environ else ""
     filebackend=IRODSFileBackend()
 
     def construct_cached_file_path(self,hashe,obj):

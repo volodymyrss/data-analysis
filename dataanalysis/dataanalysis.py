@@ -523,7 +523,9 @@ class DataAnalysis(object):
     _da_restored=None
     _da_locally_complete=None
     _da_main_delegated=None
+    _da_main_log_content=""
     _da_delegated_input=None
+    _da_ignore_output_objects=False
 
     write_caches=[caches.MemCache]
     read_caches=[caches.MemCache]
@@ -653,9 +655,9 @@ class DataAnalysis(object):
             cprint("explicit output requested",self.explicit_output)
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
-            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
+            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
 
-        cprint("resulting output:",r)
+        #cprint("resulting output:",r)
         return r
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
@@ -671,7 +673,10 @@ class DataAnalysis(object):
 
     def get_version(self):
         ss="_".join(["%s:%s"%(a,repr(getattr(self,a))) for a in self._da_settings]) if self._da_settings is not None else ""
-        return self.get_signature()+"."+self.version+("."+ss if ss!="" else "")
+        v=self.get_signature()+"."+self.version+("."+ss if ss!="" else "")
+        #if hasattr(self,'timestamp'):
+        #    v+=".at_"+str(self.timestamp)
+        return v
 
     def get_signature(self):
         a=self.get_formatted_attributes()
@@ -803,6 +808,27 @@ class DataAnalysis(object):
 
     def get(self,**aa):
         return self.process(output_required=True,**aa)[1]
+    
+    def load(self,**aa):
+        fih=self._da_locally_complete
+        if fih is None:
+            fih=self.process(output_required=False,**aa)[0]
+
+        print("restoring as",fih)
+        self.retrieve_cache(fih)
+        return self.get(**aa)
+    
+    def stamp(self,comment,**aa):
+        self.comment=comment
+        import time
+        self.timestamp=time.time()
+
+        fih=self._da_locally_complete
+        if fih is None:
+            fih=self.process(output_required=False,**aa)[0]
+        
+        print("storing as",fih)
+        return self.store_cache(fih)
         
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
@@ -970,6 +996,9 @@ class DataAnalysis(object):
             setattr(self,'output',mr)
 
     def process_find_output_objects(self):
+        if self._da_ignore_output_objects:
+            return []
+
         da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
         if da!=[]:
             cprint(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
