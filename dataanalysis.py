@@ -249,6 +249,7 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         generates and instance of DataAnalysis from something
    
         """
+
         cprint("interpreting",item)
         cprint("factory knows",self.cache) #.keys())
 
@@ -822,6 +823,30 @@ class DataAnalysis(object):
         return graph
 
     def get(self,**aa):
+        if 'saveonly' in aa and aa['saveonly'] is not None:
+            import errno
+            import shutil
+            import tempfile
+
+            aax=dict(aa.items()+[['saveonly',None]])
+
+            try:
+                tmp_dir = tempfile.mkdtemp()  # create dir
+                print("tempdir:",tmp_dir)
+                olddir=os.getcwd()
+                os.chdir(tmp_dir)
+                self.get(**aax)
+
+                for fn in aa['saveonly']:
+                    shutil.copyfile(tmp_dir+"/"+fn,olddir+"/"+fn)
+
+            finally:
+                try:
+                    shutil.rmtree(tmp_dir)  # delete directory
+                except OSError as exc:
+                    if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
+                        raise  # re-raise exception
+
         return self.process(output_required=True,**aa)[1]
     
     def load(self,**aa):
