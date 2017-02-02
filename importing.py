@@ -77,7 +77,9 @@ class load_module(DataAnalysis):
         #self.module=imp.load_module(,*self.input_module_path.found)
 
 def import_git_module(name,version):
-    os.system("git clone git@github.com:volodymyrss/dda-"+name+".git")
+    gitroot=os.environ["GIT_ROOT"] if "GIT_ROOT" in os.environ else "git@github.com:volodymyrss"
+    
+    os.system("git clone "+gitroot+"/dda-"+name+".git")
     os.system("cd dda-"+name+"; git pull; git checkout "+version)
     os.system("ls -lotr")
     print name,os.getcwd()+"/dda-"+name+"/"+name+".py"
