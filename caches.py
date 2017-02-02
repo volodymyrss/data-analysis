@@ -1073,6 +1073,54 @@ class MemCacheIndex(MemCache):
         #raise Exception("please write to index!")
         return
 
+class SSHFileBackend:
+    #sshroot="apcclwn12:/Integral2/data/reduced/ddcache/"
+
+    def exists(self,fn):
+        try:
+            subprocess.check_call(["scp",fn,"./"])
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def getsize(self,origin):
+        return 0 
+        #return os.path.getsize(origin)/1024./1024.
+    
+    def get(self,orig,dest,gz=False):
+        subprocess.check_call(["scp",fn,"./"])
+        if gz:
+            open(dest,"w").write(gzip.open(os.path.basename(orig)).read())
+    
+    def symlink(self,orig,dest):
+        os.symlink(orig,dest)
+    
+    def put(self,orig,dest):
+        pass
+        #subprocess.check_call(["iput","-f",orig,dest])
+    
+    def makedirs(self,dirs):
+        pass
+
+    def open(self,fn,mode="r",gz=False):
+        local_fn=os.path.basename(fn) # !!
+
+        if "w"==mode:
+            pass
+        elif "r"==mode:
+            cprint("will get file from ssh:",fn,local_fn)
+            self.get(fn,local_fn)
+        else:
+            raise Exception("do not understand this mode: "+mode)
+
+        if gz:
+            return gzip.open(local_fn,mode)
+        return open(local_fn,mode)
+
+
+    def flush(self):
+        pass
+
 
 class IRODSFileBackend:
     def exists(self,fn):
@@ -1162,6 +1210,10 @@ class MemCacheNoIndex(MemCache):
 class MemCacheIRODS(MemCacheNoIndex):
     can_url_to_cache=False
     filebackend=IRODSFileBackend()
+
+class MemCacheSSH(MemCacheNoIndex):
+    can_url_to_cache=False
+    filebackend=SSHFileBackend()
 
 
 class CacheModule(MemCache):
