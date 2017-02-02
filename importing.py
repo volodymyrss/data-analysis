@@ -27,8 +27,8 @@ class find_module_standard(DataAnalysis):
         self.module_path=pathname
 
 cm=caches.CacheModule()
-cmi=caches.CacheModuleIRODS()
-cm.parent=cmi
+#cmi=caches.CacheModuleIRODS()
+#cm.parent=cmi
 
 class find_module_cached(DataAnalysis):
     cached=True
