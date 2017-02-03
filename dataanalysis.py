@@ -1004,8 +1004,13 @@ class DataAnalysis(object):
             #os.system("ls -ltor")
             self.stop_main_watchdog()
             os.system("echo current dir;pwd")
-            self.cache.report_exception(self,e)
-            self.report_runtime("failed "+repr(e))
+
+            try:
+                self.cache.report_exception(self,e)
+                self.report_runtime("failed "+repr(e))
+            except Exception:
+                print("unable to report exception!")
+
             raise
         self.stop_main_watchdog()
 
