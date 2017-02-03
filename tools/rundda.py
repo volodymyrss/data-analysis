@@ -14,6 +14,7 @@ parser.add_argument('-s', dest='silent',  help='...',action='store_true', defaul
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
 parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', default=False)
 parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
+parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 #parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 
@@ -75,6 +76,14 @@ for a in args.force_run:
     try:
         b=dataanalysis.AnalysisFactory[a[0]]() # more better this
         b.__class__.cached=False
+    except: # oh now!
+        pass
+
+for a in args.force_produce:
+    print "force produce",a
+    try:
+        b=dataanalysis.AnalysisFactory[a[0]]() # more better this
+        b.__class__.read_caches=[]
     except: # oh now!
         pass
 

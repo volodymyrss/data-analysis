@@ -71,12 +71,12 @@ class DataFile:
 
 
 
-#global_log_enabled=True
-#global_fancy_output=True
+global_log_enabled=True
+global_fancy_output=False
 #global_suppress_output=False
-#global_all_output=False
+global_all_output=True
 #global_readonly_caches=False
-#global_output_levels=('top')
+global_output_levels=('top')
 
 from  printhook import cprint
 

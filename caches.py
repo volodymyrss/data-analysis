@@ -1088,7 +1088,8 @@ class SSHFileBackend:
         #return os.path.getsize(origin)/1024./1024.
     
     def get(self,orig,dest,gz=False):
-        subprocess.check_call(["scp",fn,"./"])
+        print(["scp",orig,dest],level="top")
+        subprocess.check_call(["scp",orig,dest])
         if gz:
             open(dest,"w").write(gzip.open(os.path.basename(orig)).read())
     
@@ -1096,17 +1097,33 @@ class SSHFileBackend:
         os.symlink(orig,dest)
     
     def put(self,orig,dest):
-        pass
-        #subprocess.check_call(["iput","-f",orig,dest])
+        destdir="/".join(dest.split("/")[:-1])
+
+        print("makedirs",["scp","-r",orig,destdir],level="top")
+        subprocess.check_call(["scp","-r",orig,destdir])
     
     def makedirs(self,dirs):
-        pass
+        host,thedirs=dirs.split(":")
+        subprocess.check_call(["ssh",host,"mkdir -pv "+thedirs])
+
+    def register_pending_put(self,local_fn,remote_fn):
+        if self.pending_put is None:
+            self.pending_put=[]
+        self.pending_put.append([local_fn,remote_fn])
+    
+    pending_put=None
+
+    def flush(self):
+        while self.pending_put is not None and len(self.pending_put)>0:
+            local,remote=self.pending_put.pop()
+            self.put(local,remote)
 
     def open(self,fn,mode="r",gz=False):
         local_fn=os.path.basename(fn) # !!
 
         if "w"==mode:
-            pass
+            cprint("will later put file to ssh",local_fn,fn)
+            self.register_pending_put(local_fn,fn)
         elif "r"==mode:
             cprint("will get file from ssh:",fn,local_fn)
             self.get(fn,local_fn)
@@ -1117,9 +1134,6 @@ class SSHFileBackend:
             return gzip.open(local_fn,mode)
         return open(local_fn,mode)
 
-
-    def flush(self):
-        pass
 
 
 class IRODSFileBackend:
