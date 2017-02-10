@@ -1143,6 +1143,8 @@ class IRODSFileBackend:
             return True
         except subprocess.CalledProcessError:
             return False
+        except:
+            return False
 
     def getsize(self,origin):
         return 0 
