@@ -1160,10 +1160,16 @@ class IRODSFileBackend:
         os.symlink(orig,dest)
     
     def put(self,orig,dest):
-        subprocess.check_call(["iput","-f",orig,dest])
+        try:
+            subprocess.check_call(["iput","-f",orig,dest])
+        except:
+            pass
     
     def makedirs(self,dirs):
-        subprocess.check_call(["imkdir","-p",dirs])
+        try:
+            subprocess.check_call(["imkdir","-p",dirs])
+        except:
+            pass
 
     def open(self,fn,mode="r",gz=False):
         local_fn=os.path.basename(fn) # !!
