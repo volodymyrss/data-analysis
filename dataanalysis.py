@@ -78,7 +78,7 @@ global_all_output=True
 #global_readonly_caches=False
 global_output_levels=('top')
 
-from  printhook import cprint
+from  printhook import cprint,debug_print
 
 #
 
@@ -190,6 +190,10 @@ class decorate_all_methods(type):
                 value = local[attr]
                 if callable(value) and not isinstance(value,type):
                     local[attr] = decorate_method_log(value)
+        else:
+            if printhook.global_catch_main_output and 'main' in local:
+                debug_print("decorating only main in "+repr(cls)+"; "+repr(name))
+                local['main'] = decorate_method_log(local['main'])
 
         c=type.__new__(cls, name, bases, local)
 
@@ -990,7 +994,8 @@ class DataAnalysis(object):
         cprint(render("{RED}running main{/}"),'{log:top}')
         t0=time.time()
         main_log=StringIO.StringIO()
-        main_logstream=printhook.LogStream(main_log,lambda x:True)
+        main_logstream=printhook.LogStream(main_log,lambda x:True,name="main stream")
+        main_logstream_file=printhook.LogStream("main.log",lambda x:True,name="main stream file")
         cprint("starting main log stream",main_log,main_logstream,level='logstreams')
 
         self.start_main_watchdog()
@@ -1015,8 +1020,10 @@ class DataAnalysis(object):
         self.stop_main_watchdog()
 
         main_logstream.forget()
+        main_logstream_file.forget()
         self._da_main_log_content=main_log.getvalue()
         main_log.close()
+        cprint("main log stream collected",len(self._da_main_log_content),level="logstreams")
         cprint("closing main log stream",main_log,main_logstream,level="logstreams")
 
         tspent=time.time()-t0
@@ -1643,7 +1650,7 @@ class AnyAnalysis(DataAnalysis):
 
 ## to fits io-related!!
 import numpy as np
-import pyfits
+from astropy.io import fits as pyfits
 
 def jsonify_image(data):
     if data is None:
