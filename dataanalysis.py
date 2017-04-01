@@ -1648,7 +1648,7 @@ class AnyAnalysis(DataAnalysis):
 
 ## to fits io-related!!
 import numpy as np
-import pyfits
+from astropy.io import fits as pyfits
 
 def jsonify_image(data):
     if data is None:
