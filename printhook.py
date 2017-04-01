@@ -7,7 +7,7 @@ import re
 
 global_suppress_output=False
 global_fancy_output=False
-global_catch_main_output=True
+global_catch_main_output=False
 global_output_levels=['top','cache']
 #global_permissive_output=True
 global_permissive_output=False
