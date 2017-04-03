@@ -13,6 +13,7 @@ parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default
 parser.add_argument('-s', dest='silent',  help='...',action='store_true', default=False)
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
 parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', default=False)
+parser.add_argument('-c', dest='cachelink',  help='...',action='store_true', default=False)
 parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 #parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
@@ -103,6 +104,10 @@ if args.json:
     print "will dump state json"
     json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
                       indent=4, separators=(',', ': '))
+
+if args.cachelink:
+    print "will note cache link"
+    open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
 
 #print "aliases:"
 #for a,b in dataanalysis.AnalysisFactory.aliases:

@@ -281,6 +281,7 @@ class MemCache(object): #d
         cprint("cached path:",cached_path)
 
         obj._da_cache_path_root=cached_path
+        obj._da_cached_pathes=[cached_path]
 
         try:
             c=self.load_content(hashe,c)
@@ -443,6 +444,11 @@ class MemCache(object): #d
             cached_path=self.construct_cached_file_path(hashe,obj)
 
             obj._da_cached_path=cached_path
+
+            if not hasattr(obj,'_da_cached_pathes'):
+                obj._da_cached_pathes=[]
+            obj._da_cached_pathes.append(cached_path)
+
             cprint("storing in",cached_path)
                         
             dn=os.path.dirname(cached_path)
