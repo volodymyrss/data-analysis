@@ -201,7 +201,7 @@ class MemCache(object): #d
     def test_file(self,fn):
         if fn.endswith('fits') or fn.endswith('fits.gz'):
             print("fits, will test it")
-            import pyfits
+            from astropy.io import fits as pyfits
             try:
                 pyfits.open(fn)
             except:

@@ -1453,7 +1453,7 @@ class DataAnalysis(object):
                         raise Exception("input is None: vortual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
 
-                    if hasattr(l,'noanalysis') and l.noanalysis:
+                    if not isinstance(l,list) and l.is_noanalysis():
                         cprint("NoAnalysis:",o,o.__class__)
                         continue # yes?
 
@@ -1501,7 +1501,9 @@ class DataAnalysis(object):
        # we are down to the input item finally
         
         item=self.interpret_item(obj)  # this makes DataAnalysis object
-        if hasattr(item,'noanalysis') and item.noanalysis:
+        #if hasattr(item,'noanalysis') and item.noanalysis:
+        #    cprint("noanalysis!")
+        if item.is_noanalysis():
             cprint("noanalysis!")
             return None,item
 
@@ -1648,7 +1650,7 @@ class AnyAnalysis(DataAnalysis):
 
 ## to fits io-related!!
 import numpy as np
-import pyfits
+from astropy.io import fits as pyfits
 
 def jsonify_image(data):
     if data is None:

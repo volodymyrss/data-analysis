@@ -12,6 +12,7 @@ parser.add_argument('-j', dest='json',  help='...',action='store_true', default=
 parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default=False)
 parser.add_argument('-s', dest='silent',  help='...',action='store_true', default=False)
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
+parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
 parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', default=False)
 parser.add_argument('-c', dest='cachelink',  help='...',action='store_true', default=False)
 parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
@@ -48,6 +49,9 @@ if args.quiet:
 else:
     print "will not be quiet"
     dataanalysis.printhook.LogStream(None,lambda x:True)
+
+if args.very_verbose:
+    dataanalysis.printhook.global_permissive_output=True
 
 modules=[m[0] for m in args.module]
 
