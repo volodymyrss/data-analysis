@@ -126,8 +126,6 @@ def athostdir(f):
 class DataHandle:
     pass
 
-class DataFile:
-    pass
 
 class NoAnalysis:
     pass
@@ -522,7 +520,7 @@ class DataAnalysis(object):
 
     noanalysis=False
     
-    rename_output_unique=False
+    rename_output_unique=True
 
     force_complete_input=True
 
@@ -746,6 +744,9 @@ class DataAnalysis(object):
         TransientCacheInstance.store(fih,self)
         self.cache.store(fih,self)
         #c=MemCacheLocal.store(oh,self.export_data())
+
+    def post_restore(self):
+        pass
     
     def retrieve_cache(self,fih,rc=None):
         cprint("requested cache for",fih)
@@ -795,6 +796,11 @@ class DataAnalysis(object):
             cprint("this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=fih # info save
             cprint("locally complete:",fih)
+            self.post_restore()
+            if self.rename_output_unique:
+                self.process_output_files(fih)
+            else:
+                cprint("disabled self.rename_output_unique",level='cache')
             return r
         return r # twice
 
@@ -1729,19 +1735,21 @@ class DataFile(DataAnalysis):
 # confis
         #cprint("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
 
+        if hasattr(self,'cached_path'):
+            print("have cached path",self.cached_path)
+
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
             
         if hasattr(self,'_da_unique_local_path'):
             return self._da_unique_local_path
 
-        if not hasattr(self,'restored_mode'):
+        if not hasattr(self,'restored_mode'): # means it was just produced
             return self.path
 
         if self.restored_mode=="copy":
-            cprint("datafile copied by no local path?",self,id(self))
-            raise Exception("inconsistency!")
- #       raise Exception("inconsistency!")
+            cprint("datafile copied but no local path?",self,id(self))
+            raise Exception("inconsistency: "+repr(self))
             
     def get_full_path(self):
         if hasattr(self,'restored_path_prefix'):

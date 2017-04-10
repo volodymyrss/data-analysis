@@ -9,6 +9,7 @@ parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name o
 parser.add_argument('-m', dest='module', metavar='MODULE_NAME', type=str, help='module to load', nargs='+', action='append', default=[])
 parser.add_argument('-a', dest='assume', metavar='ASSUME', type=str, help='...', nargs='+', action='append', default=[])
 parser.add_argument('-j', dest='json',  help='...',action='store_true', default=False)
+parser.add_argument('-t', dest='tar',  help='...',action='store_true', default=False)
 parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default=False)
 parser.add_argument('-s', dest='silent',  help='...',action='store_true', default=False)
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
@@ -66,20 +67,18 @@ for m in modules:
 
 
 
-for a in args.assume:
-    print "assume",a[0]
-    l=eval(a[0])
+assumptions=",".join([a[0] for a in args.assume])
+print assumptions
+dataanalysis.AnalysisFactory.WhatIfCopy('commandline',eval(assumptions))
 
-    dataanalysis.AnalysisFactory.WhatIfCopy('commandline',l)
-
-A=dataanalysis.AnalysisFactory[args.object_name]() # more better this
+A=dataanalysis.AnalysisFactory[args.object_name]() 
 
 print A
 
 for a in args.force_run:
     print "force run",a
     try:
-        b=dataanalysis.AnalysisFactory[a[0]]() # more better this
+        b=dataanalysis.AnalysisFactory[a[0]]() 
         b.__class__.cached=False
     except: # oh now!
         pass
@@ -87,19 +86,14 @@ for a in args.force_run:
 for a in args.force_produce:
     print "force produce",a
     try:
-        b=dataanalysis.AnalysisFactory[a[0]]() # more better this
+        b=dataanalysis.AnalysisFactory[a[0]]() 
         b.__class__.read_caches=[]
     except: # oh now!
         pass
 
-#for a in args.verify:
-#    print "verify",a
-#    b=dataanalysis.AnalysisFactory[a[0]]() # more better this
-#    b.__class__.only_verify_cache_record=False
-
 for a in args.disable_run:
     print "disable run",a
-    b=dataanalysis.AnalysisFactory[a[0]]() # more better this
+    b=dataanalysis.AnalysisFactory[a[0]]() 
     b.__class__.produce_disabled=True
 
 A.process(output_required=True)
@@ -109,11 +103,12 @@ if args.json:
     json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
                       indent=4, separators=(',', ': '))
 
+if args.tar:
+    print "will tar cache"
+    print A._da_cached_path
+
 if args.cachelink:
     print "will note cache link"
     open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
 
-#print "aliases:"
-#for a,b in dataanalysis.AnalysisFactory.aliases:
-#    print a,b
 

@@ -163,18 +163,20 @@ class MemCache(object): #d
         print("< ",origin,'{log:top}',level='top')
         print("> ",dest,'{log:top}',level='top')
         
-        print(dest,self.hashe2signature(hashe))
-
         dest_unique=dest+"."+self.hashe2signature(hashe)
         print("> ",dest_unique,'{log:top}',level='top')
         
-        cprint("as",dest_unique)
+        print("as",dest_unique,level='top')
 
         fsize=self.filebackend.getsize(origin)/1024./1024.
         cprint("restoring file of",fsize,'{log:resources}','{log:cache}')
 
         t0=time.time()
-        self.filebackend.get(origin,dest_unique,gz=True)
+
+        if dest.endswith(".gz"):
+            self.filebackend.get(origin,dest_unique,gz=False)
+        else:
+            self.filebackend.get(origin,dest_unique,gz=True)
 
         tspent=time.time()-t0
 
@@ -204,8 +206,8 @@ class MemCache(object): #d
             from astropy.io import fits as pyfits
             try:
                 pyfits.open(fn)
-            except:
-                print("corrupt fits file",fn)
+            except Exception as e:
+                print("corrupt fits file",fn,e)
                 raise Exception('corrupt fits file in cache: '+fn)
         
         if fn.endswith('npy'):
@@ -238,13 +240,22 @@ class MemCache(object): #d
 
         t0=time.time()
         if not origin.endswith(".gz"):
-            os.system("gzip -c %s > %s.gz"%(origin,origin))
+            origin_gzipped=origin+".gz"
+            dest_gzipped=dest+".gz"
+            os.system("gzip -c %s > %s"%(origin,origin_gzipped))
+        else:
+            origin_gzipped=origin
+            dest_gzipped=dest
+
         #check_call(['gzip','-f',origin])
         tspentc=time.time()-t0
-        cprint("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
+
+        if tspentc>0:
+            cprint("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
 
         t0=time.time()
-        self.filebackend.put(origin+".gz",dest+".gz") # just by name? # gzip optional
+
+        self.filebackend.put(origin_gzipped,dest_gzipped) # just by name? # gzip optional
         #shutil.copyfile(origin+".gz",dest+".gz") # just by name? # gzip optional
         tspent=time.time()-t0
 
@@ -315,7 +326,10 @@ class MemCache(object): #d
                         prefix=""
 
                     try:
-                        stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        if os.path.basename(b.path).endswith(".gz"):
+                            stored_filename=cached_path+os.path.basename(b.path) # just by name? # gzip optional
+                        else:
+                            stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
                         print("stored filename:",stored_filename)
                     except Exception as e:
                         cprint("wat",e)
@@ -336,8 +350,7 @@ class MemCache(object): #d
                                 # just reproduce?
                                 return None
 
-                            cprint("stored file:",stored_filename,"will restore as",prefix,b.path,".gz",level='top') 
-                            cprint("stored file:",stored_filename,"will restore as",prefix+b.path+".gz",level='top') 
+                            cprint("stored file:",stored_filename,"will restore as",prefix,b.path,level='top') 
 
                             b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+os.path.basename(b.path),obj,hashe)
                             print("restored as",restored_file)
@@ -366,15 +379,15 @@ class MemCache(object): #d
                             # just reproduce?
                             return None
                     elif restore_config['datafile_restore_mode']=="symlink":
-                        self.filebackend.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+os.path.basename(b.path)+".gz") # just by name? # gzip optional
+                        self.filebackend.symlink(stored_filename,prefix+os.path.basename(b.path)+".gz") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfile":
                         b.cached_path_valid_url=True
-                        open(prefix+os.path.basename(b.path)+".url.txt","w").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        open(prefix+os.path.basename(b.path)+".url.txt","w").write(stored_filename+"\n") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfileappend":
-                        open(prefix+os.path.basename(b.path)+".urls.txt","a").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        open(prefix+os.path.basename(b.path)+".urls.txt","a").write(stored_filename+"\n") # just by name? # gzip optional
                         b.cached_path_valid_url=True
                     elif restore_config['datafile_restore_mode']=="url_in_object":
-                        b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        b.cached_path=stored_filename # just by name? # gzip optional
                         if not os.path.exists(b.cached_path):
                             raise Exception("cached file does not exist!")
                         b.cached_path_valid_url=True
@@ -388,7 +401,7 @@ class MemCache(object): #d
                     else:
                         raise Exception("datafile restore mode not understood!")
 
-                    b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                    b.cached_path=stored_filename
                     b.restored_mode=restore_config['datafile_restore_mode']
 
             for k,i in c.items():
@@ -505,7 +518,7 @@ class MemCache(object): #d
                             print("path:",b.path)
                             print("b:",b)
                             raise
-                        b.cached_path=p+".gz"
+                        b.cached_path=p+".gz" if not p.endswith(".gz") else p
                         b.store_stats=self.store_file(b.path,p)
                         b._da_cached_path=cached_path
                         b.cached_path_valid_url=True
