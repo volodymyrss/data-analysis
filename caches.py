@@ -237,7 +237,8 @@ class MemCache(object): #d
 # note that this leaves files!!
 
         t0=time.time()
-        os.system("gzip -c %s > %s.gz"%(origin,origin))
+        if not origin.endswith(".gz"):
+            os.system("gzip -c %s > %s.gz"%(origin,origin))
         #check_call(['gzip','-f',origin])
         tspentc=time.time()-t0
         cprint("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
