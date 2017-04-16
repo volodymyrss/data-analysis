@@ -393,7 +393,7 @@ class MemCache(object): #d
                         b.cached_path_valid_url=True
                         print("stored url:",b.cached_path,b.cached_path_valid_url)
 
-                        if restore_config['test_files']:
+                        if 'test_files' in restore_config and restore_config['test_files']:
                             try:
                                 self.test_file(b.cached_path)
                             except:
