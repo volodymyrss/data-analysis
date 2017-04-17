@@ -82,7 +82,6 @@ def import_git_module(name,version):
     
     os.system(netgit+" clone "+gitroot+"/dda-"+name+".git")
     os.system("cd dda-"+name+"; "+netgit+" pull; git checkout "+version)
-    os.system("ls -lotr")
     print name,os.getcwd()+"/dda-"+name+"/"+name+".py"
     return imp.load_source(name,os.getcwd()+"/dda-"+name+"/"+name+".py")
 
