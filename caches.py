@@ -654,19 +654,23 @@ class MemCache(object): #d
         exception_ticket_fn=exception_ticket_fn.replace("[","")
         exception_ticket_fn=exception_ticket_fn.replace(":","_")
 
-        f=open(exception_dir+"/"+exception_ticket_fn,"w")
-        f.write("-"*80+"\n")
-        f.write(repr(e)+"\n\n")
-        f.write(socket.gethostname()+"\n\n")
-        f.write(time.strftime("%Y-%m-%dT%H:%M:%S %a %d %B")+"\n\n")
-
-        if hasattr(obj,'_da_requested_by'):
-            f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
-
         try:
-            f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
-        except Exception as e:
+            f=open(exception_dir+"/"+exception_ticket_fn,"w")
+            f.write("-"*80+"\n")
+            f.write(repr(e)+"\n\n")
+            f.write(socket.gethostname()+"\n\n")
+            f.write(time.strftime("%Y-%m-%dT%H:%M:%S %a %d %B")+"\n\n")
+            if hasattr(obj,'_da_requested_by'):
+                f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
+
+            try:
+                f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
+            except Exception as e:
+                print(e)
+        except Exception:
+            print("unable to write exception!")
             print(e)
+
 
         # check
         #for m in sys.modules:
