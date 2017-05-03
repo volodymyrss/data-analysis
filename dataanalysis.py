@@ -1791,7 +1791,7 @@ class DataFile(DataAnalysis):
 
 def jsonify(item):
     if isinstance(item,DataFile):
-        return item.jsonify()
+        return (item.path,item.jsonify())
     
     if isinstance(item,np.ndarray):
         return jsonify_array(item)
