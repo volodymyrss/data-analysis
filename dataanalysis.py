@@ -722,9 +722,10 @@ class DataAnalysis(object):
         """
         rename output files to unique filenames
         """
+
         content=self.export_data()
         if isinstance(content,dict):
-            for a,b in content.items(): 
+            for a,b in content.items():
                 if isinstance(b,DataFile):
                     dest_unique=b.path+"."+self.cache.hashe2signature(hashe) # will it always?
                     b._da_unique_local_path=dest_unique
@@ -797,7 +798,7 @@ class DataAnalysis(object):
             self._da_locally_complete=fih # info save
             cprint("locally complete:",fih)
             self.post_restore()
-            if self.rename_output_unique:
+            if self.rename_output_unique and rc['datafile_restore_mode']=="copy":
                 self.process_output_files(fih)
             else:
                 cprint("disabled self.rename_output_unique",level='cache')
@@ -1332,7 +1333,7 @@ class DataAnalysis(object):
 
                     #cprint("new output:",self.export_data())
 
-                    if self.rename_output_unique:
+                    if self.rename_output_unique and restore_config['datafile_restore_mode']=="copy":
                         self.process_output_files(fih)
                     else:
                         cprint("disabled self.rename_output_unique",level='cache')
@@ -1428,6 +1429,7 @@ class DataAnalysis(object):
         else:
             #cprint("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
+
         if self.test_files:
             restore_config['test_files']=True
         else:
