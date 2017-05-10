@@ -939,7 +939,7 @@ class DataAnalysis(object):
             rc={'datafile_restore_mode':'copy'}
         
         cprint('restore_config:',rc)
-        return restore_config
+        return rc
 
 
     def process_timespent_interpret(self):
