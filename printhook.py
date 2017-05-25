@@ -6,10 +6,12 @@ from datetime import datetime
 import re
 
 global_suppress_output=False
-global_fancy_output=True
+global_fancy_output=False
+global_catch_main_output=True
 global_output_levels=['top','cache']
+#global_permissive_output=True
 global_permissive_output=False
-global_all_output=False
+global_all_output=True
 global_log_enabled=True
 
 if not hasattr(print,'replaced'):
@@ -23,6 +25,10 @@ if not hasattr(print,'replaced'):
             if ((level is None) and global_permissive_output) or level in global_output_levels or global_permissive_output:
                 return sprint(level,*a)
     print.replaced=True
+
+
+def debug_print(text):
+    open("debug.txt","a").write(text+"\n")
 
 #this class gets all output directed to stdout(e.g by print statements)
 #and stderr and redirects it to a user defined function
@@ -124,12 +130,15 @@ def decorate_method_log(f):
             if hasattr(s,'default_log_level') and s.default_log_level is not None:
                 text+='{log:%s}'%s.default_log_level
 
-            ct=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-5]
+            if global_fancy_output or True:
+                ct=datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-5]
 
-            processed_text=render('{CYAN}'+ct+'{/} ')+'[%10s'%render("{BLUE}"+fileName[-10:].strip()+":%4s"%lineText+"{/}")+ \
-                                 render("{YEL}%20s{/}"%repr(s)[:20])+ \
-                                 '; %20s'%render("{CYAN}"+funcName[:20]+"{/}")+': '+\
-                                 text
+                processed_text=render('{CYAN}'+ct+'{/} ')+'[%10s'%render("{BLUE}"+fileName[-10:].strip()+":%4s"%lineText+"{/}")+ \
+                                     render("{YEL}%20s{/}"%repr(s)[:20])+ \
+                                     '; '+render("{CYAN}%10s"%funcName[:10]+"{/}")+': '+\
+                                     text
+            else:
+                processed_text=text
             
             r=""
             for l in LogStreams:
@@ -143,29 +152,30 @@ def decorate_method_log(f):
         def MyHookErr(text):
             return ""
 
-        if global_fancy_output:
-            phOut = PrintHook(n=repr(f))
-            phOut.Start(MyHookOut)
-        
-            try:
-                r=f(s,*a,**b)
-            except Exception as e:
-                phOut.Stop()
-                raise
-        
-            phOut.Stop()
-        else:
+        #if global_fancy_output or True:
+        phOut = PrintHook(n=repr(f))
+        phOut.Start(MyHookOut)
+    
+        try:
             r=f(s,*a,**b)
+        except Exception as e:
+            phOut.Stop()
+            raise
+    
+        phOut.Stop()
+       # else:
+       #     r=f(s,*a,**b)
 
         return r
 
     return nf
 
 
-class LogStream:
-    def __init__(self,target,levels):
+class LogStream(object):
+    def __init__(self,target,levels,name=None):
         self.target=target
         self.levels=levels
+        self.name=name
 
         for i,l in enumerate(LogStreams):
             if target==l.target:
@@ -184,18 +194,21 @@ class LogStream:
             return self.levels(inlevels)
 
     def process(self,text):
+
         levels=re.findall("{log:(.*?)}",text)
         text=re.sub("{log:(.*?)}","",text)
 
+        debug_print(repr(self)+": "+text)
+        
         if self.check_levels(levels):
-        #if any([l in levels for l in self.levels]):
             return self.output(text)
 
     def output(self,text):
-        if self.target is None or global_all_output:
+        if self.target is None: # or global_all_output:
+        #if self.target is None or global_all_output:
             return text
-        if hasattr(self.target,'write'): # callable?
-        #if isinstance(self.target,file) or:
+
+        if hasattr(self.target,'write'): 
             self.target.write(text+"\n")
             return
         if isinstance(self.target,str):
@@ -204,6 +217,13 @@ class LogStream:
             return self.output(text)
         raise Exception("unknown target in logstream:"+repr(self.target))
 
+    def __repr__(self):
+        r=super(LogStream,self).__repr__()
+        if self.name is not None:
+            r+=": "+self.name
+        return r
+
 LogStreams=[]
 
 cprint=print
+

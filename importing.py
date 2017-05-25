@@ -27,8 +27,8 @@ class find_module_standard(DataAnalysis):
         self.module_path=pathname
 
 cm=caches.CacheModule()
-cmi=caches.CacheModuleIRODS()
-cm.parent=cmi
+#cmi=caches.CacheModuleIRODS()
+#cm.parent=cmi
 
 class find_module_cached(DataAnalysis):
     cached=True
@@ -76,6 +76,14 @@ class load_module(DataAnalysis):
         self.module=imp.load_source(self.input_module_path.input_module_name.handle,self.input_module_path.module_path)
         #self.module=imp.load_module(,*self.input_module_path.found)
 
+def import_git_module(name,version):
+    gitroot=os.environ["GIT_ROOT"] if "GIT_ROOT" in os.environ else "git@github.com:volodymyrss"
+    netgit=os.environ["GIT_COMMAND"] if "GIT_COMMAND" in os.environ else "git"
+    
+    os.system(netgit+" clone "+gitroot+"/dda-"+name+".git")
+    os.system("cd dda-"+name+"; "+netgit+" pull; git checkout "+version)
+    print name,os.getcwd()+"/dda-"+name+"/"+name+".py"
+    return imp.load_source(name,os.getcwd()+"/dda-"+name+"/"+name+".py")
 
 def load_by_name(m):
     if m.startswith("/"):
@@ -89,6 +97,20 @@ def load_by_name(m):
 
         cprint("as",m0,m1)
         result=import_analysis_module(m0,m1),m0
+        result[0].__dda_module_global_name__=(m0,m1)
+        return result
+    elif m.startswith("git://"):
+        cprint("will import modul from cache")
+        ms=m[len("git://"):].split("/")
+
+        if len(ms)==2:
+            m0,m1=ms
+        else:
+            m0=ms[0]
+            m1="master"
+
+        cprint("as",m0,m1)
+        result=import_git_module(m0,m1),m0
         result[0].__dda_module_global_name__=(m0,m1)
         return result
     else:

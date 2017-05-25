@@ -120,7 +120,13 @@ class MemCache(object): #d
             return None
         
         cprint("there is a parent available to call for:",self.parent)
-        return self.parent.restore(hashe,obj,rc)
+        from_parent=self.parent.restore(hashe,obj,rc)
+            
+        if from_parent is not None:
+            print("storing what restored from parent")
+            self.store(hashe,obj)
+
+        return from_parent
 
     def store_to_parent(self,hashe,obj):
         if self.parent is None:
@@ -157,18 +163,20 @@ class MemCache(object): #d
         print("< ",origin,'{log:top}',level='top')
         print("> ",dest,'{log:top}',level='top')
         
-        print(dest,self.hashe2signature(hashe))
-
         dest_unique=dest+"."+self.hashe2signature(hashe)
         print("> ",dest_unique,'{log:top}',level='top')
         
-        cprint("as",dest_unique)
+        print("as",dest_unique,level='top')
 
         fsize=self.filebackend.getsize(origin)/1024./1024.
         cprint("restoring file of",fsize,'{log:resources}','{log:cache}')
 
         t0=time.time()
-        self.filebackend.get(origin,dest_unique,gz=True)
+
+        if dest.endswith(".gz"):
+            self.filebackend.get(origin,dest_unique,gz=False)
+        else:
+            self.filebackend.get(origin,dest_unique,gz=True)
 
         tspent=time.time()-t0
 
@@ -195,11 +203,11 @@ class MemCache(object): #d
     def test_file(self,fn):
         if fn.endswith('fits') or fn.endswith('fits.gz'):
             print("fits, will test it")
-            import pyfits
+            from astropy.io import fits as pyfits
             try:
                 pyfits.open(fn)
-            except:
-                print("corrupt fits file",fn)
+            except Exception as e:
+                print("corrupt fits file",fn,e)
                 raise Exception('corrupt fits file in cache: '+fn)
         
         if fn.endswith('npy'):
@@ -231,13 +239,23 @@ class MemCache(object): #d
 # note that this leaves files!!
 
         t0=time.time()
-        os.system("gzip -c %s > %s.gz"%(origin,origin))
+        if not origin.endswith(".gz"):
+            origin_gzipped=origin+".gz"
+            dest_gzipped=dest+".gz"
+            os.system("gzip -c %s > %s"%(origin,origin_gzipped))
+        else:
+            origin_gzipped=origin
+            dest_gzipped=dest
+
         #check_call(['gzip','-f',origin])
         tspentc=time.time()-t0
-        cprint("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
+
+        if tspentc>0:
+            cprint("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
 
         t0=time.time()
-        self.filebackend.put(origin+".gz",dest+".gz") # just by name? # gzip optional
+
+        self.filebackend.put(origin_gzipped,dest_gzipped) # just by name? # gzip optional
         #shutil.copyfile(origin+".gz",dest+".gz") # just by name? # gzip optional
         tspent=time.time()-t0
 
@@ -252,7 +270,8 @@ class MemCache(object): #d
 
         if not any([isinstance(self,c) for c in obj.read_caches]):
             cprint("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
-            return self.restore_from_parent(hashe,obj,restore_config)
+            from_parent=self.restore_from_parent(hashe,obj,restore_config)
+            return from_parent
 
         if restore_config is None:
             restore_config={}
@@ -274,6 +293,7 @@ class MemCache(object): #d
         cprint("cached path:",cached_path)
 
         obj._da_cache_path_root=cached_path
+        obj._da_cached_pathes=[cached_path]
 
         try:
             c=self.load_content(hashe,c)
@@ -306,7 +326,10 @@ class MemCache(object): #d
                         prefix=""
 
                     try:
-                        stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        if os.path.basename(b.path).endswith(".gz"):
+                            stored_filename=cached_path+os.path.basename(b.path) # just by name? # gzip optional
+                        else:
+                            stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
                         print("stored filename:",stored_filename)
                     except Exception as e:
                         cprint("wat",e)
@@ -327,8 +350,7 @@ class MemCache(object): #d
                                 # just reproduce?
                                 return None
 
-                            cprint("stored file:",stored_filename,"will restore as",prefix,b.path,".gz",level='top') 
-                            cprint("stored file:",stored_filename,"will restore as",prefix+b.path+".gz",level='top') 
+                            cprint("stored file:",stored_filename,"will restore as",prefix,b.path,level='top') 
 
                             b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+os.path.basename(b.path),obj,hashe)
                             print("restored as",restored_file)
@@ -357,21 +379,21 @@ class MemCache(object): #d
                             # just reproduce?
                             return None
                     elif restore_config['datafile_restore_mode']=="symlink":
-                        self.filebackend.symlink(cached_path+os.path.basename(b.path)+".gz",prefix+os.path.basename(b.path)+".gz") # just by name? # gzip optional
+                        self.filebackend.symlink(stored_filename,prefix+os.path.basename(b.path)+".gz") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfile":
                         b.cached_path_valid_url=True
-                        open(prefix+os.path.basename(b.path)+".url.txt","w").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        open(prefix+os.path.basename(b.path)+".url.txt","w").write(stored_filename+"\n") # just by name? # gzip optional
                     elif restore_config['datafile_restore_mode']=="urlfileappend":
-                        open(prefix+os.path.basename(b.path)+".urls.txt","a").write(cached_path+os.path.basename(b.path)+".gz"+"\n") # just by name? # gzip optional
+                        open(prefix+os.path.basename(b.path)+".urls.txt","a").write(stored_filename+"\n") # just by name? # gzip optional
                         b.cached_path_valid_url=True
                     elif restore_config['datafile_restore_mode']=="url_in_object":
-                        b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                        b.cached_path=stored_filename # just by name? # gzip optional
                         if not os.path.exists(b.cached_path):
                             raise Exception("cached file does not exist!")
                         b.cached_path_valid_url=True
                         print("stored url:",b.cached_path,b.cached_path_valid_url)
 
-                        if restore_config['test_files']:
+                        if 'test_files' in restore_config and restore_config['test_files']:
                             try:
                                 self.test_file(b.cached_path)
                             except:
@@ -379,7 +401,7 @@ class MemCache(object): #d
                     else:
                         raise Exception("datafile restore mode not understood!")
 
-                    b.cached_path=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
+                    b.cached_path=stored_filename
                     b.restored_mode=restore_config['datafile_restore_mode']
 
             for k,i in c.items():
@@ -431,11 +453,16 @@ class MemCache(object): #d
 
             content=obj.export_data()
 
-            cprint("content:",content)
+            #cprint("content:",content)
                         
             cached_path=self.construct_cached_file_path(hashe,obj)
 
             obj._da_cached_path=cached_path
+
+            if not hasattr(obj,'_da_cached_pathes'):
+                obj._da_cached_pathes=[]
+            obj._da_cached_pathes.append(cached_path)
+
             cprint("storing in",cached_path)
                         
             dn=os.path.dirname(cached_path)
@@ -491,7 +518,7 @@ class MemCache(object): #d
                             print("path:",b.path)
                             print("b:",b)
                             raise
-                        b.cached_path=p+".gz"
+                        b.cached_path=p+".gz" if not p.endswith(".gz") else p
                         b.store_stats=self.store_file(b.path,p)
                         b._da_cached_path=cached_path
                         b.cached_path_valid_url=True
@@ -504,7 +531,7 @@ class MemCache(object): #d
             if found is None:
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content})
             else:
-                cprint("record already found:",found,'{log:reflections}')
+                #cprint("record already found:",found,'{log:reflections}')
                 cprint("these results will be ignored! (why would we do this?..)","{log:reflections}") # current behavior is to replace
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content}) # twice same!
             
@@ -516,7 +543,7 @@ class MemCache(object): #d
         # and save
 
     def make_record(self,hashe,content):
-        cprint("make record",hashe,content)
+        #cprint("make record",hashe,content)
         self.cache[hashe]=content
         self.save()
         cprint("now entries",len(self.cache))
@@ -627,19 +654,23 @@ class MemCache(object): #d
         exception_ticket_fn=exception_ticket_fn.replace("[","")
         exception_ticket_fn=exception_ticket_fn.replace(":","_")
 
-        f=open(exception_dir+"/"+exception_ticket_fn,"w")
-        f.write("-"*80+"\n")
-        f.write(repr(e)+"\n\n")
-        f.write(socket.gethostname()+"\n\n")
-        f.write(time.strftime("%Y-%m-%dT%H:%M:%S %a %d %B")+"\n\n")
-
-        if hasattr(obj,'_da_requested_by'):
-            f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
-
         try:
-            f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
-        except Exception as e:
+            f=open(exception_dir+"/"+exception_ticket_fn,"w")
+            f.write("-"*80+"\n")
+            f.write(repr(e)+"\n\n")
+            f.write(socket.gethostname()+"\n\n")
+            f.write(time.strftime("%Y-%m-%dT%H:%M:%S %a %d %B")+"\n\n")
+            if hasattr(obj,'_da_requested_by'):
+                f.write("requested by: "+" ".join(obj._da_requested_by)+"\n\n")
+
+            try:
+                f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
+            except Exception as e:
+                print(e)
+        except Exception:
+            print("unable to write exception!")
             print(e)
+
 
         # check
         #for m in sys.modules:
@@ -1028,7 +1059,7 @@ class TransientCache(MemCache): #d
         self.cache[hashe]=content
 
         cprint("stored")
-        self.list()
+        #self.list()
 
 #        self.guarantee_unique_names(obj)
         
@@ -1066,6 +1097,68 @@ class MemCacheIndex(MemCache):
         #raise Exception("please write to index!")
         return
 
+class SSHFileBackend:
+    #sshroot="apcclwn12:/Integral2/data/reduced/ddcache/"
+
+    def exists(self,fn):
+        try:
+            subprocess.check_call(["scp",fn,"./"])
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def getsize(self,origin):
+        return 0 
+        #return os.path.getsize(origin)/1024./1024.
+    
+    def get(self,orig,dest,gz=False):
+        print(["scp",orig,dest],level="top")
+        subprocess.check_call(["scp",orig,dest])
+        if gz:
+            open(dest,"w").write(gzip.open(os.path.basename(orig)).read())
+    
+    def symlink(self,orig,dest):
+        os.symlink(orig,dest)
+    
+    def put(self,orig,dest):
+        destdir="/".join(dest.split("/")[:-1])
+
+        print("makedirs",["scp","-r",orig,destdir],level="top")
+        subprocess.check_call(["scp","-r",orig,destdir])
+    
+    def makedirs(self,dirs):
+        host,thedirs=dirs.split(":")
+        subprocess.check_call(["ssh",host,"mkdir -pv "+thedirs])
+
+    def register_pending_put(self,local_fn,remote_fn):
+        if self.pending_put is None:
+            self.pending_put=[]
+        self.pending_put.append([local_fn,remote_fn])
+    
+    pending_put=None
+
+    def flush(self):
+        while self.pending_put is not None and len(self.pending_put)>0:
+            local,remote=self.pending_put.pop()
+            self.put(local,remote)
+
+    def open(self,fn,mode="r",gz=False):
+        local_fn=os.path.basename(fn) # !!
+
+        if "w"==mode:
+            cprint("will later put file to ssh",local_fn,fn)
+            self.register_pending_put(local_fn,fn)
+        elif "r"==mode:
+            cprint("will get file from ssh:",fn,local_fn)
+            self.get(fn,local_fn)
+        else:
+            raise Exception("do not understand this mode: "+mode)
+
+        if gz:
+            return gzip.open(local_fn,mode)
+        return open(local_fn,mode)
+
+
 
 class IRODSFileBackend:
     def exists(self,fn):
@@ -1073,6 +1166,8 @@ class IRODSFileBackend:
             subprocess.check_call(["ils",fn])
             return True
         except subprocess.CalledProcessError:
+            return False
+        except:
             return False
 
     def getsize(self,origin):
@@ -1089,10 +1184,16 @@ class IRODSFileBackend:
         os.symlink(orig,dest)
     
     def put(self,orig,dest):
-        subprocess.check_call(["iput","-f",orig,dest])
+        try:
+            subprocess.check_call(["iput","-f",orig,dest])
+        except:
+            pass
     
     def makedirs(self,dirs):
-        subprocess.check_call(["imkdir","-p",dirs])
+        try:
+            subprocess.check_call(["imkdir","-p",dirs])
+        except:
+            pass
 
     def open(self,fn,mode="r",gz=False):
         local_fn=os.path.basename(fn) # !!
@@ -1156,9 +1257,13 @@ class MemCacheIRODS(MemCacheNoIndex):
     can_url_to_cache=False
     filebackend=IRODSFileBackend()
 
+class MemCacheSSH(MemCacheNoIndex):
+    can_url_to_cache=False
+    filebackend=SSHFileBackend()
+
 
 class CacheModule(MemCache):
-    filecacheroot=os.environ['DDA_MODULE_CACHE']
+    filecacheroot=os.environ['DDA_MODULE_CACHE'] if 'DDA_MODULE_CACHE' in os.environ else ""
 
     def construct_cached_file_path(self,hashe,obj):
         print("requested path for",hashe,obj)
@@ -1181,7 +1286,7 @@ class CacheModule(MemCache):
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
 
 class CacheModuleIRODS(MemCacheNoIndex):
-    filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS']
+    filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS'] if 'DDA_MODULE_CACHE_IRODS' in os.environ else ""
     filebackend=IRODSFileBackend()
 
     def construct_cached_file_path(self,hashe,obj):

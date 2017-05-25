@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import collections
 import StringIO
+import json
 from datetime import datetime
 
 from printhook import PrintHook,decorate_method_log,LogStream
@@ -70,14 +71,14 @@ class DataFile:
 
 
 
-#global_log_enabled=True
-#global_fancy_output=True
+global_log_enabled=True
+global_fancy_output=False
 #global_suppress_output=False
-#global_all_output=False
+global_all_output=True
 #global_readonly_caches=False
-#global_output_levels=('top')
+global_output_levels=('top')
 
-from  printhook import cprint
+from  printhook import cprint,debug_print
 
 #
 
@@ -125,8 +126,6 @@ def athostdir(f):
 class DataHandle:
     pass
 
-class DataFile:
-    pass
 
 class NoAnalysis:
     pass
@@ -189,6 +188,10 @@ class decorate_all_methods(type):
                 value = local[attr]
                 if callable(value) and not isinstance(value,type):
                     local[attr] = decorate_method_log(value)
+        else:
+            if printhook.global_catch_main_output and 'main' in local:
+                debug_print("decorating only main in "+repr(cls)+"; "+repr(name))
+                local['main'] = decorate_method_log(local['main'])
 
         c=type.__new__(cls, name, bases, local)
 
@@ -248,6 +251,7 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         generates and instance of DataAnalysis from something
    
         """
+
         cprint("interpreting",item)
         cprint("factory knows",self.cache) #.keys())
 
@@ -337,6 +341,10 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         if isinstance(item,str):
             cprint("considering string data handle")
             return DataHandle(item)
+        
+        if isinstance(item,unicode):
+            cprint("considering unicode string data handle")
+            return DataHandle(str(item))
          
         
         cprint("unable to interpret item: "+repr(item))
@@ -512,7 +520,7 @@ class DataAnalysis(object):
 
     noanalysis=False
     
-    rename_output_unique=False
+    rename_output_unique=True
 
     force_complete_input=True
 
@@ -523,7 +531,11 @@ class DataAnalysis(object):
     _da_restored=None
     _da_locally_complete=None
     _da_main_delegated=None
+    _da_main_log_content=""
     _da_delegated_input=None
+    _da_ignore_output_objects=False
+
+    _da_main_log_content=""
 
     write_caches=[caches.MemCache]
     read_caches=[caches.MemCache]
@@ -643,7 +655,7 @@ class DataAnalysis(object):
         for a,b in data.items():
             setattr(self,a,b)
 
-    def export_data(self):
+    def export_data(self,embed_datafiles=False,verify_jsonifiable=False):
         empty_copy=self.__class__
         cprint("my class is",self.__class__)
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
@@ -653,7 +665,15 @@ class DataAnalysis(object):
             cprint("explicit output requested",self.explicit_output)
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
-            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_da_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
+            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
+
+        if verify_jsonifiable:
+            res=[]
+            for a,b in r.items():
+                res.append([a,jsonify(b)])
+            r=dict(res)
+
+
 
         cprint("resulting output:",r)
         return r
@@ -671,7 +691,10 @@ class DataAnalysis(object):
 
     def get_version(self):
         ss="_".join(["%s:%s"%(a,repr(getattr(self,a))) for a in self._da_settings]) if self._da_settings is not None else ""
-        return self.get_signature()+"."+self.version+("."+ss if ss!="" else "")
+        v=self.get_signature()+"."+self.version+("."+ss if ss!="" else "")
+        #if hasattr(self,'timestamp'):
+        #    v+=".at_"+str(self.timestamp)
+        return v
 
     def get_signature(self):
         a=self.get_formatted_attributes()
@@ -699,9 +722,10 @@ class DataAnalysis(object):
         """
         rename output files to unique filenames
         """
+
         content=self.export_data()
         if isinstance(content,dict):
-            for a,b in content.items(): 
+            for a,b in content.items():
                 if isinstance(b,DataFile):
                     dest_unique=b.path+"."+self.cache.hashe2signature(hashe) # will it always?
                     b._da_unique_local_path=dest_unique
@@ -721,6 +745,9 @@ class DataAnalysis(object):
         TransientCacheInstance.store(fih,self)
         self.cache.store(fih,self)
         #c=MemCacheLocal.store(oh,self.export_data())
+
+    def post_restore(self):
+        pass
     
     def retrieve_cache(self,fih,rc=None):
         cprint("requested cache for",fih)
@@ -770,6 +797,11 @@ class DataAnalysis(object):
             cprint("this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=fih # info save
             cprint("locally complete:",fih)
+            self.post_restore()
+            if self.rename_output_unique and rc['datafile_restore_mode']=="copy":
+                self.process_output_files(fih)
+            else:
+                cprint("disabled self.rename_output_unique",level='cache')
             return r
         return r # twice
 
@@ -802,7 +834,52 @@ class DataAnalysis(object):
         return graph
 
     def get(self,**aa):
+        if 'saveonly' in aa and aa['saveonly'] is not None:
+            import errno
+            import shutil
+            import tempfile
+
+            aax=dict(aa.items()+[['saveonly',None]])
+
+            try:
+                tmp_dir = tempfile.mkdtemp()  # create dir
+                print("tempdir:",tmp_dir)
+                olddir=os.getcwd()
+                os.chdir(tmp_dir)
+                self.get(**aax)
+
+                for fn in aa['saveonly']:
+                    shutil.copyfile(tmp_dir+"/"+fn,olddir+"/"+fn)
+
+            finally:
+                try:
+                    shutil.rmtree(tmp_dir)  # delete directory
+                except OSError as exc:
+                    if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
+                        raise  # re-raise exception
+
         return self.process(output_required=True,**aa)[1]
+    
+    def load(self,**aa):
+        fih=self._da_locally_complete
+        if fih is None:
+            fih=self.process(output_required=False,**aa)[0]
+
+        print("restoring as",fih)
+        self.retrieve_cache(fih)
+        return self.get(**aa)
+    
+    def stamp(self,comment,**aa):
+        self.comment=comment
+        import time
+        self.timestamp=time.time()
+
+        fih=self._da_locally_complete
+        if fih is None:
+            fih=self.process(output_required=False,**aa)[0]
+        
+        print("storing as",fih)
+        return self.store_cache(fih)
         
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
@@ -862,7 +939,7 @@ class DataAnalysis(object):
             rc={'datafile_restore_mode':'copy'}
         
         cprint('restore_config:',rc)
-        return restore_config
+        return rc
 
 
     def process_timespent_interpret(self):
@@ -924,7 +1001,8 @@ class DataAnalysis(object):
         cprint(render("{RED}running main{/}"),'{log:top}')
         t0=time.time()
         main_log=StringIO.StringIO()
-        main_logstream=printhook.LogStream(main_log,lambda x:True)
+        main_logstream=printhook.LogStream(main_log,lambda x:True,name="main stream")
+        main_logstream_file=printhook.LogStream("main.log",lambda x:True,name="main stream file")
         cprint("starting main log stream",main_log,main_logstream,level='logstreams')
 
         self.start_main_watchdog()
@@ -938,14 +1016,21 @@ class DataAnalysis(object):
             #os.system("ls -ltor")
             self.stop_main_watchdog()
             os.system("echo current dir;pwd")
-            self.cache.report_exception(self,e)
-            self.report_runtime("failed "+repr(e))
+
+            try:
+                self.cache.report_exception(self,e)
+                self.report_runtime("failed "+repr(e))
+            except Exception:
+                print("unable to report exception!")
+
             raise
         self.stop_main_watchdog()
 
         main_logstream.forget()
+        main_logstream_file.forget()
         self._da_main_log_content=main_log.getvalue()
         main_log.close()
+        cprint("main log stream collected",len(self._da_main_log_content),level="logstreams")
         cprint("closing main log stream",main_log,main_logstream,level="logstreams")
 
         tspent=time.time()-t0
@@ -970,6 +1055,9 @@ class DataAnalysis(object):
             setattr(self,'output',mr)
 
     def process_find_output_objects(self):
+        if self._da_ignore_output_objects:
+            return []
+
         da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
         if da!=[]:
             cprint(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
@@ -1245,7 +1333,7 @@ class DataAnalysis(object):
 
                     #cprint("new output:",self.export_data())
 
-                    if self.rename_output_unique:
+                    if self.rename_output_unique and restore_config['datafile_restore_mode']=="copy":
                         self.process_output_files(fih)
                     else:
                         cprint("disabled self.rename_output_unique",level='cache')
@@ -1341,6 +1429,7 @@ class DataAnalysis(object):
         else:
             #cprint("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
+
         if self.test_files:
             restore_config['test_files']=True
         else:
@@ -1372,7 +1461,7 @@ class DataAnalysis(object):
                         raise Exception("input is None: vortual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
 
-                    if hasattr(l,'noanalysis') and l.noanalysis:
+                    if not isinstance(l,list) and l.is_noanalysis():
                         cprint("NoAnalysis:",o,o.__class__)
                         continue # yes?
 
@@ -1420,7 +1509,9 @@ class DataAnalysis(object):
        # we are down to the input item finally
         
         item=self.interpret_item(obj)  # this makes DataAnalysis object
-        if hasattr(item,'noanalysis') and item.noanalysis:
+        #if hasattr(item,'noanalysis') and item.noanalysis:
+        #    cprint("noanalysis!")
+        if item.is_noanalysis():
             cprint("noanalysis!")
             return None,item
 
@@ -1565,14 +1656,79 @@ class AnyAnalysis(DataAnalysis):
     def main(self):
         raise Exception("requested to run abstract any analysis!")
 
+## to fits io-related!!
+import numpy as np
+from astropy.io import fits as pyfits
+
+def jsonify_image(data):
+    if data is None:
+        return None
+    return [jsonify_image(d) if isinstance(d,np.array) else d for d in data]
+
+def totype(v):
+    if isinstance(v,str): return v
+    if isinstance(v,int): return v
+    if isinstance(v,float): return v
+
+    if hasattr(v,'dtype'):
+        if v.dtype in (np.int16,np.int32,np.int64):
+            return int(v)
+        if v.dtype in (np.float16,np.float32,np.int64):
+            return float(v)
+    
+    if isinstance(v,dict):
+        return dict([[a,totype(b)] for a,b in v.items()])
+    
+    if isinstance(v,list):
+        return [totype(b) for b in v]
+
+    try:
+        return float(v)
+    except:
+        return str(v)
+
+
+def jsonify_fits_header(h):
+    return dict([(k,str(h[k])) for k in h.keys()])
+            
+def jsonify_array(arr):
+    return [totype(v) for v in arr]
+
+def jsonify_fits_table(d):
+    r=[]
+    for c in d.columns:
+        try:
+            arr=jsonify_array(c.array[:])
+            r.append([c.name,arr])
+        except:
+            print(c,arr)
+            raise
+    return r
+
+
+def jsonify_fits(fits):
+    if isinstance(fits,pyfits.HDUList):
+        return [jsonify_fits(f) for f in fits]
+    
+    if isinstance(fits,pyfits.ImageHDU) or isinstance(fits,pyfits.PrimaryHDU):
+        return (jsonify_fits_header(fits.header),jsonify_image(fits.data))
+    
+    if isinstance(fits,pyfits.TableHDU) or isinstance(fits,pyfits.BinTableHDU):
+        return (jsonify_fits_header(fits.header),jsonify_fits_table(fits.data))
+
+    return str(fits)
+    
 
 class DataFile(DataAnalysis):
     cached_path_valid_url=False
 
     infactory=False
 
+    size=None
+
     def __init__(self,fn=None):
         self.path=fn
+        self.size=os.path.getsize(fn)
 
     def get_cached_path(self): # not work properly if many run!
         return self.cached_path if hasattr(self,'cached_path') else self.path
@@ -1581,19 +1737,21 @@ class DataFile(DataAnalysis):
 # confis
         #cprint("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
 
+        if hasattr(self,'cached_path'):
+            print("have cached path",self.cached_path)
+
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
             
         if hasattr(self,'_da_unique_local_path'):
             return self._da_unique_local_path
 
-        if not hasattr(self,'restored_mode'):
+        if not hasattr(self,'restored_mode'): # means it was just produced
             return self.path
 
         if self.restored_mode=="copy":
-            cprint("datafile copied by no local path?",self,id(self))
-            raise Exception("inconsistency!")
- #       raise Exception("inconsistency!")
+            cprint("datafile copied but no local path?",self,id(self))
+            raise Exception("inconsistency: "+repr(self))
             
     def get_full_path(self):
         if hasattr(self,'restored_path_prefix'):
@@ -1609,6 +1767,38 @@ class DataFile(DataAnalysis):
 
     def __repr__(self):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
+                        
+
+    def jsonify(self):
+        if self.size<100e3:
+            try:
+                return json.load(self.open())
+            except:    
+                content=self.open().read()
+
+            try:
+                f=pyfits.open(self.open())
+                return jsonify_fits(f)
+            except Exception as e:
+                print("can not interpret as fits:",e)
+            
+            try:
+                json.dumps(content)
+                return content
+            except:
+                content=self.open().read()
+                return str(self)+" can not encode "+str(self.size)+" fits error "+str(e)
+        else:
+            return str(self)+" too big "+str(self.size)
+
+def jsonify(item):
+    if isinstance(item,DataFile):
+        return ('DataFile',item.path,item.jsonify())
+    
+    if isinstance(item,np.ndarray):
+        return jsonify_array(item)
+
+    return totype(item)
 
 class DataFileStatic(DataFile):
     cached_path_valid_url=False
