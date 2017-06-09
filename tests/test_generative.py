@@ -23,6 +23,8 @@ def test_generate_one():
 
     
     class Analysis(da.DataAnalysis):
+	run_for_hashe=True
+
         def main(self):
             print "test",self.__class__
             r=[BAnalysis(use_c=c) for c in range(3)]
