@@ -2,11 +2,15 @@
 
 def test_one_object():
     import dataanalysis as da
+    da.AnalysisFactory.reset()
+    da.TransientCacheInstance.reset()
 
     class Analysis(da.DataAnalysis):
+
         def main(self):
             print "test"
             self.data ="datacontent"
+
 
     A = Analysis()
     A.get()

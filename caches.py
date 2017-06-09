@@ -73,6 +73,14 @@ class MemCache(object): #d
     filebackend=FileBackend()
 
     can_url_to_cache=True
+ 
+    def reset(self):
+        cprint("resetting cache PLACEHOLDER",self)
+
+    def reset_stack(self):
+        self.reset()
+	if self.parent is not None:
+            self.parent.reset()
 
     def statistics(self):
         pass
@@ -995,6 +1003,10 @@ class TransientCache(MemCache): #d
     def list(self):
         for a,b in self.cache.items():
             cprint(a,":",b)
+
+    def reset(self):
+        self.cache={}
+        cprint("resetting cache",self,"was",self.cache)
 
     def restore(self,hashe,obj,rc=None):
         #return # problem with files
