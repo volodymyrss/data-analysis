@@ -11,6 +11,8 @@ import StringIO
 import json
 from datetime import datetime
 
+# need to tidy up imports
+
 from printhook import PrintHook,decorate_method_log,LogStream
 import printhook
 
@@ -20,6 +22,7 @@ import caches
 
 from caches import *
 from hashtools import *
+from hashtools import shhash
 
 Cache=caches.MemCacheNoIndex()
 TransientCacheInstance=caches.TransientCache()
@@ -84,7 +87,6 @@ from  printhook import cprint,debug_print
 
 #AnalysisDict={}
 
-from hashtools import shhash
 
 # dual python 2/3 compatability, inspired by the "six" library
 string_types = (str, unicode) if str is bytes else (str, bytes)
