@@ -17,12 +17,7 @@ from printhook import PrintHook,decorate_method_log,LogStream
 import printhook
 
 import caches
-
-# compatibitlity with ddosa!
-
-from caches import *
-from hashtools import *
-from hashtools import shhash
+import hashtools
 
 Cache=caches.MemCacheNoIndex()
 TransientCacheInstance=caches.TransientCache()
@@ -1168,7 +1163,7 @@ class DataAnalysis(object):
 
             for a,b in hashe_mappings:
                 cprint("mapping",a,b,getattr(self,b)._da_expected_full_hashe)
-                substitute_hashe=hashe_replace_object(substitute_hashe,a,getattr(self,b)._da_expected_full_hashe)
+                substitute_hashe=hashtools.hashe_replace_object(substitute_hashe,a,getattr(self,b)._da_expected_full_hashe)
 
             cprint("using substitute hashe:",substitute_hashe)
             cprint("instead of:",fih)
@@ -1379,7 +1374,7 @@ class DataAnalysis(object):
             cprint("NO output is strictly required, will not attempt to get")
             if restore_rules['restore_complete']: 
                 cprint("however, diagnostic complete restore is requested, trying to restore")
-                if self.retrieve_cache(fih,rc):
+                if self.retrieve_cache(fih,restore_config):
                     cprint("cache found and retrieved",'{log:top}')
                     cprint("processing finished, object is locally complete")
                     self._da_locally_complete=fih
@@ -1600,7 +1595,7 @@ class FileHashed(DataAnalysis):
 
 
     def main(self): # pointless unless fine has known hashe!
-        self.md5=hash_for_file(open(self.input_filename.handle))
+        self.md5=hashtools.hash_for_file(open(self.input_filename.handle))
         return DataHandle(self.input_filename.handle+":md5:"+self.md5[:8])
 
     def get_filename(self):
@@ -1625,7 +1620,7 @@ class HasheForFile(DataAnalysis):
 
 
     def main(self):
-        md5=hash_for_file(open(self.input_filename.str()))
+        md5=hashtools.hash_for_file(open(self.input_filename.str()))
         return HashedFile(use_md5=md5,use_filename=self.input_filename.str())
 
 class DataHandle(DataAnalysis):

@@ -13,8 +13,8 @@ import shutil
 import time
 import pprint
 
-
-from hashtools import *
+import hashtools
+from bcolors import render
 
 import analysisfactory
 
@@ -78,12 +78,12 @@ class MemCache(object): #d
         pass
 
     def hashe2signature(self,hashe_raw):
-        hashe=hashe_replace_object(hashe_raw,None,"None")
+        hashe=hashtools.hashe_replace_object(hashe_raw,None,"None")
         cprint("hashe:",hashe)
         if isinstance(hashe,tuple):
             if hashe[0]=="analysis":
-                return hashe[2]+":"+shhash(hashe)[:8]
-        sig=shhash(hashe)[:8]
+                return hashe[2]+":"+hashtools.shhash(hashe)[:8]
+        sig=hashtools.shhash(hashe)[:8]
         cprint("signature hashe:",sig)
         return sig
 
@@ -568,7 +568,7 @@ class MemCache(object): #d
 
         def hash_to_path2(hashe):
             #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
-            return hashe[2]+"/"+shhash(repr(hashe[1]))
+            return hashe[2]+"/"+hashtools.shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hash_to_path2(hashe)+"/" # choose to avoid overlapp
 
@@ -856,7 +856,7 @@ class MemCacheMySQL(MemCacheSqlite):
             nlast_string=" ORDER BY rowid DESC LIMIT %i"%nlast # must be int
 
         with con:    
-            cur = db.cursor()    
+            cur = con.cursor()
 
             cprint("SELECT * FROM cacheindex"+selection_string+nlast_string)
 
