@@ -1000,9 +1000,8 @@ class TransientCache(Cache): #d
 
         cprint("transient cache stores results in the memory, found:",c)
 
-        for k,i in c.items():
-            cprint("restoring",k,i)
-            setattr(obj,k,i)
+
+        obj.import_data(c)
         
         cprint("also files restores are ignored")
 

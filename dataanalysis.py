@@ -217,6 +217,11 @@ class AnalysisFactoryClass: # how to unify this with caches?..
     def reset(self):
         self.cache={}
 
+    def inject_serialization(self,serialization):
+        name,data=serialization
+        obj=self[name]
+        obj.import_data(data)
+
     def put(self,obj,sig=None): 
         cprint("requested to put in factory:",obj,sig)  
         cprint("factory assumptions:",self.cache_assumptions)  
@@ -688,6 +693,15 @@ class DataAnalysis(object):
 
         cprint("resulting output:",r)
         return r
+
+    def import_data(self,c):
+        # todo: check that the object is fresh
+        for k, i in c.items():
+            cprint("restoring", k, i)
+            setattr(self, k, i)
+
+    def serialize(self):
+        return self.get_factory_name(),self.export_data()
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
     # it can be done differently

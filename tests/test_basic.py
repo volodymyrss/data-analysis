@@ -118,5 +118,3 @@ def test_caching():
     assert tspent<1
     assert A1.data == 'data'
 
-
-
