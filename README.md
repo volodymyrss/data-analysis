@@ -1,15 +1,27 @@
 data-analysis
 =============
 
-The ideas described below are related to that of the lambda-architecture.
-It is intended for ingesting and processing new data that are appended to existing data rather than overwriting them. State is determined from the natural ordering of the data.
+The ideas described below are related to those of the
+lambda-architecture.  It is intended for ingesting and processing new
+data that are appended to existing data rather than overwriting
+them. State is determined from the natural ordering of the data.
 
-Framework to facilitate development of the (scientific) data analysis pipelines.
-Designed to handle organized processing and storing results of  different stages of analysis for moderate-scale (tens of Tb)  archive of very diverse data.
+Framework to facilitate development of the (scientific) data analysis
+pipelines.  Originally designed to handle organized processing and
+storing results of different stages of analysis for moderate-scale
+(tens of Tb) archive of very diverse data.
 
-The principal idea is to organize the pipeline in analysis units (classes, inheriting from DataAnalysis) without side effects. Result of a DataAnalysis is some Data. Data is transofrmed by analysis to other data. Any Data is identified by a tree of connected DataAnalysis that where used to produce it. 
+The principal idea is to organize the pipeline in analysis units
+(classes, inheriting from DataAnalysis) without side effects. Result
+of a DataAnalysis is some Data. Data is transofrmed by analysis to
+other data. Any Data is identified by a tree of connected DataAnalysis
+that where used to produce it.
 
-Many (but not all) Data is cached: it will not be recomputed if requested, instead it will be retrieved from a storage backend (Cache). Since every DataAnalysis is a pure function of it's input, Data is uniquely characterized by the analysis graph that lead to its production.
+Many (but not all) Data is cached: it will not be recomputed if
+requested, instead it will be retrieved from a storage backend
+(Cache). Since every DataAnalysis is a pure function of it's input,
+Data is uniquely characterized by the analysis graph that lead to its
+production.
 
 The strong points of this approach are:
 
@@ -17,6 +29,9 @@ The strong points of this approach are:
 * Data is be stored according to it's origin. For example in a nice directory structure optionally with an index (saving disk space)
 * analysis is rerunnable, with a granularity of a single DataAnalysis (built-in fault tolerance)
 * analysis can be easily paralelized (saving implementation time)
+
+The implementation is designed to be easy to use. Each DataAnalysis is
+provided with the neccessary inputs by the means of dependecy injection.
 
 weak points are:
 
