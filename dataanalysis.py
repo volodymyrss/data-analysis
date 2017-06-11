@@ -551,6 +551,14 @@ class DataAnalysis(object):
         if hasattr(self,'handle'): return self.handle
         return repr(self)
 
+    def get_factory_name(self):
+        if hasattr(self, 'name'):
+            name = self.name
+        else:
+            name = self.__class__.__name__
+
+        return name
+
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
         self=object.__new__(self)
 
@@ -706,12 +714,9 @@ class DataAnalysis(object):
         state=self.get_state()
         if state is not None:
             a=a+"."+state
-        
-        if hasattr(self,'name'):
-            name=self.name
-        else:
-            name=self.__class__.__name__
-        return name+a
+
+
+        return self.get_factory_name()+a
 
     def get_state(self):
         if not hasattr(self,'_da_state'):
@@ -1755,3 +1760,10 @@ class DataFileStatic(DataFile):
 def reset():
     AnalysisFactory.reset()
     TransientCacheInstance.reset()
+
+
+def debug_output():
+    printhook.global_all_output=True
+    printhook.global_permissive_output=True
+    printhook.global_fancy_output=True
+    printhook.LogStreams=[]

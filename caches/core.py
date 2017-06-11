@@ -32,6 +32,7 @@ def update_dict(a,b):
 class Cache(object): #d
     # currently store each cache in a file; this is not neccesary 
    # __metaclass__ = decorate_all_methods
+
     cache={}
     filecacheroot="./filecache"
 
@@ -48,8 +49,8 @@ class Cache(object): #d
 
     def reset_stack(self):
         self.reset()
-	if self.parent is not None:
-            self.parent.reset()
+        if self.parent is not None:
+                self.parent.reset()
 
     def statistics(self):
         pass
@@ -786,7 +787,7 @@ class CacheSqlite(Cache):
 
 #import MySQLdb
 
-class MemCacheMySQL(CacheSqlite):
+class CacheMySQL(CacheSqlite):
     cache={}
                 
 # also to object
@@ -815,7 +816,7 @@ class MemCacheMySQL(CacheSqlite):
 
     def __init__(self,*a,**aa):
         cprint(a,aa)
-        super(MemCacheMySQL,self).__init__(*a,**aa)
+        super(CacheMySQL, self).__init__(*a, **aa)
         self.db=None
         #self.connect()
 
