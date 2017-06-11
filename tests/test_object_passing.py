@@ -71,23 +71,39 @@ def test_object_injection():
 
     assert B.data == "data2"
 
-def test_object_export_import():
+def test_object_input_injection():
     import caches.delegating
     import caches.core
     import dataanalysis as da
     import analysisfactory
 
-    #da.debug_output()
+    da.debug_output()
     da.reset()
 
-    return
-
     class AAnalysis(da.DataAnalysis):
-        arg="arg1"
+#        arg=None
+        pass
+
+    A1 = AAnalysis(use_arg="arg1")
+
+    assert  A1.arg == "arg1"
+    d1 = A1.export_data()
+    print "has data:", d1
+    assert d1['arg'] == 'arg1'
+
+    A2 = AAnalysis(use_arg="arg2")
 
 
-    class AAnalysis(da.DataAnalysis):
-        arg="arg2"
+    a1 = A1.serialize()
+    a2 = A2.serialize()
+
+
+    analysisfactory.AnalysisFactory.inject_serialization(a1)
+
+    print "factory has",analysisfactory.AnalysisFactory.cache['AAnalysis']
+
+    aanalysis=analysisfactory.AnalysisFactory['AAnalysis']
+    assert aanalysis.arg == "arg1"
 
     class Analysis(da.DataAnalysis):
         #cached = True
@@ -96,23 +112,35 @@ def test_object_export_import():
         def main(self):
             print "test"
             # time.sleep(3)
-            self.data = "data1"
+            self.data = "data_"+self.input_arg.arg
 
     A=Analysis()
     A.get()
 
     print A.data
 
-    assert A.data == "data1"
-
-    object_data=A.export_data()
+    assert A.data == "data_arg1"
 
     da.reset()
 
+    class AAnalysis(da.DataAnalysis):
+        #        arg=None
+        pass
+
+
+    class Analysis(da.DataAnalysis):
+        #cached = True
+        input_arg=AAnalysis
+
+        def main(self):
+            print "test"
+            # time.sleep(3)
+            self.data = "data_"+self.input_arg.arg
+
+
+    analysisfactory.AnalysisFactory.inject_serialization(a2)
+
     B=Analysis()
+    B.get()
 
-    with pytest.raises(AttributeError):
-        print B.data
-
-    B.import_data(object_data)
-    assert B.data == "data1"
+    assert B.data == "data_arg2"

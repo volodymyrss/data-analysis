@@ -218,9 +218,13 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         self.cache={}
 
     def inject_serialization(self,serialization):
+        print("injecting",serialization)
         name,data=serialization
         obj=self[name]
         obj.import_data(data)
+        obj.infactory=True
+        obj.virtual=True
+        self.put(obj)
 
     def put(self,obj,sig=None): 
         cprint("requested to put in factory:",obj,sig)  
@@ -676,6 +680,7 @@ class DataAnalysis(object):
         cprint("my class is",self.__class__)
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
         cprint("new keys:",updates)
+        # or state of old keys??
 
         if self.explicit_output is not None:
             cprint("explicit output requested",self.explicit_output)
@@ -688,8 +693,6 @@ class DataAnalysis(object):
             for a,b in r.items():
                 res.append([a,jsonify(b)])
             r=dict(res)
-
-
 
         cprint("resulting output:",r)
         return r
@@ -1596,7 +1599,7 @@ class DataAnalysis(object):
         return self
 
     def __repr__(self):
-        return "[%s%s]"%(self.get_version(),";Virtual" if self.virtual else "")
+        return "[%s%s]"%(self.get_version(),";NoneInTheInput" if self.virtual else "")
 
         #if hasattr(self,'_da_attributes'):
         #    return "[%s: %s: %s]"%(self.__class__.__name__,repr(self._da_attributes),self.version)
