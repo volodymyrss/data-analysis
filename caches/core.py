@@ -29,7 +29,7 @@ def is_datafile(b):
 def update_dict(a,b):
     return dict(a.items()+b.items())
 
-class MemCache(object): #d
+class Cache(object): #d
     # currently store each cache in a file; this is not neccesary 
    # __metaclass__ = decorate_all_methods
     cache={}
@@ -656,7 +656,7 @@ class MemCache(object): #d
 
         
 
-class MemCacheSqlite(MemCache):
+class CacheSqlite(Cache):
     cache={}
 
     def statistics(self):
@@ -673,7 +673,7 @@ class MemCacheSqlite(MemCache):
 
     def __init__(self,*a,**aa):
         cprint(a,aa)
-        super(MemCacheSqlite,self).__init__(*a,**aa)
+        super(CacheSqlite, self).__init__(*a, **aa)
         self.con=None
         #self.connect()
 
@@ -786,7 +786,7 @@ class MemCacheSqlite(MemCache):
 
 #import MySQLdb
 
-class MemCacheMySQL(MemCacheSqlite):
+class MemCacheMySQL(CacheSqlite):
     cache={}
                 
 # also to object
@@ -953,7 +953,7 @@ class MemCacheMySQL(MemCacheSqlite):
 
 
 
-class TransientCache(MemCache): #d
+class TransientCache(Cache): #d
     # currently store each cache in a file; this is not neccesary 
     #__metaclass__ = decorate_all_methods
     cache={}
@@ -1049,11 +1049,11 @@ class TransientCache(MemCache): #d
 
         #self.store_to_parent(hashe,obj)
 
-class MemCacheIndex(MemCache):
+class CacheIndex(Cache):
     def __init__(self,*a,**aa):
        # cprint(a,aa)
         print("vvvvv:")
-        super(MemCacheIndex,self).__init__(*a,**aa)
+        super(CacheIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
         import sqlite3 as lite
@@ -1078,10 +1078,10 @@ class MemCacheIndex(MemCache):
         #raise Exception("please write to index!")
         return
 
-class MemCacheNoIndex(MemCache):
+class CacheNoIndex(Cache):
     def __init__(self,*a,**aa):
         cprint(a,aa)
-        super(MemCacheNoIndex,self).__init__(*a,**aa)
+        super(CacheNoIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
         import sqlite3 as lite
@@ -1106,16 +1106,16 @@ class MemCacheNoIndex(MemCache):
         return
 
 
-class MemCacheIRODS(MemCacheNoIndex):
+class MemCacheIRODS(CacheNoIndex):
     can_url_to_cache=False
     filebackend=caches.backends.IRODSFileBackend()
 
-class MemCacheSSH(MemCacheNoIndex):
+class MemCacheSSH(CacheNoIndex):
     can_url_to_cache=False
     filebackend=caches.backends.SSHFileBackend()
 
 
-class CacheModule(MemCache):
+class CacheModule(Cache):
     filecacheroot=os.environ['DDA_MODULE_CACHE'] if 'DDA_MODULE_CACHE' in os.environ else ""
 
     def construct_cached_file_path(self,hashe,obj):
@@ -1138,7 +1138,7 @@ class CacheModule(MemCache):
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
 
-class CacheModuleIRODS(MemCacheNoIndex):
+class CacheModuleIRODS(CacheNoIndex):
     filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS'] if 'DDA_MODULE_CACHE_IRODS' in os.environ else ""
     filebackend=caches.backends.IRODSFileBackend()
 

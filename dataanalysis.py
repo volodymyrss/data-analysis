@@ -22,7 +22,7 @@ from printhook import decorate_method_log
 
 # need to tidy up imports
 
-Cache= core.MemCacheNoIndex()
+Cache= core.CacheNoIndex()
 TransientCacheInstance= core.TransientCache()
 
 import analysisfactory
@@ -33,7 +33,7 @@ class DataFile:
 
 # TODO:
 
-
+# approprate logging
 # reporting classes
 # optional input
 # cache migration
@@ -537,8 +537,8 @@ class DataAnalysis(object):
 
     _da_main_log_content=""
 
-    write_caches=[core.MemCache]
-    read_caches=[core.MemCache]
+    write_caches=[core.Cache]
+    read_caches=[core.Cache]
 
     #def get_dynamic_input(self):
      #   if hasattr(self,'input_dynamic'):
@@ -1418,14 +1418,15 @@ class DataAnalysis(object):
 
         restore_rules_default=dict(explicit_input_required=False,restore_complete=False)
         restore_rules=dict(restore_rules_default.items()+restore_rules.items() if restore_rules is not None else [])
+
         # to simplify input
         for k in extra.keys():
             if k in restore_rules:
                 restore_rules[k]=extra[k]
-        #/
 
         if restore_config is None:
             restore_config={}
+
         if self.copy_cached_input:
             #cprint("will copy cached input")
             restore_config['datafile_restore_mode']="copy"
@@ -1433,7 +1434,7 @@ class DataAnalysis(object):
             #cprint("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
 
-        if self.test_files:
+        if self.test_files: # may be not boolean
             restore_config['test_files']=True
         else:
             restore_config['test_files']=False
@@ -1461,7 +1462,8 @@ class DataAnalysis(object):
                         continue # yes?
 
                     if o is None:
-                        raise Exception("input is None: vortual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
+                        raise Exception("input is None: virtual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
+
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
 
                     if not isinstance(l,list) and l.is_noanalysis():
