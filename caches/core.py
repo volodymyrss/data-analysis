@@ -17,6 +17,7 @@ import hashtools
 from bcolors import render
 
 import analysisfactory
+import caches.backends
 
 global_readonly_caches=False
 
@@ -28,38 +29,6 @@ def is_datafile(b):
 def update_dict(a,b):
     return dict(a.items()+b.items())
 
-class FileBackend:
-    def exists(self,fn):
-        return os.path.exists(fn)
-
-    def getsize(self,origin):
-        return os.path.getsize(origin)/1024./1024.
-    
-    def get(self,orig,dest,gz=False):
-        print(orig,"to",dest)
-        if gz:
-            open(dest,"w").write(gzip.open(orig).read())
-        else:
-            shutil.copy(orig,dest)
-    
-    def symlink(self,orig,dest):
-        os.symlink(orig,dest)
-    
-    def put(self,orig,dest):
-        shutil.copy(orig,dest)
-    
-    def makedirs(self,dirs):
-        os.makedirs(dirs)
-
-    def open(self,fn,mode="r",gz=False):
-        if gz:
-            return gzip.open(fn,mode)
-        return open(fn,mode)
-
-    def flush(self):
-        pass
-
-
 class MemCache(object): #d
     # currently store each cache in a file; this is not neccesary 
    # __metaclass__ = decorate_all_methods
@@ -70,7 +39,7 @@ class MemCache(object): #d
 
     readonly_cache=False
 
-    filebackend=FileBackend()
+    filebackend=caches.backends.FileBackend()
 
     can_url_to_cache=True
  
@@ -1109,134 +1078,6 @@ class MemCacheIndex(MemCache):
         #raise Exception("please write to index!")
         return
 
-class SSHFileBackend:
-    #sshroot="apcclwn12:/Integral2/data/reduced/ddcache/"
-
-    def exists(self,fn):
-        try:
-            subprocess.check_call(["scp",fn,"./"])
-            return True
-        except subprocess.CalledProcessError:
-            return False
-
-    def getsize(self,origin):
-        return 0 
-        #return os.path.getsize(origin)/1024./1024.
-    
-    def get(self,orig,dest,gz=False):
-        print(["scp",orig,dest],level="top")
-        subprocess.check_call(["scp",orig,dest])
-        if gz:
-            open(dest,"w").write(gzip.open(os.path.basename(orig)).read())
-    
-    def symlink(self,orig,dest):
-        os.symlink(orig,dest)
-    
-    def put(self,orig,dest):
-        destdir="/".join(dest.split("/")[:-1])
-
-        print("makedirs",["scp","-r",orig,destdir],level="top")
-        subprocess.check_call(["scp","-r",orig,destdir])
-    
-    def makedirs(self,dirs):
-        host,thedirs=dirs.split(":")
-        subprocess.check_call(["ssh",host,"mkdir -pv "+thedirs])
-
-    def register_pending_put(self,local_fn,remote_fn):
-        if self.pending_put is None:
-            self.pending_put=[]
-        self.pending_put.append([local_fn,remote_fn])
-    
-    pending_put=None
-
-    def flush(self):
-        while self.pending_put is not None and len(self.pending_put)>0:
-            local,remote=self.pending_put.pop()
-            self.put(local,remote)
-
-    def open(self,fn,mode="r",gz=False):
-        local_fn=os.path.basename(fn) # !!
-
-        if "w"==mode:
-            cprint("will later put file to ssh",local_fn,fn)
-            self.register_pending_put(local_fn,fn)
-        elif "r"==mode:
-            cprint("will get file from ssh:",fn,local_fn)
-            self.get(fn,local_fn)
-        else:
-            raise Exception("do not understand this mode: "+mode)
-
-        if gz:
-            return gzip.open(local_fn,mode)
-        return open(local_fn,mode)
-
-
-
-class IRODSFileBackend:
-    def exists(self,fn):
-        try:
-            subprocess.check_call(["ils",fn])
-            return True
-        except subprocess.CalledProcessError:
-            return False
-        except:
-            return False
-
-    def getsize(self,origin):
-        return 0 
-        #return os.path.getsize(origin)/1024./1024.
-    
-    def get(self,orig,dest,gz=False):
-           # shutil.copy(orig,dest)
-        subprocess.check_call(["iget","-f",orig])
-        if gz:
-            open(dest,"w").write(gzip.open(os.path.basename(orig)).read())
-    
-    def symlink(self,orig,dest):
-        os.symlink(orig,dest)
-    
-    def put(self,orig,dest):
-        try:
-            subprocess.check_call(["iput","-f",orig,dest])
-        except:
-            pass
-    
-    def makedirs(self,dirs):
-        try:
-            subprocess.check_call(["imkdir","-p",dirs])
-        except:
-            pass
-
-    def open(self,fn,mode="r",gz=False):
-        local_fn=os.path.basename(fn) # !!
-
-        if "w"==mode:
-            cprint("will later put file to irods")
-            self.register_pending_put(local_fn,fn)
-        elif "r"==mode:
-            cprint("will get file from irods:",fn,local_fn)
-            self.get(fn,local_fn)
-        else:
-            raise Exception("do not understand this mode: "+mode)
-
-        if gz:
-            return gzip.open(local_fn,mode)
-        return open(local_fn,mode)
-
-    def register_pending_put(self,local_fn,remote_fn):
-        if self.pending_put is None:
-            self.pending_put=[]
-        self.pending_put.append([local_fn,remote_fn])
-
-    pending_put=None
-
-    def flush(self):
-        while self.pending_put is not None and len(self.pending_put)>0:
-            local,remote=self.pending_put.pop()
-            self.put(local,remote)
-
-
-
 class MemCacheNoIndex(MemCache):
     def __init__(self,*a,**aa):
         cprint(a,aa)
@@ -1267,11 +1108,11 @@ class MemCacheNoIndex(MemCache):
 
 class MemCacheIRODS(MemCacheNoIndex):
     can_url_to_cache=False
-    filebackend=IRODSFileBackend()
+    filebackend=caches.backends.IRODSFileBackend()
 
 class MemCacheSSH(MemCacheNoIndex):
     can_url_to_cache=False
-    filebackend=SSHFileBackend()
+    filebackend=caches.backends.SSHFileBackend()
 
 
 class CacheModule(MemCache):
@@ -1293,13 +1134,13 @@ class CacheModule(MemCache):
 
         def hash_to_path2(hashe):
             #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
-            return hashe[2]+"/"+shhash(repr(hashe[1]))
+            return hashe[2]+"/"+hashtools.shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
 
 class CacheModuleIRODS(MemCacheNoIndex):
     filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS'] if 'DDA_MODULE_CACHE_IRODS' in os.environ else ""
-    filebackend=IRODSFileBackend()
+    filebackend=caches.backends.IRODSFileBackend()
 
     def construct_cached_file_path(self,hashe,obj):
         print("requested path for",hashe,obj)
@@ -1317,7 +1158,7 @@ class CacheModuleIRODS(MemCacheNoIndex):
 
         def hash_to_path2(hashe):
             #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
-            return hashe[2]+"/"+shhash(repr(hashe[1]))
+            return hashe[2]+"/"+hashtools.shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
     

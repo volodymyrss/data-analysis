@@ -2,8 +2,7 @@
 
 def test_one_object():
     import dataanalysis as da
-    da.AnalysisFactory.reset()
-    da.TransientCacheInstance.reset()
+    da.reset()
 
     class Analysis(da.DataAnalysis):
 

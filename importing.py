@@ -1,13 +1,13 @@
-import os
-import sys
 import imp
+import os
 import shutil
+import sys
 
-from dataanalysis import DataAnalysis,DataFile
-import caches
+from caches import core
+from dataanalysis import DataAnalysis, DataFile
 from hashtools import *
-
 from printhook import cprint
+
 
 class find_module_standard(DataAnalysis):
     cached=False # never    
@@ -26,7 +26,7 @@ class find_module_standard(DataAnalysis):
 
         self.module_path=pathname
 
-cm=caches.CacheModule()
+cm= core.CacheModule()
 #cmi=caches.CacheModuleIRODS()
 #cm.parent=cmi
 

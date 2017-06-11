@@ -1,28 +1,29 @@
 from __future__ import print_function
-from collections import Mapping, Set, Sequence 
-from bcolors import render as render
-import pprint
-import time,gzip,cPickle,socket,sys,os,shutil,re,copy
-from subprocess import check_call
-import subprocess
-import tempfile
-import collections
+
 import StringIO
+import collections
+import gzip
 import json
-from datetime import datetime
+import os
+import shutil
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+from collections import Mapping, Set, Sequence
+
+import hashtools
+import jsonify
+import printhook
+from bcolors import render as render
+from caches import core
+from printhook import decorate_method_log
 
 # need to tidy up imports
 
-from printhook import PrintHook,decorate_method_log,LogStream
-import printhook
-
-import jsonify
-
-import caches
-import hashtools
-
-Cache=caches.MemCacheNoIndex()
-TransientCacheInstance=caches.TransientCache()
+Cache= core.MemCacheNoIndex()
+TransientCacheInstance= core.TransientCache()
 
 import analysisfactory
 
@@ -536,8 +537,8 @@ class DataAnalysis(object):
 
     _da_main_log_content=""
 
-    write_caches=[caches.MemCache]
-    read_caches=[caches.MemCache]
+    write_caches=[core.MemCache]
+    read_caches=[core.MemCache]
 
     #def get_dynamic_input(self):
      #   if hasattr(self,'input_dynamic'):
@@ -1748,3 +1749,7 @@ class DataFileStatic(DataFile):
 
     def __repr__(self):
         return "[DataFileStatic:%s]"%(self.path if hasattr(self,'path') else 'undefined')
+
+def reset():
+    AnalysisFactory.reset()
+    TransientCacheInstance.reset()
