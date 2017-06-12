@@ -1,28 +1,17 @@
 from __future__ import print_function
 
-from printhook import print,cprint
-import subprocess
-import socket
-import sqlite3 as lite
-import sys
-import os
-import cPickle
 import gzip
-import copy
+import os
 import shutil
-import time
-import pprint
+import subprocess
 
-import hashtools
-from bcolors import render
-
-import analysisfactory
+from dataanalysis.printhook import print, cprint
 
 global_readonly_caches=False
 
 def is_datafile(b):
 # delayed import
-    from dataanalysis import DataFile
+    from core import DataFile
     return isinstance(b,DataFile)
 
 def update_dict(a,b):

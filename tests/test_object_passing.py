@@ -1,10 +1,7 @@
 import pytest
 
 def test_object_export_import():
-    import caches.delegating
-    import caches.core
-    import dataanalysis as da
-    import analysisfactory
+    from dataanalysis import core as da
 
     #da.debug_output()
     da.reset()
@@ -38,9 +35,7 @@ def test_object_export_import():
     assert B.data == "data1"
 
 def test_object_injection():
-    import caches.delegating
-    import caches.core
-    import dataanalysis as da
+    from dataanalysis import core as da
     import analysisfactory
 
     #da.debug_output()
@@ -72,9 +67,7 @@ def test_object_injection():
     assert B.data == "data2"
 
 def test_object_input_injection():
-    import caches.delegating
-    import caches.core
-    import dataanalysis as da
+    from dataanalysis import core as da
     import analysisfactory
 
     da.debug_output()
@@ -124,7 +117,6 @@ def test_object_input_injection():
     da.reset()
 
     class AAnalysis(da.DataAnalysis):
-        #        arg=None
         pass
 
 

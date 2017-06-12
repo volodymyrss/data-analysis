@@ -1,7 +1,8 @@
 import numpy as np
 from astropy.io import fits as pyfits
 
-import dataanalysis as da
+import core as da
+
 
 def jsonify(item):
     if isinstance(item, da.DataFile):

@@ -1,11 +1,12 @@
 
 
 def test_import():
-    import dataanalysis as da
+    pass
+
 
 def test_one_object():
-    import dataanalysis as da
-    
+    from dataanalysis import core as da
+
     class Analysis(da.DataAnalysis):
         def main(self):
             print "test"
@@ -16,7 +17,7 @@ def test_one_object():
     assert A.data == 'data'
     
 def test_two_object():
-    import dataanalysis as da
+    from dataanalysis import core as da
 
     class BAnalysis(da.DataAnalysis):
         def main(self):
@@ -37,7 +38,7 @@ def test_two_object():
     
 def test_optional_object():
     try:
-        import dataanalysis as da
+        from dataanalysis import core as da
         da.AnalysisFactory.reset()
        # da.printhook.global_all_output=True
        # da.printhook.global_permissive_output=True
@@ -77,13 +78,13 @@ def test_optional_object():
         assert A.input_b.incomplete == True
         
     except:
-        da.printhook.global_all_output=False
-        da.printhook.global_permissive_output=False
-        da.printhook.LogStreams=[]
+        dataanalysis.printhook.global_all_output=False
+        dataanalysis.printhook.global_permissive_output=False
+        dataanalysis.printhook.LogStreams=[]
         raise
     
 def test_caching():
-    import dataanalysis as da
+    from dataanalysis import core as da
     import time
     
     class Analysis(da.DataAnalysis):

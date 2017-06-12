@@ -1,10 +1,12 @@
-import dataanalysis as da
+from dataanalysis import core as da
+
 
 def debug_output():
-    da.printhook.global_all_output=True
-    da.printhook.global_permissive_output=True
-    da.printhook.global_fancy_output=True
-    da.printhook.LogStreams=[]
+    import dataanalysis
+    dataanalysis.printhook.global_all_output=True
+    dataanalysis.printhook.global_permissive_output=True
+    dataanalysis.printhook.global_fancy_output=True
+    dataanalysis.printhook.LogStreams=[]
 
 def test_generate_one():
     debug_output()

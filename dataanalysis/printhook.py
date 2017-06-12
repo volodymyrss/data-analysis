@@ -1,9 +1,10 @@
 from __future__ import print_function
 
-import sys
-from bcolors import render
-from datetime import datetime
 import re
+import sys
+from datetime import datetime
+
+from dataanalysis.bcolors import render
 
 global_suppress_output=False
 global_fancy_output=False

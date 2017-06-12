@@ -1,7 +1,7 @@
 
 def test_base_cache():
-    import caches.core
-    import dataanalysis as da
+    from dataanalysis import core as da
+    from dataanalysis import caches
 
     cache=caches.core.Cache()
 

@@ -1,29 +1,30 @@
 from __future__ import print_function
 
-from printhook import print,cprint
-import subprocess
+import cPickle
+import copy
+import gzip
+import os
+import pprint
+import shutil
 import socket
 import sqlite3 as lite
-import sys
-import os
-import cPickle
-import gzip
-import copy
-import shutil
+import subprocess
 import time
-import pprint
-
-import hashtools
-from bcolors import render
 
 import analysisfactory
+from bcolors import render
+
+from dataanalysis import hashtools
+from dataanalysis.printhook import print, cprint
+
+import caches
 import caches.backends
 
 global_readonly_caches=False
 
 def is_datafile(b):
 # delayed import
-    from dataanalysis import DataFile
+    from core import DataFile
     return isinstance(b,DataFile)
 
 def update_dict(a,b):
@@ -56,12 +57,12 @@ class Cache(object): #d
         pass
 
     def hashe2signature(self,hashe_raw):
-        hashe=hashtools.hashe_replace_object(hashe_raw,None,"None")
+        hashe= hashtools.hashe_replace_object(hashe_raw, None, "None")
         cprint("hashe:",hashe)
         if isinstance(hashe,tuple):
             if hashe[0]=="analysis":
-                return hashe[2]+":"+hashtools.shhash(hashe)[:8]
-        sig=hashtools.shhash(hashe)[:8]
+                return hashe[2]+":" + hashtools.shhash(hashe)[:8]
+        sig= hashtools.shhash(hashe)[:8]
         cprint("signature hashe:",sig)
         return sig
 
@@ -546,7 +547,7 @@ class Cache(object): #d
 
         def hash_to_path2(hashe):
             #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
-            return hashe[2]+"/"+hashtools.shhash(repr(hashe[1]))
+            return hashe[2]+"/" + hashtools.shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hash_to_path2(hashe)+"/" # choose to avoid overlapp
 
@@ -724,8 +725,6 @@ class CacheSqlite(Cache):
         raise e
 
     def find(self,hashe):
-        import sqlite3 as lite
-        import sys
 
         con=self.connect()
 
@@ -762,8 +761,6 @@ class CacheSqlite(Cache):
 
 
     def make_record(self,hashe,content):
-        import sqlite3 as lite
-        import sys
 
         cprint("will store",hashe,content)
 
@@ -866,8 +863,7 @@ class CacheMySQL(CacheSqlite):
         raise e
 
     def find(self,hashe):
-        import sys
-        
+
         cprint("requested to find",hashe)
         cprint("hashed",hashe,"as",self.hashe2signature(hashe))
 
@@ -901,7 +897,7 @@ class CacheMySQL(CacheSqlite):
 
 
     def make_record(self,hashe,content):
-        import sys,json
+        import json
 
         cprint("will store",hashe,content)
 
@@ -929,7 +925,7 @@ class CacheMySQL(CacheSqlite):
         return c['content']
     
     def make_delegation_record(self,hashe,module_description,dependencies):
-        import sys,json
+        import json
 
         cprint("will store",hashe,module_description)
 
@@ -1056,8 +1052,6 @@ class CacheIndex(Cache):
         super(CacheIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
-        import sqlite3 as lite
-        import sys
 
         cprint("requested to find",hashe)
 
@@ -1084,8 +1078,6 @@ class CacheNoIndex(Cache):
         super(CacheNoIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
-        import sqlite3 as lite
-        import sys
 
         cprint("requested to find",hashe)
 
@@ -1134,7 +1126,7 @@ class CacheModule(Cache):
 
         def hash_to_path2(hashe):
             #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
-            return hashe[2]+"/"+hashtools.shhash(repr(hashe[1]))
+            return hashe[2]+"/" + hashtools.shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
 
@@ -1158,7 +1150,7 @@ class CacheModuleIRODS(CacheNoIndex):
 
         def hash_to_path2(hashe):
             #by32=lambda x:x[:8]+"/"+by8(x[8:]) if x[8:]!="" else x
-            return hashe[2]+"/"+hashtools.shhash(repr(hashe[1]))
+            return hashe[2]+"/" + hashtools.shhash(repr(hashe[1]))
 
         return self.filecacheroot+"/"+hashe[1][1]+"/"+hashe[1][2]+"/" # choose to avoid overlapp
     

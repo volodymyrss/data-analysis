@@ -3,9 +3,9 @@ import os
 import shutil
 import sys
 
-from caches import core
-from dataanalysis import DataAnalysis, DataFile
-from hashtools import *
+from dataanalysis.caches import core
+from dataanalysis.core import DataAnalysis, DataFile
+from dataanalysis.hashtools import *
 from printhook import cprint
 
 

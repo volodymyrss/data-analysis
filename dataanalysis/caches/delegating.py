@@ -2,8 +2,10 @@ import time
 
 from persistqueue import Queue, Empty
 
-import caches.core
 import analysisfactory
+import caches
+import caches.core
+
 
 class DelegatedNoticeException(Exception):
     pass

@@ -1,7 +1,7 @@
 import pytest
 
 def define_analysis():
-    import dataanalysis as da
+    from dataanalysis import core as da
 
     class Analysis(da.DataAnalysis):
         def main(self):
@@ -10,10 +10,10 @@ def define_analysis():
 
 
 def test_queue_cache():
-    import caches.delegating
-    import caches.core
-    import dataanalysis as da
+    from dataanalysis import core as da
     import analysisfactory
+    from dataanalysis import caches
+    import dataanalysis.caches.delegating
 
     #da.debug_output()
     da.reset()

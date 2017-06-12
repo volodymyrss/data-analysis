@@ -1,7 +1,7 @@
 
 
 def test_one_object():
-    import dataanalysis as da
+    from dataanalysis import core as da
     da.reset()
 
     class Analysis(da.DataAnalysis):

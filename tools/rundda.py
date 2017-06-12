@@ -1,7 +1,6 @@
 #!/bin/env python
 
 import argparse
-import importing
 import json
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
@@ -25,8 +24,7 @@ args = parser.parse_args()
 
 print args.module
 
-import dataanalysis as da
-import dataanalysis
+from dataanalysis import core, importing
 
 if args.verbose:
     print "will be chatty"
@@ -46,39 +44,39 @@ if args.failsafe:
 
 if args.quiet:
     print "will be quiet"
-    dataanalysis.printhook.LogStream(None,lambda x:set(x)&set(['top','main']))
+    dataanalysis.printhook.LogStream(None, lambda x: set(x) & set(['top', 'main']))
 else:
     print "will not be quiet"
-    dataanalysis.printhook.LogStream(None,lambda x:True)
+    dataanalysis.printhook.LogStream(None, lambda x:True)
 
 if args.very_verbose:
     dataanalysis.printhook.global_permissive_output=True
 
 modules=[m[0] for m in args.module]
 
-import imp,sys
+import sys
 
 for m in modules:
     print "importing",m
 
     sys.path.append(".")
-    module,name=importing.load_by_name(m)
+    module,name= importing.load_by_name(m)
     globals()[name]=module
 
 
 
 assumptions=",".join([a[0] for a in args.assume])
 print assumptions
-dataanalysis.AnalysisFactory.WhatIfCopy('commandline',eval(assumptions))
+core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
 
-A=dataanalysis.AnalysisFactory[args.object_name]() 
+A= core.AnalysisFactory[args.object_name]()
 
 print A
 
 for a in args.force_run:
     print "force run",a
     try:
-        b=dataanalysis.AnalysisFactory[a[0]]() 
+        b= core.AnalysisFactory[a[0]]()
         b.__class__.cached=False
     except: # oh now!
         pass
@@ -86,14 +84,14 @@ for a in args.force_run:
 for a in args.force_produce:
     print "force produce",a
     try:
-        b=dataanalysis.AnalysisFactory[a[0]]() 
+        b= core.AnalysisFactory[a[0]]()
         b.__class__.read_caches=[]
     except: # oh now!
         pass
 
 for a in args.disable_run:
     print "disable run",a
-    b=dataanalysis.AnalysisFactory[a[0]]() 
+    b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
 A.process(output_required=True)
