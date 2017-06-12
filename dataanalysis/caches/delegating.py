@@ -3,22 +3,22 @@ import time
 from persistqueue import Queue, Empty
 
 import analysisfactory
-import caches
-import caches.core
+import dataanalysis.caches
+import dataanalysis.caches.core
 
 
 class DelegatedNoticeException(Exception):
     pass
 
 
-class QueueCache(caches.core.Cache):
+class QueueCache(dataanalysis.caches.core.Cache):
 
     def __init__(self,queue_file="./queue"):
         self.queue_file=queue_file
         self.queue = Queue(self.queue_file)
 
     def restore(self,hashe,obj,restore_config=None):
-        self.queue.put([obj.get_factory_name(),analysisfactory.AnalysisFactory.get_module_description(),hashe])
+        self.queue.put([obj.get_factory_name(),dataanalysis.core.AnalysisFactory.get_module_description(),hashe])
 
         raise DelegatedNoticeException()
 
@@ -42,7 +42,7 @@ class QueueCacheWorker(object):
         print "modules",modules
         print "hashe",hashe
 
-        A=analysisfactory.AnalysisFactory[object_name]
+        A=dataanalysis.core.AnalysisFactory[object_name]
 
         return A.get()
 

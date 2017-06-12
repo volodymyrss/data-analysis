@@ -11,7 +11,7 @@ def define_analysis():
 
 def test_queue_cache():
     from dataanalysis import core as da
-    import analysisfactory
+    import dataanalysis
     from dataanalysis import caches
     import dataanalysis.caches.delegating
 
@@ -23,7 +23,7 @@ def test_queue_cache():
 
     define_analysis()
 
-    A=analysisfactory.AnalysisFactory['Analysis']
+    A=dataanalysis.core.AnalysisFactory['Analysis']
     A.produce_disabled=True
     A.cache = q_cache
     A.cached = True
@@ -38,7 +38,7 @@ def test_queue_cache():
 
     define_analysis()
 
-    A = analysisfactory.AnalysisFactory['Analysis']
+    A = dataanalysis.core.AnalysisFactory['Analysis']
     A.produce_disabled = False
     A.cache = f_cache
     A.cached = True

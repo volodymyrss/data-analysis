@@ -25,8 +25,6 @@ from printhook import decorate_method_log
 Cache= core.CacheNoIndex()
 TransientCacheInstance= core.TransientCache()
 
-import analysisfactory
-
 # for name
 class DataFile:
     pass
@@ -475,15 +473,11 @@ class AnalysisFactoryClass: # how to unify this with caches?..
         return module_description
 
 AnalysisFactory=AnalysisFactoryClass()
-analysisfactory.AnalysisFactory=AnalysisFactory
 
 byname=lambda x:AnalysisFactory.byname(x)
 
 def get_object(a):
     return AnalysisFactory[a]
-
-
-
 
 class DataAnalysis(object):
     __metaclass__ = decorate_all_methods

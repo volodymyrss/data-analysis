@@ -36,7 +36,6 @@ def test_object_export_import():
 
 def test_object_injection():
     from dataanalysis import core as da
-    import analysisfactory
 
     #da.debug_output()
     da.reset()
@@ -61,14 +60,13 @@ def test_object_injection():
     class Analysis(da.DataAnalysis):
         pass
 
-    analysisfactory.AnalysisFactory.inject_serialization(serialization)
+    da.AnalysisFactory.inject_serialization(serialization)
     B=Analysis()
 
     assert B.data == "data2"
 
 def test_object_input_injection():
     from dataanalysis import core as da
-    import analysisfactory
 
     da.debug_output()
     da.reset()
@@ -90,12 +88,11 @@ def test_object_input_injection():
     a1 = A1.serialize()
     a2 = A2.serialize()
 
+    da.AnalysisFactory.inject_serialization(a1)
 
-    analysisfactory.AnalysisFactory.inject_serialization(a1)
+    print "factory has",da.AnalysisFactory.cache['AAnalysis']
 
-    print "factory has",analysisfactory.AnalysisFactory.cache['AAnalysis']
-
-    aanalysis=analysisfactory.AnalysisFactory['AAnalysis']
+    aanalysis=da.AnalysisFactory['AAnalysis']
     assert aanalysis.arg == "arg1"
 
     class Analysis(da.DataAnalysis):
@@ -130,7 +127,7 @@ def test_object_input_injection():
             self.data = "data_"+self.input_arg.arg
 
 
-    analysisfactory.AnalysisFactory.inject_serialization(a2)
+    da.AnalysisFactory.inject_serialization(a2)
 
     B=Analysis()
     B.get()

@@ -17,14 +17,14 @@ from bcolors import render
 from dataanalysis import hashtools
 from dataanalysis.printhook import print, cprint
 
-import caches
-import caches.backends
+from dataanalysis import  caches
+from dataanalysis.caches import backends
 
 global_readonly_caches=False
 
 def is_datafile(b):
 # delayed import
-    from core import DataFile
+    from dataanalysis.core import DataFile
     return isinstance(b,DataFile)
 
 def update_dict(a,b):
