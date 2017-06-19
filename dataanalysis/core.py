@@ -17,13 +17,13 @@ import hashtools
 import jsonify
 import printhook
 from bcolors import render as render
-from caches import core
+from caches import core as cache_core
 from printhook import decorate_method_log
 
 # need to tidy up imports
 
-Cache= core.CacheNoIndex()
-TransientCacheInstance= core.TransientCache()
+Cache= cache_core.CacheNoIndex()
+TransientCacheInstance= cache_core.TransientCache()
 
 # for name
 class DataFile:
@@ -540,8 +540,8 @@ class DataAnalysis(object):
 
     _da_main_log_content=""
 
-    write_caches=[core.Cache]
-    read_caches=[core.Cache]
+    write_caches=[cache_core.Cache]
+    read_caches=[cache_core.Cache]
 
     #def get_dynamic_input(self):
      #   if hasattr(self,'input_dynamic'):

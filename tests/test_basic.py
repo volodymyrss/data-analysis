@@ -1,7 +1,8 @@
 
 
 def test_import():
-    pass
+    from dataanalysis import core as da
+    print da.__file__
 
 
 def test_one_object():
