@@ -401,6 +401,7 @@ class Cache(object): #d
         raise Exception("content from cache is not dict! "+str(c))
 
 
+    # TODO: separate directory writing, to allow bundling
     def store(self,hashe,obj):
         if obj.run_for_hashe or obj.mutating:
             return 
