@@ -4,14 +4,14 @@ from persistqueue import Queue, Empty
 
 import analysisfactory
 import dataanalysis.caches
-import dataanalysis.caches.core
+import dataanalysis.caches.cache_core
 
 
 class DelegatedNoticeException(Exception):
     pass
 
 
-class QueueCache(dataanalysis.caches.core.Cache):
+class QueueCache(dataanalysis.caches.cache_core.Cache):
 
     def __init__(self,queue_file="./queue"):
         self.queue_file=queue_file

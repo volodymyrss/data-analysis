@@ -3,7 +3,7 @@ import os
 import shutil
 import sys
 
-from dataanalysis.caches import core
+from dataanalysis.caches import cache_core
 from dataanalysis.core import DataAnalysis, DataFile
 from dataanalysis.hashtools import *
 from printhook import cprint
@@ -26,7 +26,7 @@ class find_module_standard(DataAnalysis):
 
         self.module_path=pathname
 
-cm= core.CacheModule()
+cm= cache_core.CacheModule()
 #cmi=caches.CacheModuleIRODS()
 #cm.parent=cmi
 

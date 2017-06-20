@@ -1,6 +1,17 @@
-from core import * # compatibility
+# ===
 
-from hashtools import *
-from caches.core import *
+#import dataanalysis.core
+#import dataanalysis.caches
 
-MemCacheNoIndex=CacheNoIndex
+#from dataanalysis import core
+#from dataanalysis import caches
+
+# compatibility
+
+#from dataanalysis.core import *
+
+#from dataanalysis.hashtools import *
+#from dataanalysis.caches.cache_core import *
+
+#MemCacheNoIndex=CacheNoIndex
+

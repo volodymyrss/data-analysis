@@ -33,7 +33,7 @@ def test_queue_cache():
 
     # worker part
 
-    f_cache=caches.core.CacheNoIndex()
+    f_cache=caches.cache_core.CacheNoIndex()
     #f_cache.parent=q_cache
 
     define_analysis()

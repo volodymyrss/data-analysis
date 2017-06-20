@@ -87,9 +87,13 @@ def test_optional_object():
 def test_caching():
     from dataanalysis import core as da
     import time
-    
+
+    da.debug_output()
+
     class Analysis(da.DataAnalysis):
         cached=True
+
+        read_caches = []
 
         def main(self):
             print "test"
@@ -99,10 +103,10 @@ def test_caching():
     A=Analysis()
     A.get()
 
-    reload(da)
+    da.reset()
 
     print A
-    print "construting again.."
+    print "constructing again.."
     
     class Analysis(da.DataAnalysis):
         cached=True

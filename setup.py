@@ -9,6 +9,7 @@ setup(
 		"dataanalysis.bcolors",
 		"dataanalysis.caches",
 		"dataanalysis.caches.core",
+		"dataanalysis.caches.sdsc",
 		"dataanalysis.caches.delegating",
 		"dataanalysis.caches.backends",
 		"dataanalysis.core",

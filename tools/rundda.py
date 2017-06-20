@@ -25,6 +25,7 @@ args = parser.parse_args()
 print args.module
 
 from dataanalysis import core, importing
+import dataanalysis.printhook
 
 if args.verbose:
     print "will be chatty"

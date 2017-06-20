@@ -11,7 +11,7 @@ global_readonly_caches=False
 
 def is_datafile(b):
 # delayed import
-    from core import DataFile
+    from cache_core import DataFile
     return isinstance(b,DataFile)
 
 def update_dict(a,b):

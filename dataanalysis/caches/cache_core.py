@@ -11,13 +11,15 @@ import sqlite3 as lite
 import subprocess
 import time
 
-import analysisfactory
 from bcolors import render
 
+import dataanalysis
+
+print(dataanalysis.__file__)
+
+from dataanalysis import analysisfactory
 from dataanalysis import hashtools
 from dataanalysis.printhook import print, cprint
-
-from dataanalysis import  caches
 from dataanalysis.caches import backends
 
 global_readonly_caches=False
@@ -41,7 +43,7 @@ class Cache(object): #d
 
     readonly_cache=False
 
-    filebackend=caches.backends.FileBackend()
+    filebackend=backends.FileBackend()
 
     can_url_to_cache=True
  
@@ -402,6 +404,83 @@ class Cache(object): #d
 
 
     # TODO: separate directory writing, to allow bundling
+
+    def store_to_directory(self, hashe, obj, cached_path):
+        obj._da_cached_path = cached_path
+
+        if not hasattr(obj, '_da_cached_pathes'):
+            obj._da_cached_pathes = []
+        obj._da_cached_pathes.append(cached_path)
+
+        cprint("storing in", cached_path)
+
+        dn = os.path.dirname(cached_path)
+        if not self.filebackend.exists(dn):
+            self.filebackend.makedirs(dn)
+
+        content = obj.export_data()
+
+        cPickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
+        cPickle.dump(hashe, self.filebackend.open(cached_path + "hash.pickle.gz", "w", gz=True))
+        self.filebackend.open(cached_path + "hash.txt", "w").write(pprint.pformat(hashe) + "\n")
+        self.filebackend.open(cached_path + "log.txt.gz", "w", gz=True).write(obj._da_main_log_content)
+
+        aliases = obj.factory.list_relevant_aliases(obj)
+
+        try:
+            if aliases != []:
+                open(cached_path + "aliases.txt", "w").write("\n".join(
+                    [("=" * 80) + "\n" + pprint.pformat(a) + "\n" + ("-" * 80) + "\n" + pprint.pformat(b) + "\n" for
+                     a, b in aliases]))
+        except:
+            pass  # fix!
+
+        definitions = analysisfactory.AnalysisFactory.get_definitions()
+        try:
+            if definitions != []:
+                open(cached_path + "definitions.txt", "w").write("\n".join(
+                    [("=" * 80) + "\n" + pprint.pformat(a) + "\n" + ("-" * 80) + "\n" + pprint.pformat(b) + "\n" for
+                     a, b in definitions]))
+        except:
+            pass  # fix!
+
+        modules = obj.factory.get_module_description()
+        filtered_modules = []
+        for m in reversed(modules):
+            if m not in filtered_modules:
+                filtered_modules.append(m)
+        self.filebackend.open(cached_path + "modules.txt", "w").write(pprint.pformat(filtered_modules) + "\n")
+
+        self.filebackend.flush()
+
+        if hasattr(obj, 'alias'):
+            cprint('object has alias:', obj.alias)
+            open(cached_path + "alias.txt", "w").write(pprint.pformat(obj.alias) + "\n")
+        else:
+            cprint('object has no alias')
+
+
+        if isinstance(content, dict):
+            for a, b in content.items():
+                if is_datafile(b):
+                    cprint("requested to store DataFile", b)
+
+                    try:
+                        p = cached_path + os.path.basename(b.path)
+                    except Exception as e:
+                        print("failed:", e)
+                        print("path:", b.path)
+                        print("b:", b)
+                        raise
+                    b.cached_path = p + ".gz" if not p.endswith(".gz") else p
+                    b.store_stats = self.store_file(b.path, p)
+                    b._da_cached_path = cached_path
+                    b.cached_path_valid_url = True
+                    obj.note_resource_stats(
+                        {'resource_type': 'cache', 'resource_source': repr(self), 'filename': b.path,
+                         'stats': b.store_stats, 'operation': 'store'})
+        return content
+
     def store(self,hashe,obj):
         if obj.run_for_hashe or obj.mutating:
             return 
@@ -420,89 +499,21 @@ class Cache(object): #d
             cprint("object",obj,"is cached, storing")
         
         if any([isinstance(self,c) for c in obj.write_caches]):
-
-            cprint("storing:",hashe)
+            cprint("storing:", hashe)
 
             if not self.filebackend.exists(self.filecacheroot):
                 self.filebackend.makedirs(self.filecacheroot)
 
-            obj._da_stamp=obj.get_stamp() # or in the object?
-            
-            if not hasattr(self,'cache'):
-                self.cache={}
+            obj._da_stamp = obj.get_stamp()  # or in the object?
 
-            content=obj.export_data()
+            if not hasattr(self, 'cache'):
+                self.cache = {}
 
-            #cprint("content:",content)
-                        
-            cached_path=self.construct_cached_file_path(hashe,obj)
+            # cprint("content:",content)
 
-            obj._da_cached_path=cached_path
+            cached_path = self.construct_cached_file_path(hashe, obj)
 
-            if not hasattr(obj,'_da_cached_pathes'):
-                obj._da_cached_pathes=[]
-            obj._da_cached_pathes.append(cached_path)
-
-            cprint("storing in",cached_path)
-                        
-            dn=os.path.dirname(cached_path)
-            if not self.filebackend.exists(dn):
-                self.filebackend.makedirs(dn)
-
-
-            cPickle.dump(content,self.filebackend.open(cached_path+"cache.pickle.gz","w",gz=True))
-            cPickle.dump(hashe,self.filebackend.open(cached_path+"hash.pickle.gz","w",gz=True))
-            self.filebackend.open(cached_path+"hash.txt","w").write(pprint.pformat(hashe)+"\n")
-            self.filebackend.open(cached_path+"log.txt.gz","w",gz=True).write(obj._da_main_log_content)
-            
-            aliases=analysisfactory.AnalysisFactory.list_relevant_aliases(obj)
-
-            try:
-                if aliases!=[]:
-                    open(cached_path+"aliases.txt","w").write("\n".join([("="*80)+"\n"+pprint.pformat(a)+"\n"+("-"*80)+"\n"+pprint.pformat(b)+"\n" for a,b in aliases]))
-            except:
-                pass # fix!
-            
-            definitions=analysisfactory.AnalysisFactory.get_definitions()
-            try:
-                if definitions!=[]:
-                    open(cached_path+"definitions.txt","w").write("\n".join([("="*80)+"\n"+pprint.pformat(a)+"\n"+("-"*80)+"\n"+pprint.pformat(b)+"\n" for a,b in definitions]))
-            except:
-                pass # fix!
-                
-            modules=analysisfactory.AnalysisFactory.get_module_description()
-            filtered_modules=[]
-            for m in reversed(modules):
-                if m not in filtered_modules:
-                    filtered_modules.append(m)
-            self.filebackend.open(cached_path+"modules.txt","w").write(pprint.pformat(filtered_modules)+"\n")
-
-            self.filebackend.flush()
-
-            if hasattr(obj,'alias'):
-                cprint('object has alias:',obj.alias)
-                open(cached_path+"alias.txt","w").write(pprint.pformat(obj.alias)+"\n")
-            else:
-                cprint('object has no alias')
-
-
-            if isinstance(content,dict):
-                for a,b in content.items(): 
-                    if is_datafile(b):
-                        cprint("requested to store DataFile",b)
-
-                        try:
-                            p=cached_path+os.path.basename(b.path)
-                        except Exception as e:
-                            print("failed:",e)
-                            print("path:",b.path)
-                            print("b:",b)
-                            raise
-                        b.cached_path=p+".gz" if not p.endswith(".gz") else p
-                        b.store_stats=self.store_file(b.path,p)
-                        b._da_cached_path=cached_path
-                        b.cached_path_valid_url=True
-                        obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.store_stats,'operation':'store'})
+            content = self.store_to_directory(hashe, obj, cached_path)
 
             import socket
 
@@ -577,7 +588,7 @@ class Cache(object): #d
 
         cprint("modules used in dda factory:")
         
-        module_description=analysisfactory.AnalysisFactory.get_module_description()
+        module_description=obj.factory.get_module_description()
 
         dependencies=obj._da_delegated_input
 
@@ -594,7 +605,7 @@ class Cache(object): #d
         try:
             os.makedirs(state_dir)
         except os.error:
-            print("unable to create state dir!") # exissst?
+            print("unable to create state dir!") # exist?
 
         state_ticket_fn=repr(obj)+"_"+time.strftime("%Y%m%d_%H%M%S")+".txt"
         state_ticket_fn=state_ticket_fn.replace("]","")
@@ -1101,11 +1112,11 @@ class CacheNoIndex(Cache):
 
 class MemCacheIRODS(CacheNoIndex):
     can_url_to_cache=False
-    filebackend=caches.backends.IRODSFileBackend()
+    filebackend=backends.IRODSFileBackend()
 
 class MemCacheSSH(CacheNoIndex):
     can_url_to_cache=False
-    filebackend=caches.backends.SSHFileBackend()
+    filebackend=backends.SSHFileBackend()
 
 
 class CacheModule(Cache):
@@ -1133,7 +1144,7 @@ class CacheModule(Cache):
 
 class CacheModuleIRODS(CacheNoIndex):
     filecacheroot=os.environ['DDA_MODULE_CACHE_IRODS'] if 'DDA_MODULE_CACHE_IRODS' in os.environ else ""
-    filebackend=caches.backends.IRODSFileBackend()
+    filebackend=backends.IRODSFileBackend()
 
     def construct_cached_file_path(self,hashe,obj):
         print("requested path for",hashe,obj)
