@@ -73,7 +73,13 @@ def test_generate_join():
             self.data=" ".join([repr(c) for c in self.input_list])
 
     A=CAnalysis()
-    print A._da_expected_full_hashe
+    A.process(output_required=False)
+    expected_hashe=A._da_expected_full_hashe
     r=A.get()
 
-    print r._da_locally_complete
+    got_hashe=r._da_locally_complete
+
+    print expected_hashe
+    print got_hashe
+
+    assert expected_hashe != got_hashe

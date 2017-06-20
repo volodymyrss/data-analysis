@@ -13,7 +13,7 @@ class DelegatedNoticeException(Exception):
 
 class QueueCache(dataanalysis.caches.cache_core.Cache):
 
-    def __init__(self,queue_file="./queue"):
+    def __init__(self,queue_file="/tmp/queue"):
         self.queue_file=queue_file
         self.queue = Queue(self.queue_file)
 
@@ -32,7 +32,7 @@ class QueueCache(dataanalysis.caches.cache_core.Cache):
 
 
 class QueueCacheWorker(object):
-    def __init__(self,queue_file="./queue"):
+    def __init__(self,queue_file="/tmp/queue"):
         self.queue_file = queue_file
         self.queue = Queue(self.queue_file)
 
