@@ -94,9 +94,6 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             cprint("no analysis yet")
             return item
 
-        if item.trivial:
-            return item
-
         if isinstance(item, type) and issubclass(item, self.blueprint_class):
             cprint("is subclass of DataAnalysis, probably need to construct it")
             name = item.__name__
@@ -181,11 +178,11 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
         if isinstance(item, str):
             cprint("considering string data handle")
-            return DataHandle(item)
+            return self.blueprint_DataHandle(item)
 
         if isinstance(item, unicode):
             cprint("considering unicode string data handle")
-            return DataHandle(str(item))
+            return self.blueprint_DataHandle(str(item))
 
         cprint("unable to interpret item: " + repr(item))
         cprint("factory knows",AnalysisFactory.cache)

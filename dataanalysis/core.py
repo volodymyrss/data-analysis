@@ -1504,6 +1504,7 @@ def debug_output():
     printhook.LogStreams=[]
 
 AnalysisFactory.blueprint_class=DataAnalysis
+AnalysisFactory.blueprint_DataHandle=DataHandle
 
 byname = lambda x: AnalysisFactory.byname(x)
 

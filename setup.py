@@ -8,7 +8,7 @@ setup(
 		"dataanalysis.analysisfactory",
 		"dataanalysis.bcolors",
 		"dataanalysis.caches",
-		"dataanalysis.caches.core",
+		"dataanalysis.caches.cache_core",
 		"dataanalysis.caches.sdsc",
 		"dataanalysis.caches.delegating",
 		"dataanalysis.caches.backends",

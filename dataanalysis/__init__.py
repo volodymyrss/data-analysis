@@ -8,7 +8,7 @@
 
 # compatibility
 
-#from dataanalysis.core import *
+from dataanalysis.core import *
 
 #from dataanalysis.hashtools import *
 #from dataanalysis.caches.cache_core import *
