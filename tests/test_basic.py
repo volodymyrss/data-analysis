@@ -89,6 +89,7 @@ def test_caching():
     import time
 
     da.debug_output()
+    da.reset()
 
     class Analysis(da.DataAnalysis):
         cached=True
@@ -122,5 +123,7 @@ def test_caching():
     tspent=time.time()-t0
         
     assert tspent<1
+    assert hasattr(A1,'data')
+    print A1.data
     assert A1.data == 'data'
 

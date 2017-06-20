@@ -1,6 +1,8 @@
 from __future__ import print_function
 
 import cPickle
+import tarfile
+import glob
 import copy
 import gzip
 import os
@@ -10,6 +12,7 @@ import socket
 import sqlite3 as lite
 import subprocess
 import time
+import socket
 
 from bcolors import render
 
@@ -32,7 +35,7 @@ def is_datafile(b):
 def update_dict(a,b):
     return dict(a.items()+b.items())
 
-class Cache(object): #d
+class Cache(object):
     # currently store each cache in a file; this is not neccesary 
    # __metaclass__ = decorate_all_methods
 
@@ -402,10 +405,20 @@ class Cache(object): #d
             return True
         raise Exception("content from cache is not dict! "+str(c))
 
+    def assemble_blob(self,hashe,obj):
+        self.store_to_directory(hashe,obj,"./blob")
 
-    # TODO: separate directory writing, to allow bundling
+        with tarfile.open("tmp.tgz", "w:gz") as tar:
+            for name in glob.glob("./blob/*"):
+                tar.add(name)
+
+        tar.close()
+        return open("tmp.tgz")
 
     def store_to_directory(self, hashe, obj, cached_path):
+        if not cached_path.endswith("/"):
+            cached_path=cached_path+"/"
+
         obj._da_cached_path = cached_path
 
         if not hasattr(obj, '_da_cached_pathes'):
@@ -413,6 +426,7 @@ class Cache(object): #d
         obj._da_cached_pathes.append(cached_path)
 
         cprint("storing in", cached_path)
+
 
         dn = os.path.dirname(cached_path)
         if not self.filebackend.exists(dn):
@@ -481,6 +495,19 @@ class Cache(object): #d
                          'stats': b.store_stats, 'operation': 'store'})
         return content
 
+    def store_object_content(self,hashe,obj):
+        if not self.filebackend.exists(self.filecacheroot):
+            self.filebackend.makedirs(self.filecacheroot)
+
+        obj._da_stamp = obj.get_stamp()  # or in the object?
+
+        if not hasattr(self, 'cache'):
+            self.cache = {}
+
+        cached_path = self.construct_cached_file_path(hashe, obj)
+
+        return self.store_to_directory(hashe, obj, cached_path)
+
     def store(self,hashe,obj):
         if obj.run_for_hashe or obj.mutating:
             return 
@@ -501,28 +528,13 @@ class Cache(object): #d
         if any([isinstance(self,c) for c in obj.write_caches]):
             cprint("storing:", hashe)
 
-            if not self.filebackend.exists(self.filecacheroot):
-                self.filebackend.makedirs(self.filecacheroot)
-
-            obj._da_stamp = obj.get_stamp()  # or in the object?
-
-            if not hasattr(self, 'cache'):
-                self.cache = {}
-
-            # cprint("content:",content)
-
-            cached_path = self.construct_cached_file_path(hashe, obj)
-
-            content = self.store_to_directory(hashe, obj, cached_path)
-
-            import socket
+            content=self.store_object_content(hashe,obj)
 
             cprint("will check if record exists",'{log:top}')
             found=self.find(hashe)
             if found is None:
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content})
             else:
-                #cprint("record already found:",found,'{log:reflections}')
                 cprint("these results will be ignored! (why would we do this?..)","{log:reflections}") # current behavior is to replace
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content}) # twice same!
             
@@ -530,8 +542,6 @@ class Cache(object): #d
             cprint("cache "+repr(self)+" should not be written by this analysis, allowed: "+repr(obj.write_caches))
 
         return self.store_to_parent(hashe,obj)
-        
-        # and save
 
     def make_record(self,hashe,content):
         #cprint("make record",hashe,content)
