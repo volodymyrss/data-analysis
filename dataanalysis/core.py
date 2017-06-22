@@ -28,7 +28,7 @@ global_all_output=True
 #global_readonly_caches=False
 global_output_levels=('top')
 
-from  printhook import cprint,debug_print
+from  printhook import log,debug_print
 
 from dataanalysis.analysisfactory import AnalysisFactory
 
@@ -62,11 +62,11 @@ TransientCacheInstance = cache_core.TransientCache()
 
 #  exceptions handle better
 #  output hash in never-cached objects
-#  timestamps 
+#  timestamps
 #  more nested caches!
 
 # there are several ways to construct new analysis
-#  - inherit class from dataanalysis. identified by class name  
+#  - inherit class from dataanalysis. identified by class name
 #  - create an object with arguments. by class name and arguments (_da_attributes)
 
 # translation of subgraphs: rewrite rules
@@ -97,7 +97,7 @@ def get_cwd():
         pass
     tf.seek(0)
     owd=tf.read()[:-1]
-    cprint("old pwd gives me",owd)
+    log("old pwd gives me",owd)
     tf.close()
     del tf
     return owd
@@ -112,7 +112,7 @@ def athostdir(f):
             os.chdir(self.hostdir)
             r=f(self,*a,**aa)
         except Exception as e:
-            cprint("exception in wrapped:",e)
+            log("exception in wrapped:",e)
             os.chdir(owd)
             raise
         os.chdir(owd)
@@ -126,7 +126,7 @@ class DataHandle:
 
 class NoAnalysis:
     pass
-            
+
 def isdataanalysis(obj,alsofile=False):
     if isinstance(obj,DataFile) and not alsofile:
         return False
@@ -137,7 +137,7 @@ def isdataanalysis(obj,alsofile=False):
     return False
 
 def objwalk(obj, path=(), memo=None, sel=lambda x:True):
-    #cprint("walking in",obj,path)
+    #log("walking in",obj,path)
     if memo is None:
         memo = set()
     iterator = None
@@ -146,18 +146,18 @@ def objwalk(obj, path=(), memo=None, sel=lambda x:True):
     elif isinstance(obj, (Sequence, Set)) and not isinstance(obj, string_types):
         iterator = enumerate
     if iterator:
-        #cprint("walking interate")
+        #log("walking interate")
         if id(obj) not in memo:
             memo.add(id(obj))
             for path_component, value in iterator(obj):
-         #       cprint("walking",path,path_component,value)
+         #       log("walking",path,path_component,value)
                 for result in objwalk(value, path + (path_component,), memo, sel):
                     yield result
             memo.remove(id(obj))
     else:
-        #cprint("walk end",path,obj)
+        #log("walk end",path,obj)
         if sel(obj):
-         #   cprint("walk selected",path,obj)
+         #   log("walk selected",path,obj)
             yield obj
 
 #/objwalk
@@ -187,10 +187,10 @@ class decorate_all_methods(type):
         c=type.__new__(cls, name, bases, local)
 
         if not c.trivial:
-            cprint("declaring analysis class",name,)
-            cprint("   constructing object...")
+            log("declaring analysis class",name,)
+            log("   constructing object...")
             o=c(update=True)
-            cprint("   registered",o)
+            log("   registered",o)
 
         return c
 
@@ -239,7 +239,7 @@ class DataAnalysis(object):
     virtual=True
 
     noanalysis=False
-    
+
     rename_output_unique=True
 
     force_complete_input=True
@@ -285,69 +285,69 @@ class DataAnalysis(object):
         # otherwise construct object, test if already there
 
         self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_") and not a.startswith("set_")]) # exclude registered
-        
-        
+
+
         update=False
         #update=True
         if 'update' in args:
-            cprint("update in the args:",update)
+            log("update in the args:",update)
             update=args['update']
-        
+
         for a,b in args.items():
             if a.startswith("input"):
-                cprint("input in the constructor:",a,b)
+                log("input in the constructor:",a,b)
                 setattr(self,a,b)
-                cprint("explicite input require non-virtual") # differently!
+                log("explicite input require non-virtual") # differently!
                 self.virtual=False
                 self._da_virtual_reason='explicit input:'+repr(a)+" = "+repr(b)
-            
+
             if a.startswith("use"):
-                cprint("use in the constructor:",a,b)
+                log("use in the constructor:",a,b)
                 setattr(self,a.replace("use_",""),b)
-                cprint("explicite use require non-virtual") # differently!
+                log("explicite use require non-virtual") # differently!
                 self.virtual=False
                 self._da_virtual_reason='explicit use:'+repr(a)+" = "+repr(b)
-            
+
             if a.startswith("set"):
-                cprint("set in the constructor:",a,b)
+                log("set in the constructor:",a,b)
                 setting_name=a.replace("set_","")
                 setattr(self,setting_name,b)
                 if self._da_settings is None:
                     self._da_settings=[]
                 self._da_settings.append(setting_name)
-                cprint('settings:',self,self._da_settings,level='top')
-                #cprint("explicite use require non-virtual") # differently!
+                log('settings:',self,self._da_settings,level='top')
+                #log("explicite use require non-virtual") # differently!
                 #self.virtual=False
                 #self._da_virtual_reason='explicit use:'+repr(a)+" = "+repr(b)
 
         name=self.get_signature()
-        cprint("requested object",name,"attributes",self._da_attributes)
+        log("requested object",name,"attributes",self._da_attributes)
 
         if 'dynamic' in args and not args['dynamic']:
-            cprint("not dynamic object:",self,level='dynamic')
+            log("not dynamic object:",self,level='dynamic')
             r=self
         else:
-            cprint("dynamic object, from",self,level='dynamic')
+            log("dynamic object, from",self,level='dynamic')
             r=AnalysisFactory.get(self,update=update)
-            cprint("dynamic object, to",r,level='dynamic')
-        
+            log("dynamic object, to",r,level='dynamic')
+
         if 'assume' in args and args['assume']!=[]:
-            cprint("replacing with a copy: < ",r,level='dynamic')
+            log("replacing with a copy: < ",r,level='dynamic')
             r=r.__class__(dynamic=False) # replace with a copy
-            cprint("replacing with a copy: > ",r,level='dynamic')
+            log("replacing with a copy: > ",r,level='dynamic')
             r.assumptions=args['assume']
             if not isinstance(r.assumptions,list): # iteratable?
                 r.assumptions=[r.assumptions]
-            cprint("assuming with a copy: > ",r,level='dynamic')
-            cprint("requested assumptions:",self.assumptions)
-            cprint("explicite assumptions require non-virtual") # differently!
+            log("assuming with a copy: > ",r,level='dynamic')
+            log("requested assumptions:",self.assumptions)
+            log("explicite assumptions require non-virtual") # differently!
             #self.virtual=False
             r._da_virtual_reason='assumptions:'+repr(self.assumptions)
 
         return r
 
     def promote(self):
-        cprint("promoting to the factory",self)
+        log("promoting to the factory",self)
         return AnalysisFactory.put(self)
 
     def verify_content(self):
@@ -355,9 +355,9 @@ class DataAnalysis(object):
 
 #   implements:
 #       caching
-#       
+#
 #       dependencies
-#   
+#
 #   input hashes + version => output hash
 
     #input= no inpuit!
@@ -377,9 +377,9 @@ class DataAnalysis(object):
 
     def interpret_item(self,item):
         return AnalysisFactory.get(item,update=False)
-    
+
     def import_data(self,data):
-        cprint("updating analysis with data")
+        log("updating analysis with data")
         for a,b in data.items():
             setattr(self,a,b)
 
@@ -388,13 +388,13 @@ class DataAnalysis(object):
 
     def export_data(self,embed_datafiles=False,verify_jsonifiable=False):
         empty_copy=self.__class__
-        cprint("my class is",self.__class__)
+        log("my class is",self.__class__)
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
-        cprint("new keys:",updates)
+        log("new keys:",updates)
         # or state of old keys??
 
         if self.explicit_output is not None:
-            cprint("explicit output requested",self.explicit_output)
+            log("explicit output requested",self.explicit_output)
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
             r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
@@ -405,13 +405,13 @@ class DataAnalysis(object):
                 res.append([a,jsonify(b)])
             r=dict(res)
 
-        cprint("resulting output:",r)
+        log("resulting output:",r)
         return r
 
     def import_data(self,c):
         # todo: check that the object is fresh
         for k, i in c.items():
-            cprint("restoring", k, i)
+            log("restoring", k, i)
             setattr(self, k, i)
 
     def serialize(self):
@@ -438,7 +438,7 @@ class DataAnalysis(object):
     def get_signature(self):
         a=self.get_formatted_attributes()
         if a!="": a="."+a
-    
+
         state=self.get_state()
         if state is not None:
             a=a+"."+state
@@ -466,78 +466,78 @@ class DataAnalysis(object):
                     dest_unique=b.path+"."+self.cache.hashe2signature(hashe) # will it always?
                     b._da_unique_local_path=dest_unique
                     shutil.copyfile(b.path,dest_unique)
-                    cprint("post-processing DataFile",b,"as",b._da_unique_local_path,log='datafile')
+                    log("post-processing DataFile",b,"as",b._da_unique_local_path,log='datafile')
 
     def store_cache(self,fih):
         """
     store output with
         """
 
-        cprint(render("{MAGENTA}storing in cache{/}"))
-        cprint("hashe:",fih)
+        log(render("{MAGENTA}storing in cache{/}"))
+        log("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
-        #cprint(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
+        #log(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
         TransientCacheInstance.store(fih,self)
         self.cache.store(fih,self)
         #c=MemCacheLocal.store(oh,self.export_data())
 
     def post_restore(self):
         pass
-    
+
     def retrieve_cache(self,fih,rc=None):
-        cprint("requested cache for",fih)
+        log("requested cache for",fih)
 
         if self._da_locally_complete is not None:
-            cprint("this object has been already restored and complete",self)
+            log("this object has been already restored and complete",self)
             if self._da_locally_complete == fih:
-                cprint("this object has been completed with the neccessary hash: no need to recover state",self)
+                log("this object has been completed with the neccessary hash: no need to recover state",self)
                 if not hasattr(self,'_da_recovered_restore_config'):
-                    cprint("the object has not record of restore config",level='top')
+                    log("the object has not record of restore config",level='top')
                     return True
                 if rc==self._da_recovered_restore_config:
-                    cprint("the object was recovered with the same restore config:",rc,self._da_recovered_restore_config,level='top')
+                    log("the object was recovered with the same restore config:",rc,self._da_recovered_restore_config,level='top')
                     return True
-                cprint("the object was recovered with a different restore config:",self._da_recovered_restore_config,'became',rc,level='top')
+                log("the object was recovered with a different restore config:",self._da_recovered_restore_config,'became',rc,level='top')
             else:
-                cprint("state of this object isincompatible with the requested!")
-                cprint(" was: ",self._da_locally_complete)
-                cprint(" now: ",fih)
+                log("state of this object isincompatible with the requested!")
+                log(" was: ",self._da_locally_complete)
+                log(" now: ",fih)
                 #raise Exception("hm, changing analysis dictionary?")
-                cprint("hm, changing analysis dictionary?","{log:thoughts}")
-    
+                log("hm, changing analysis dictionary?","{log:thoughts}")
+
                 if self.run_for_hashe:
-                    cprint("object is run_for_hashe, this is probably the reason")
-        
+                    log("object is run_for_hashe, this is probably the reason")
+
                 return None
 
         if rc is None:
             rc={}
-            
+
         r=TransientCacheInstance.restore(fih,self,rc)
-        
+
         if r and r is not None:
-            cprint("restored from transient: this object will be considered restored and complete: will not do again",self)
+            log("restored from transient: this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=True # info save
             return r
 
         if not self.cached:
-            cprint(render("{MAGENTA}not cached restore only from transient{/}"))
-            return None # only transient! 
+            log(render("{MAGENTA}not cached restore only from transient{/}"))
+            return None # only transient!
         # discover through different caches
         #c=MemCacheLocal.find(fih)
 
         r=self.cache.restore(fih,self,rc)
 
         if r and r is not None:
-            cprint("this object will be considered restored and complete: will not do again",self)
+            log("this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=fih # info save
-            cprint("locally complete:",fih)
+            log("locally complete:",fih)
             self.post_restore()
             if self.rename_output_unique and rc['datafile_restore_mode']=="copy":
                 self.process_output_files(fih)
             else:
-                cprint("disabled self.rename_output_unique",level='cache')
+                log("disabled self.rename_output_unique",level='cache')
             return r
         return r # twice
 
@@ -551,13 +551,13 @@ class DataAnalysis(object):
         graph = pydot.Dot(graph_type='digraph')
 
         def make_schema(i1,i2):
-            
+
             if not isinstance(i2,DataAnalysis):
                 return
 
             if i2.schema_hidden:
                 return
-            
+
             node = pydot.Node(repr(i2), style="filled", fillcolor="green")
             node = pydot.Node(repr(i1), style="filled", fillcolor="green")
 
@@ -595,7 +595,7 @@ class DataAnalysis(object):
                         raise  # re-raise exception
 
         return self.process(output_required=True,**aa)[1]
-    
+
     def load(self,**aa):
         fih=self._da_locally_complete
         if fih is None:
@@ -604,7 +604,7 @@ class DataAnalysis(object):
         print("restoring as",fih)
         self.retrieve_cache(fih)
         return self.get(**aa)
-    
+
     def stamp(self,comment,**aa):
         self.comment=comment
         import time
@@ -613,28 +613,28 @@ class DataAnalysis(object):
         fih=self._da_locally_complete
         if fih is None:
             fih=self.process(output_required=False,**aa)[0]
-        
+
         print("storing as",fih)
         return self.store_cache(fih)
-        
+
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
-            cprint("cache assumptions:",AnalysisFactory.cache_assumptions)
-            cprint("assumptions:",self.assumptions)
-            cprint("non-trivial assumptions require copy of the analysis tree")
+            log("cache assumptions:",AnalysisFactory.cache_assumptions)
+            log("assumptions:",self.assumptions)
+            log("non-trivial assumptions require copy of the analysis tree")
             AnalysisFactory.WhatIfCopy("requested by "+repr(self),self.assumptions)
             for a in self.assumptions:
                 a.promote()
         else:
-            cprint("no special assumptions") 
+            log("no special assumptions")
 
     def process_checkout_assumptions(self):
-        cprint("assumptions checkout")
+        log("assumptions checkout")
         if self.assumptions!=[]:
             AnalysisFactory.WhatIfNot()
 
     def process_restore_rules(self,restore_rules,extra):
-        cprint("suggested restore rules:",restore_rules)
+        log("suggested restore rules:",restore_rules)
         restore_rules_default=dict(
                     output_required=False,
                     substitute_output_required=False,
@@ -653,12 +653,12 @@ class DataAnalysis(object):
         for k in extra.keys():
             if k in restore_rules:
                 restore_rules[k]=extra[k]
-        
+
         # always run to process
         restore_rules['substitute_output_required']=restore_rules['output_required']
         if self.run_for_hashe:
-            cprint(render("{BLUE}this analysis has to run for hashe! this will be treated later, requiring output{/}"))
-            cprint(render("{BLUE}original object output required?{/}"+str(restore_rules['output_required'])))
+            log(render("{BLUE}this analysis has to run for hashe! this will be treated later, requiring output{/}"))
+            log(render("{BLUE}original object output required?{/}"+str(restore_rules['output_required'])))
             restore_rules['output_required']=True
             restore_rules['explicit_input_required']=True
             restore_rules['input_runs_if_haveto']=True
@@ -666,37 +666,37 @@ class DataAnalysis(object):
 
         #restore_rules['force_complete_input']=self.force_complete_input
 
-        cprint("will use restore_rules:",restore_rules)
+        log("will use restore_rules:",restore_rules)
         return restore_rules
 
     def process_restore_config(self,restore_config):
         rc=restore_config # this is for data restore modes, passed to cache
         if restore_config is None:
             rc={'datafile_restore_mode':'copy'}
-        
-        cprint('restore_config:',rc)
+
+        log('restore_config:',rc)
         return rc
 
 
     def process_timespent_interpret(self):
         tspent=self.time_spent_in_main
         if tspent<self.min_timespent_tocache and self.cached:
-            cprint(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
+            log(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
             if self.allow_timespent_adjustment:
-                cprint(render("{MAGENTA}temporarily disabling caching for this analysis{/}"))
+                log(render("{MAGENTA}temporarily disabling caching for this analysis{/}"))
                 self.cached=False
             else:
-                cprint("being ignorant about it")
-        
+                log("being ignorant about it")
+
             if tspent<self.min_timespent_tocache_hard and self.cached:
                 if self.hard_timespent_checks:
                     estr=render("{RED}requested to cache fast analysis, hard limit reached!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache_hard))
                     raise Exception(estr)
                 else:
-                    cprint("ignoring hard limit on request")
+                    log("ignoring hard limit on request")
 
         if tspent>self.max_timespent_tocache and not self.cached:
-            cprint(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
+            log(render("{BLUE}analysis takes a lot of time but not cached, recommendation is to cache!{/}"),"{log:advice}")
 
     def treat_input_analysis_exceptions(self,analysis_exceptions):
         return False
@@ -712,15 +712,15 @@ class DataAnalysis(object):
         self.analysis_exceptions.append((self.get_signature(),ae))
 
     watched_analysis=False
-        
+
     def start_main_watchdog(self):
-        cprint("main watchdog")
+        log("main watchdog")
         self.report_runtime("starting")
         if not self.watched_analysis: return
         # do it?
         self.cache.report_analysis_state(self,"running")
-        
-    
+
+
     def stop_main_watchdog(self):
         self.report_runtime("done")
         if not self.watched_analysis: return
@@ -734,12 +734,12 @@ class DataAnalysis(object):
         dll=self.default_log_level
         self.default_log_level="main"
 
-        cprint(render("{RED}running main{/}"),'{log:top}')
+        log(render("{RED}running main{/}"),'{log:top}')
         t0=time.time()
         main_log=StringIO.StringIO()
         main_logstream= printhook.LogStream(main_log, lambda x:True, name="main stream")
         main_logstream_file= printhook.LogStream("main.log", lambda x:True, name="main stream file")
-        cprint("starting main log stream",main_log,main_logstream,level='logstreams')
+        log("starting main log stream",main_log,main_logstream,level='logstreams')
 
         self.start_main_watchdog()
 
@@ -766,12 +766,12 @@ class DataAnalysis(object):
         main_logstream_file.forget()
         self._da_main_log_content=main_log.getvalue()
         main_log.close()
-        cprint("main log stream collected",len(self._da_main_log_content),level="logstreams")
-        cprint("closing main log stream",main_log,main_logstream,level="logstreams")
+        log("main log stream collected",len(self._da_main_log_content),level="logstreams")
+        log("closing main log stream",main_log,main_logstream,level="logstreams")
 
         tspent=time.time()-t0
         self.time_spent_in_main=tspent
-        cprint(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
+        log(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
         self.report_runtime("done in %g seconds"%tspent)
         self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
 
@@ -779,7 +779,7 @@ class DataAnalysis(object):
         #self.runtime_update("storing")
 
         if mr is not None:
-            cprint("main returns",mr,"attaching to the object as list")
+            log("main returns",mr,"attaching to the object as list")
 
             if isinstance(mr, collections.Iterable):
                 mr=list(mr)
@@ -787,7 +787,7 @@ class DataAnalysis(object):
                 mr=[mr]
             for r in mr:
                 if isinstance(r,DataAnalysis):
-                    cprint("returned dataanalysis:",r,"assumptions:",r.assumptions)
+                    log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
 
     def process_find_output_objects(self):
@@ -796,29 +796,29 @@ class DataAnalysis(object):
 
         da=list(objwalk(self.export_data(),sel=lambda y:isdataanalysis(y)))
         if da!=[]:
-            cprint(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
-            cprint(render("{RED}carefull!{/} it will substitute the object!"),da)
-    
+            log(render("{BLUE}resulting object exports dataanalysis, should be considered:{/}"),da)
+            log(render("{RED}carefull!{/} it will substitute the object!"),da)
+
             if len(da)==1:
                 da=da[0]
         return da
-    
+
     def process_implement_output_objects(self,output_objects,implemented_objects):
-        cprint("was",output_objects,level='output_objects')
-        cprint("has",implemented_objects,level='output_objects')
+        log("was",output_objects,level='output_objects')
+        log("has",implemented_objects,level='output_objects')
 
 
         try:
             for newobj,obj in zip(implemented_objects,output_objects):
-                cprint("replace",obj,"with",newobj,level='top')
+                log("replace",obj,"with",newobj,level='top')
         except TypeError:
             implemented_objects=[implemented_objects]
             output_objects=[output_objects]
 
         for newobj,obj in zip(implemented_objects,output_objects):
-            cprint("replace",obj,"with",newobj,level='top')
+            log("replace",obj,"with",newobj,level='top')
 
-            #for key in newobj.))dir: 
+            #for key in newobj.))dir:
             for key in newobj.export_data().keys(): # or all??
                 setattr(obj,key,getattr(newobj,key))
 
@@ -830,7 +830,7 @@ class DataAnalysis(object):
         #   return self._da_delagated_input
         if self._da_main_delegated is not None:
             return self._da_main_delegated
-    
+
     def process_list_delegated_inputs(self,input):
         return [] # disabled
 
@@ -840,16 +840,16 @@ class DataAnalysis(object):
             for input_item in input:
                 delegated_inputs+=self.process_list_delegated_inputs(input_item)
             return delegated_inputs
-            
+
         if isinstance(input,DataAnalysis):
             d=input.get_delegation()
             if d is not None:
-                cprint("input delegated:",input,d)
+                log("input delegated:",input,d)
                 return [d]
             return []
 
         raise Exception("can not understand input: "+repr(input))
-    
+
     def process_list_analysis_exceptions(self,input):
         # walk input recursively
         if isinstance(input,list) or isinstance(input,tuple):
@@ -857,14 +857,14 @@ class DataAnalysis(object):
             for input_item in input:
                 l+=self.process_list_analysis_exceptions(input_item)
             return l
-            
+
         if isinstance(input,DataAnalysis):
             if hasattr(input,'analysis_exceptions'):
                 return input.analysis_exceptions
             return []
-        
+
         if input is None:
-            cprint("input is None, it is fine")
+            log("input is None, it is fine")
             return []
 
         raise Exception("can not understand input: "+repr(input))
@@ -872,7 +872,7 @@ class DataAnalysis(object):
     def process_verify_inputs(self,input):
         # walk input recursively
         if not self.force_complete_input:
-            cprint("loose input evaluation - not forced")
+            log("loose input evaluation - not forced")
             return
 
         if isinstance(input,list) or isinstance(input,tuple):
@@ -881,14 +881,14 @@ class DataAnalysis(object):
             return
 
         if isinstance(input,DataAnalysis):
-            cprint("will verify:",input)
+            log("will verify:",input)
             if not input._da_locally_complete:
-                cprint("input is not completed! this should not happen!",input)
+                log("input is not completed! this should not happen!",input)
                 raise("input is not completed! this should not happen!")
             return
 
         if input is None:
-            cprint("input is None, it is fine")
+            log("input is None, it is fine")
             return
 
         raise Exception("can not understand input: "+repr(input))
@@ -901,11 +901,11 @@ class DataAnalysis(object):
             hashe_mappings=self.use_hashe[1:]
 
             for a,b in hashe_mappings:
-                cprint("mapping",a,b,getattr(self,b)._da_expected_full_hashe)
+                log("mapping",a,b,getattr(self,b)._da_expected_full_hashe)
                 substitute_hashe= hashtools.hashe_replace_object(substitute_hashe, a, getattr(self, b)._da_expected_full_hashe)
 
-            cprint("using substitute hashe:",substitute_hashe)
-            cprint("instead of:",fih)
+            log("using substitute hashe:",substitute_hashe)
+            log("instead of:",fih)
             return substitute_hashe
         else:
             return fih
@@ -945,19 +945,19 @@ class DataAnalysis(object):
 
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
-        cprint(render("{BLUE}PROCESS{/}"))
+        log(render("{BLUE}PROCESS{/}"))
 
         if requested_by is None:
             requested_by=['direct']
 
-        cprint('cache assumptions:',AnalysisFactory.cache_assumptions,'{log:top}')
-        cprint('object assumptions:',self.assumptions,'{log:top}')
+        log('cache assumptions:',AnalysisFactory.cache_assumptions,'{log:top}')
+        log('object assumptions:',self.assumptions,'{log:top}')
 
 
         restore_config=self.process_restore_config(restore_config)
         restore_rules=self.process_restore_rules(restore_rules,extra)
-        
-        cprint(render("{BLUE}requested "+("OUTPUT" if restore_rules['output_required'] else "")+" by{/} "+" ".join(requested_by)),'{log:top}')
+
+        log(render("{BLUE}requested "+("OUTPUT" if restore_rules['output_required'] else "")+" by{/} "+" ".join(requested_by)),'{log:top}')
         requested_by=[("+" if restore_rules['output_required'] else "-")+self.get_version()]+requested_by
 
         self._da_requested_by=requested_by
@@ -971,18 +971,18 @@ class DataAnalysis(object):
                                             process_function=process_function,
                                             restore_rules=update_dict(restore_rules,dict(
                                                                                             output_required=False,
-                                                                                            can_delegate=restore_rules['can_delegate_input'])), 
-                                            requested_by=["input_of"]+requested_by) 
+                                                                                            can_delegate=restore_rules['can_delegate_input'])),
+                                            requested_by=["input_of"]+requested_by)
         # TODO: defaults, alternatives
         #### /process input
-        
+
         process_t0=time.time()
 
-        cprint("input hash:",input_hash)
-        cprint("input objects:",input)
+        log("input hash:",input_hash)
+        log("input objects:",input)
 
         fih=('analysis',input_hash,self.get_version()) # construct hash
-        cprint("full hash:",fih)
+        log("full hash:",fih)
 
         fih=self.process_substitute_hashe(fih)
 
@@ -990,15 +990,15 @@ class DataAnalysis(object):
 
         substitute_object=None
 
-        if restore_rules['output_required']: # 
-            cprint("output required, try to GET from cache")
+        if restore_rules['output_required']: #
+            log("output required, try to GET from cache")
             if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
-                cprint("cache found and retrieved",'{log:top}')
-                cprint(fih,'{log:top}')
+                log("cache found and retrieved",'{log:top}')
+                log(fih,'{log:top}')
             else:
-                cprint("no cache",'{log:top}')
-                cprint(fih,'{log:top}')
-                        
+                log("no cache",'{log:top}')
+                log(fih,'{log:top}')
+
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
                     if restore_rules['force_complete']:
                         raise Exception("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
@@ -1008,9 +1008,9 @@ class DataAnalysis(object):
 
 
                 if restore_rules['explicit_input_required']:
-                    cprint("exclicite input is available")
+                    log("exclicite input is available")
                 else:
-                    cprint("need to guarantee that explicit input is available")
+                    log("need to guarantee that explicit input is available")
 
                     ## if output has to be generated, but explicite input was not prepared, do it
                     ## process
@@ -1021,12 +1021,12 @@ class DataAnalysis(object):
 
                 delegated_inputs=self.process_list_delegated_inputs(input)
                 if delegated_inputs!=[]:
-                    cprint("some input was delegated:",delegated_inputs)
-                    cprint(render("{RED}waiting for delegated input!{/}"))
+                    log("some input was delegated:",delegated_inputs)
+                    log(render("{RED}waiting for delegated input!{/}"))
                     self._da_delegated_input=delegated_inputs
 
                 if restore_rules['can_delegate'] and self.cached:
-                    cprint("will delegate this analysis") 
+                    log("will delegate this analysis")
                     hashekey=self.cache.register_delegation(self,fih)
                     self._da_main_delegated=hashekey
                     return fih,self # RETURN!
@@ -1034,7 +1034,7 @@ class DataAnalysis(object):
              # check if can and inpust  relaxe
 
                 if delegated_inputs!=[]:
-                    cprint("analysis design problem! input was delegated but the analysis can not be. wait until the input is done!")
+                    log("analysis design problem! input was delegated but the analysis can not be. wait until the input is done!")
                     raise
 
                 self.process_verify_inputs(input)
@@ -1042,37 +1042,37 @@ class DataAnalysis(object):
                 # check if input had exceptions
                 analysis_exceptions=self.process_list_analysis_exceptions(input)
                 if analysis_exceptions!=[]:
-                    cprint("found analysis exceptions in the input:",analysis_exceptions)
+                    log("found analysis exceptions in the input:",analysis_exceptions)
                     if not self.treat_input_analysis_exceptions(analysis_exceptions):
                         if not hasattr(self,'analysis_exceptions'):
                             self.analysis_exceptions=[]
                         self.analysis_exceptions+=analysis_exceptions
-                        cprint(render("{RED}ANALYSIS EXCEPTIONS:{/}"),analysis_exceptions,level='top')
+                        log(render("{RED}ANALYSIS EXCEPTIONS:{/}"),analysis_exceptions,level='top')
                     else:
                         analysis_exceptions=[]
                 # exceptions
-                
+
                 if analysis_exceptions==[]:
                     if restore_rules['run_if_can_not_delegate']:
-                        cprint("no way was able to delegate, but all ready to run and allowed. will run")
+                        log("no way was able to delegate, but all ready to run and allowed. will run")
                     else:
-                        cprint("not allowed to run here. hopefully will run as part of higher-level delegation") 
+                        log("not allowed to run here. hopefully will run as part of higher-level delegation")
                         raise Exception("not allowed to run but has to (delegation)!")
                         return fih,self # RETURN!
 
                     if restore_rules['run_if_haveto'] or self.run_for_hashe:
-                        
+
                         mr=self.process_run_main() # MAIN!
                         self.process_timespent_interpret()
                     else:
                         raise Exception("not allowed to run but has to! at "+repr(self))
 
-                    #cprint("new output:",self.export_data())
+                    #log("new output:",self.export_data())
 
                     if self.rename_output_unique and restore_config['datafile_restore_mode']=="copy":
                         self.process_output_files(fih)
                     else:
-                        cprint("disabled self.rename_output_unique",level='cache')
+                        log("disabled self.rename_output_unique",level='cache')
 
                     self.store_cache(fih)
                     #self.runtime_update("done")
@@ -1081,64 +1081,64 @@ class DataAnalysis(object):
             if output_objects!=[]:
                 da=output_objects
                 if self.cached:
-                    cprint(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
+                    log(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
 
-                    
+
                 #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
                 self.force_complete_input=restore_rules['force_complete'] # ?.. !!!!
-                cprint(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
+                log(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
 
                 rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute,requested_by=['output_of']+requested_by)
-                cprint(render("substitute the object with dynamic input. rh:"),rh)
-                cprint(render("substitute the object with dynamic input. ro:"),ro)
+                log(render("substitute the object with dynamic input. rh:"),rh)
+                log(render("substitute the object with dynamic input. ro:"),ro)
 
 
-                cprint("--- old input hash:",fih)
+                log("--- old input hash:",fih)
                 if self.allow_alias:
                     self.register_alias(fih,rh)
                     self.process_implement_output_objects(output_objects,ro)
                 else:
-                    cprint("alias is not allowed: using full input hash!")
+                    log("alias is not allowed: using full input hash!")
                     fih=rh
                     substitute_object=ro
-                    cprint("+++ new input hash:",fih)
-            
-            cprint("processing finished, main, object is locally complete")
-            cprint("locally complete:",id(self))
-            cprint("locally complete:",fih,'{log:top}')
+                    log("+++ new input hash:",fih)
+
+            log("processing finished, main, object is locally complete")
+            log("locally complete:",id(self))
+            log("locally complete:",fih,'{log:top}')
             self._da_locally_complete=fih
         else:
-            cprint("NO output is strictly required, will not attempt to get")
-            if restore_rules['restore_complete']: 
-                cprint("however, diagnostic complete restore is requested, trying to restore")
+            log("NO output is strictly required, will not attempt to get")
+            if restore_rules['restore_complete']:
+                log("however, diagnostic complete restore is requested, trying to restore")
                 if self.retrieve_cache(fih,restore_config):
-                    cprint("cache found and retrieved",'{log:top}')
-                    cprint("processing finished, object is locally complete")
+                    log("cache found and retrieved",'{log:top}')
+                    log("processing finished, object is locally complete")
                     self._da_locally_complete=fih
-                    cprint("locally complete:",fih,'{log:top}')
+                    log("locally complete:",fih,'{log:top}')
                 else:
-                    cprint("NO cache found",'{log:top}')
-        
+                    log("NO cache found",'{log:top}')
+
         self.process_checkout_assumptions()
 
         process_tspent=time.time()-process_t0
-        cprint(render("{MAGENTA}process took in total{/}"),process_tspent)
+        log(render("{MAGENTA}process took in total{/}"),process_tspent)
         self.note_resource_stats({'resource_type':'usertime','seconds':process_tspent})
         self.summarize_resource_stats()
 
         return_object=self
         if substitute_object is not None:
-            cprint("returning substituted object")
+            log("returning substituted object")
             return_object=substitute_object
 
-        cprint("PROCESS done",fih,return_object)
+        log("PROCESS done",fih,return_object)
         return fih,return_object
 
     def register_alias(self,hash1,hash2):
-        cprint("alias:",hash1)
-        cprint("stands for",hash2)
+        log("alias:",hash1)
+        log("stands for",hash2)
         self.alias=hash2
         AnalysisFactory.register_alias(hash1,hash2)
 
@@ -1147,7 +1147,7 @@ class DataAnalysis(object):
         walk over all input; apply process_function and implement if neccessary
         """
 
-        cprint("{CYAN}PROCESS INPUT{/}")
+        log("{CYAN}PROCESS INPUT{/}")
 
         restore_rules_default=dict(explicit_input_required=False,restore_complete=False)
         restore_rules=dict(restore_rules_default.items()+restore_rules.items() if restore_rules is not None else [])
@@ -1161,27 +1161,27 @@ class DataAnalysis(object):
             restore_config={}
 
         if self.copy_cached_input:
-            #cprint("will copy cached input")
+            #log("will copy cached input")
             restore_config['datafile_restore_mode']="copy"
         else:
-            #cprint("will NOT copy cached input")
+            #log("will NOT copy cached input")
             restore_config['datafile_restore_mode']="url_in_object"
 
         if self.test_files: # may be not boolean
             restore_config['test_files']=True
         else:
             restore_config['test_files']=False
-        
+
         if self.force_complete_input:
             restore_rules['force_complete']=True
         else:
             restore_rules['force_complete']=False
-            cprint("input will not be forced!")
-        
-        
-        cprint("input restore_rules:",restore_rules)
-        cprint("input restore_config:",restore_config)
-        
+            log("input will not be forced!")
+
+
+        log("input restore_rules:",restore_rules)
+        log("input restore_config:",restore_config)
+
         if obj is None:
             # start from the object dir, look for input
             inputhashes=[]
@@ -1189,9 +1189,9 @@ class DataAnalysis(object):
             for a in dir(self):
                 if a.startswith("input"):
                     o=getattr(self,a)
-                    cprint("input item",a,o)
+                    log("input item",a,o)
                     if o is NoAnalysis:
-                        cprint("NoAnalysis:",o) #,o.__class__)
+                        log("NoAnalysis:",o) #,o.__class__)
                         continue # yes?
 
                     if o is None:
@@ -1200,15 +1200,15 @@ class DataAnalysis(object):
                     h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
 
                     if not isinstance(l,list) and l.is_noanalysis():
-                        cprint("NoAnalysis:",o,o.__class__)
+                        log("NoAnalysis:",o,o.__class__)
                         continue # yes?
 
-                    if l is not None: 
-                        cprint("input item",a)
-                        cprint("implemented as",h,l)
+                    if l is not None:
+                        log("input item",a)
+                        log("implemented as",h,l)
                         setattr(self,a,l)
                     else:
-                        cprint("input item None!",a,l)
+                        log("input item None!",a,l)
                         raise Exception("?")
 
                     inputhashes.append(h)
@@ -1219,20 +1219,20 @@ class DataAnalysis(object):
             if len(inputhashes)==1:
                 return inputhashes[0],inputs[0]
 
-            cprint("this class has no input! origin class")
+            log("this class has no input! origin class")
             # does this ever happen?
             return None,None
         else:
             # process given input structure
-            cprint("parse and get",obj,obj.__class__)
+            log("parse and get",obj,obj.__class__)
 
             # list or tuple
             if isinstance(obj,list) or isinstance(obj,tuple):
-                cprint("parse list")
+                log("parse list")
                 hashes=[]
                 nitems=[]
                 for i in obj:
-                    cprint("item:",i)
+                    log("item:",i)
                     hi,ni=self.process_input(obj=i,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
                     hashes.append(hi)
                     nitems.append(ni)
@@ -1241,33 +1241,33 @@ class DataAnalysis(object):
 
                 if any([i is None for i in nitems]):
                     raise Exception("process input returned None for a fraction of a structured input! this should not happen")
-                    
+
                 return tuple(['list']+hashes),nitems
 
        # we are down to the input item finally
-        
+
         item=self.interpret_item(obj)  # this makes DataAnalysis object
         #if hasattr(item,'noanalysis') and item.noanalysis:
-        #    cprint("noanalysis!")
+        #    log("noanalysis!")
         if item.is_noanalysis():
-            cprint("noanalysis!")
+            log("noanalysis!")
             return None,item
 
         rr=dict(restore_rules.items()+dict(explicit_input_required=False,output_required=restore_rules['explicit_input_required']).items())
         if self.run_for_hashe:
-            cprint("for run_for_hashe, input need a right to run")
+            log("for run_for_hashe, input need a right to run")
             restore_rules['run_if_haveto']=True
 
-        
-        cprint("proceeding to run",item,"rules",restore_rules)
+
+        log("proceeding to run",item,"rules",restore_rules)
 
         try:
-            cprint("item:",item._da_locally_complete)
+            log("item:",item._da_locally_complete)
         except Exception as e:
             raise Exception(str(item)+" has no locally complete!")
         input_hash,newitem=item.process(process_function=process_function,restore_rules=rr,restore_config=restore_config,requested_by=requested_by) # recursively for all inputs process input
-        cprint("process_input finishing at the end",input_hash,newitem)
-        
+        log("process_input finishing at the end",input_hash,newitem)
+
         if process_function is not None:
             process_function(self,newitem) # then run something to each input item
 
@@ -1286,18 +1286,18 @@ class DataAnalysis(object):
     def note_resource_stats(self,info):
         if self._da_resource_stats is None:
             self._da_resource_stats=[]
-        cprint('note resource stats:',info['resource_type'],'{log:resources}')
+        log('note resource stats:',info['resource_type'],'{log:resources}')
         self._da_resource_stats.append(info)
-    
+
     def summarize_resource_stats(self):
         total_usertime=sum([a['seconds'] for a in self._da_resource_stats if a['resource_type']=='usertime'])
-        cprint(render("collected resource stats, total {MAGENTA}usertime{/}"),total_usertime,'{log:resources}')
-        
+        log(render("collected resource stats, total {MAGENTA}usertime{/}"),total_usertime,'{log:resources}')
+
         total_runtime=sum([a['seconds'] for a in self._da_resource_stats if a['resource_type']=='runtime'])
-        cprint(render("collected resource stats, total {MAGENTA}run time{/}"),total_runtime,'{log:resources}')
-        
+        log(render("collected resource stats, total {MAGENTA}run time{/}"),total_runtime,'{log:resources}')
+
         total_cachetime=sum([a['stats']['copytime'] for a in self._da_resource_stats if a['resource_type']=='cache'])
-        cprint(render("collected resource stats, total {MAGENTA}cache copy time{/}"),total_cachetime,'{log:resources}')
+        log(render("collected resource stats, total {MAGENTA}cache copy time{/}"),total_cachetime,'{log:resources}')
 
         self.resource_stats={
                                 'total_usertime':total_usertime,
@@ -1378,15 +1378,15 @@ class DataHandle(DataAnalysis):
         self.handle=h
 
     def process(self,**args):
-        cprint("datahandle is hash",self)
+        log("datahandle is hash",self)
         self._da_locally_complete=True
         return self.handle,self
 
     def __repr__(self):
         return '[%s]'%self.handle
 
-    
-class DataAnalysisGroup(DataAnalysis): # make it 
+
+class DataAnalysisGroup(DataAnalysis): # make it
     def process(self):
         pass
 
@@ -1414,17 +1414,17 @@ class DataFile(DataAnalysis):
 
     def get_cached_path(self): # not work properly if many run!
         return self.cached_path if hasattr(self,'cached_path') else self.path
-    
+
     def get_path(self): # not work properly if many run!
 # confis
-        #cprint("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
+        #log("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
 
         if hasattr(self,'cached_path'):
             print("have cached path",self.cached_path)
 
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
-            
+
         if hasattr(self,'_da_unique_local_path'):
             return self._da_unique_local_path
 
@@ -1432,7 +1432,7 @@ class DataFile(DataAnalysis):
             return self.path
 
         if self.restored_mode=="copy":
-            cprint("datafile copied but no local path?",self,id(self))
+            log("datafile copied but no local path?",self,id(self))
             raise Exception("inconsistency: "+repr(self))
             
     def get_full_path(self):
@@ -1501,7 +1501,7 @@ def debug_output():
     printhook.global_all_output=True
     printhook.global_permissive_output=True
     printhook.global_fancy_output=True
-    printhook.LogStreams=[]
+    printhook.LogStreams=[printhook.LogStream(sys.stdout,levels=None,name="original stdout")]
 
 AnalysisFactory.blueprint_class=DataAnalysis
 AnalysisFactory.blueprint_DataHandle=DataHandle

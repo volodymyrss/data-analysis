@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 
-from dataanalysis.printhook import print, cprint
+from dataanalysis.printhook import log
 
 global_readonly_caches=False
 
@@ -88,10 +88,10 @@ class IRODSFileBackend:
         local_fn=os.path.basename(fn) # !!
 
         if "w"==mode:
-            cprint("will later put file to irods")
+            log("will later put file to irods")
             self.register_pending_put(local_fn,fn)
         elif "r"==mode:
-            cprint("will get file from irods:",fn,local_fn)
+            log("will get file from irods:",fn,local_fn)
             self.get(fn,local_fn)
         else:
             raise Exception("do not understand this mode: "+mode)
@@ -162,10 +162,10 @@ class SSHFileBackend:
         local_fn = os.path.basename(fn)  # !!
 
         if "w" == mode:
-            cprint("will later put file to ssh", local_fn, fn)
+            log("will later put file to ssh", local_fn, fn)
             self.register_pending_put(local_fn, fn)
         elif "r" == mode:
-            cprint("will get file from ssh:", fn, local_fn)
+            log("will get file from ssh:", fn, local_fn)
             self.get(fn, local_fn)
         else:
             raise Exception("do not understand this mode: " + mode)

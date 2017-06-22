@@ -22,7 +22,7 @@ print(dataanalysis.__file__)
 
 from dataanalysis import analysisfactory
 from dataanalysis import hashtools
-from dataanalysis.printhook import print, cprint
+from dataanalysis.printhook import log
 from dataanalysis.caches import backends
 
 global_readonly_caches=False
@@ -51,7 +51,7 @@ class Cache(object):
     can_url_to_cache=True
  
     def reset(self):
-        cprint("resetting cache PLACEHOLDER",self)
+        log("resetting cache PLACEHOLDER",self)
 
     def reset_stack(self):
         self.reset()
@@ -63,12 +63,12 @@ class Cache(object):
 
     def hashe2signature(self,hashe_raw):
         hashe= hashtools.hashe_replace_object(hashe_raw, None, "None")
-        cprint("hashe:",hashe)
+        log("hashe:",hashe)
         if isinstance(hashe,tuple):
             if hashe[0]=="analysis":
                 return hashe[2]+":" + hashtools.shhash(hashe)[:8]
         sig= hashtools.shhash(hashe)[:8]
-        cprint("signature hashe:",sig)
+        log("signature hashe:",sig)
         return sig
 
     def __init__(self,rootdir=None):
@@ -80,16 +80,16 @@ class Cache(object):
 
     def find(self,hashe):
         #for c in self.cache.keys():
-            #cprint("cache:",c)
+            #log("cache:",c)
 
         self.load()
 
         if hashe in self.cache:
             fi=self.cache[hashe]
-            cprint("{log:cache}","cache found!",fi)
+            log("{log:cache}","cache found!",fi)
             return fi
             
-        cprint("found no cache for",hashe)
+        log("found no cache for",hashe)
 
         return None
     
@@ -100,10 +100,10 @@ class Cache(object):
     
     def restore_from_parent(self,hashe,obj,rc=None):
         if self.parent is None:
-            cprint("no parent available to call for")
+            log("no parent available to call for")
             return None
         
-        cprint("there is a parent available to call for:",self.parent)
+        log("there is a parent available to call for:",self.parent)
         from_parent=self.parent.restore(hashe,obj,rc)
             
         if from_parent is not None:
@@ -114,36 +114,36 @@ class Cache(object):
 
     def store_to_parent(self,hashe,obj):
         if self.parent is None:
-            cprint("no parent available to call for")
+            log("no parent available to call for")
             return None
         
-        cprint("there is a parent available to call for:",self.parent)
+        log("there is a parent available to call for:",self.parent)
         return self.parent.store(hashe,obj)
 
 
     def load_content(self,hashe,c):
         cached_path=self.construct_cached_file_path(hashe,c)
                     
-        cprint("restoring from",cached_path+"/cache.pickle.gz")
+        log("restoring from",cached_path+"/cache.pickle.gz")
 
         try:
-            cprint("loading from pickle")
+            log("loading from pickle")
             content=cPickle.load(self.filebackend.open(cached_path+"/cache.pickle.gz",gz=True))
-            cprint("done loading from pickle")
+            log("done loading from pickle")
             return content
         except TypeError as e:
-            cprint("typeerror! "+repr(e))
+            log("typeerror! "+repr(e))
             raise
         except IOError,cPickle.UnpicklingError:
-            cprint("problem loading cache! corrupt cache!")
+            log("problem loading cache! corrupt cache!")
             raise
         except Exception:
-            cprint("problem loading cache! corrupt cache!")
+            log("problem loading cache! corrupt cache!")
             raise
 
     def restore_file(self,origin,dest,obj,hashe):
        # statistics 
-        cprint("restore file:")
+        log("restore file:")
         print("< ",origin,'{log:top}',level='top')
         print("> ",dest,'{log:top}',level='top')
         
@@ -153,7 +153,7 @@ class Cache(object):
         print("as",dest_unique,level='top')
 
         fsize=self.filebackend.getsize(origin)/1024./1024.
-        cprint("restoring file of",fsize,'{log:resources}','{log:cache}')
+        log("restoring file of",fsize,'{log:resources}','{log:cache}')
 
         t0=time.time()
 
@@ -164,22 +164,22 @@ class Cache(object):
 
         tspent=time.time()-t0
 
-        cprint("restoring took",tspent,"seconds, speed",fsize/tspent,'MB/s','{log:resources}','{log:cache}')
+        log("restoring took",tspent,"seconds, speed",fsize/tspent,'MB/s','{log:resources}','{log:cache}')
 
         tspentc=0
 
-        cprint("here should verify integrity")
-        cprint("successfully restored:",dest_unique)
+        log("here should verify integrity")
+        log("successfully restored:",dest_unique)
 
         if os.path.exists(dest):
-            cprint("destination exists:",dest)
+            log("destination exists:",dest)
 
         shutil.copyfile(dest_unique,dest)
 
         if obj.test_files:
             self.test_file(dest)
         
-        cprint("successfully copied to",dest)
+        log("successfully copied to",dest)
 
         return {'size':fsize,'copytime':tspent,'compressiontime':tspentc},dest_unique
 
@@ -213,12 +213,12 @@ class Cache(object):
                 raise Exception('corrupt fits file in cache: '+fn)
 
     def store_file(self,origin,dest):
-        cprint("store file:")
-        cprint("< ",origin,'{log:top}')
-        cprint("> ",dest,'{log:top}')
+        log("store file:")
+        log("< ",origin,'{log:top}')
+        log("> ",dest,'{log:top}')
 
         fsize=self.filebackend.getsize(origin)/1024./1024.
-        cprint("storing file of",fsize,'{log:resources}','{log:cache}')
+        log("storing file of",fsize,'{log:resources}','{log:cache}')
 
 # note that this leaves files!!
 
@@ -235,7 +235,7 @@ class Cache(object):
         tspentc=time.time()-t0
 
         if tspentc>0:
-            cprint("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
+            log("compressing took",tspentc,"seconds, speed",fsize/tspentc,'MB/s','{log:resources}','{log:cache}')
 
         t0=time.time()
 
@@ -243,7 +243,7 @@ class Cache(object):
         #shutil.copyfile(origin+".gz",dest+".gz") # just by name? # gzip optional
         tspent=time.time()-t0
 
-        cprint("storing took",tspent,"seconds, speed",fsize/tspent,'MB/s','{log:resources}','{log:cache}')
+        log("storing took",tspent,"seconds, speed",fsize/tspent,'MB/s','{log:resources}','{log:cache}')
 
         return {'size':fsize,'copytime':tspent,'compressiontime':tspentc}
 
@@ -253,7 +253,7 @@ class Cache(object):
             return 
 
         if not any([isinstance(self,c) for c in obj.read_caches]):
-            cprint("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
+            log("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
             from_parent=self.restore_from_parent(hashe,obj,restore_config)
             return from_parent
 
@@ -269,12 +269,12 @@ class Cache(object):
 
         c=self.find(hashe)
         if c is None:
-            cprint("normal restore failed.")
+            log("normal restore failed.")
             return self.restore_from_parent(hashe,obj,restore_config)
 
-        cprint("requested to restore cache")
+        log("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
-        cprint("cached path:",cached_path)
+        log("cached path:",cached_path)
 
         obj._da_cache_path_root=cached_path
         obj._da_cached_pathes=[cached_path]
@@ -282,7 +282,7 @@ class Cache(object):
         try:
             c=self.load_content(hashe,c)
         except Exception as e:
-            cprint("can not load content from cache, while cache record exists! inconsistent cache!") #???
+            log("can not load content from cache, while cache record exists! inconsistent cache!") #???
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
             return self.restore_from_parent(hashe,obj,restore_config)
 
@@ -297,7 +297,7 @@ class Cache(object):
         if isinstance(c,dict):
             for a,b in c.items(): 
                 if is_datafile(b):
-                    cprint("requested to restore DataFile",b,"mode",restore_config['datafile_restore_mode'],'{log:top}')
+                    log("requested to restore DataFile",b,"mode",restore_config['datafile_restore_mode'],'{log:top}')
 
                     prefix=restore_config['datafile_target_dir']
                     if prefix is not None:
@@ -316,9 +316,9 @@ class Cache(object):
                             stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
                         print("stored filename:",stored_filename)
                     except Exception as e:
-                        cprint("wat",e)
+                        log("wat",e)
                     if not self.filebackend.exists(stored_filename): # and
-                        cprint("file from cache does not exist, while cache record exists! inconsistent cache!") #,stored_filename)
+                        log("file from cache does not exist, while cache record exists! inconsistent cache!") #,stored_filename)
                         return None
 
                     b.cached_path_valid_url=False
@@ -329,12 +329,12 @@ class Cache(object):
  #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
 
                             if not self.filebackend.exists(stored_filename):
-                                cprint("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename,level='top')
+                                log("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename,level='top')
                                 #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                                 # just reproduce?
                                 return None
 
-                            cprint("stored file:",stored_filename,"will restore as",prefix,b.path,level='top') 
+                            log("stored file:",stored_filename,"will restore as",prefix,b.path,level='top') 
 
                             b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+os.path.basename(b.path),obj,hashe)
                             print("restored as",restored_file)
@@ -347,18 +347,18 @@ class Cache(object):
 
                         except IOError:
                             if IOError.errno==20:
-                                cprint("can not copy from from cache, while cache record exists! inconsistent cache!")
+                                log("can not copy from from cache, while cache record exists! inconsistent cache!")
                       #          raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                                 # just reproduce?
                                 return None
                         except subprocess.CalledProcessError:
-                            cprint("can not copy from from cache, while cache record exists! inconsistent cache!")
+                            log("can not copy from from cache, while cache record exists! inconsistent cache!")
                  #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                             # just reproduce?
                             return None
                         except Exception as e:
-                            cprint("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
-                            cprint("details:"+repr(e))
+                            log("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
+                            log("details:"+repr(e))
                  #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                             # just reproduce?
                             return None
@@ -392,7 +392,7 @@ class Cache(object):
                 setattr(obj,k,i)
             obj._da_recovered_restore_config=copy.copy(restore_config)
 
-            cprint("restored with",obj._da_recovered_restore_config)
+            log("restored with",obj._da_recovered_restore_config)
     
             try:
                 a=obj.verify_content()
@@ -425,7 +425,7 @@ class Cache(object):
             obj._da_cached_pathes = []
         obj._da_cached_pathes.append(cached_path)
 
-        cprint("storing in", cached_path)
+        log("storing in", cached_path)
 
 
         dn = os.path.dirname(cached_path)
@@ -468,16 +468,16 @@ class Cache(object):
         self.filebackend.flush()
 
         if hasattr(obj, 'alias'):
-            cprint('object has alias:', obj.alias)
+            log('object has alias:', obj.alias)
             open(cached_path + "alias.txt", "w").write(pprint.pformat(obj.alias) + "\n")
         else:
-            cprint('object has no alias')
+            log('object has no alias')
 
 
         if isinstance(content, dict):
             for a, b in content.items():
                 if is_datafile(b):
-                    cprint("requested to store DataFile", b)
+                    log("requested to store DataFile", b)
 
                     try:
                         p = cached_path + os.path.basename(b.path)
@@ -518,43 +518,43 @@ class Cache(object):
         if global_readonly_caches:
             raise Exception("all caches are readonly!")
 
-        cprint("requested to store:",hashe)
+        log("requested to store:",hashe)
         if not obj.cached:
-            cprint("the object is declared as non-cached, not storing")
+            log("the object is declared as non-cached, not storing")
             return
         else:
-            cprint("object",obj,"is cached, storing")
+            log("object",obj,"is cached, storing")
         
         if any([isinstance(self,c) for c in obj.write_caches]):
-            cprint("storing:", hashe)
+            log("storing:", hashe)
 
             content=self.store_object_content(hashe,obj)
 
-            cprint("will check if record exists",'{log:top}')
+            log("will check if record exists",'{log:top}')
             found=self.find(hashe)
             if found is None:
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content})
             else:
-                cprint("these results will be ignored! (why would we do this?..)","{log:reflections}") # current behavior is to replace
+                log("these results will be ignored! (why would we do this?..)","{log:reflections}") # current behavior is to replace
                 self.make_record(hashe,{'host':socket.gethostname(),'recored_at':time.time(),'content':content}) # twice same!
             
         else:
-            cprint("cache "+repr(self)+" should not be written by this analysis, allowed: "+repr(obj.write_caches))
+            log("cache "+repr(self)+" should not be written by this analysis, allowed: "+repr(obj.write_caches))
 
         return self.store_to_parent(hashe,obj)
 
     def make_record(self,hashe,content):
-        #cprint("make record",hashe,content)
+        #log("make record",hashe,content)
         self.cache[hashe]=content
         self.save()
-        cprint("now entries",len(self.cache))
+        log("now entries",len(self.cache))
 
     def runtime_update(self,hashe,content):
         pass
         #self.make_record(self,hashe,content)
 
     def construct_cached_file_path(self,hashe,obj):
-        cprint("requested default cached file path")
+        log("requested default cached file path")
 
         def hash_to_path(hashe):
             if isinstance(hashe,tuple):
@@ -587,16 +587,16 @@ class Cache(object):
         if os.path.exists(target):
             self.cache=cPickle.load(gzip.open(target))
         else:
-            cprint("file to load does not exist:",target)
+            log("file to load does not exist:",target)
 
     def make_delegation_record(self,hashe,module_description,dependencies):
         return self.parent.make_delegation_record(hashe,module_description,dependencies)
 
     def register_delegation(self,obj,hashe):
-        cprint("requested to register delegation of",obj)
-        cprint("hashe:",obj)
+        log("requested to register delegation of",obj)
+        log("hashe:",obj)
 
-        cprint("modules used in dda factory:")
+        log("modules used in dda factory:")
         
         module_description=obj.factory.get_module_description()
 
@@ -675,7 +675,7 @@ class Cache(object):
 
         # check
         #for m in sys.modules:
-        #    cprint("all modules:",m,sys.modules[m],sys.modules[m].__file__ if hasattr(sys.modules[m],'__file__') else "no file??")
+        #    log("all modules:",m,sys.modules[m],sys.modules[m].__file__ if hasattr(sys.modules[m],'__file__') else "no file??")
 
 
         
@@ -685,18 +685,18 @@ class CacheSqlite(Cache):
 
     def statistics(self):
         if self.con is None:
-            cprint("NOT connected")
+            log("NOT connected")
         else:
-            cprint("connected to",self.con)
+            log("connected to",self.con)
 
     def connect(self):
         if self.con is None:
-            cprint("connecting to",self.filecacheroot+'/index.db')
+            log("connecting to",self.filecacheroot+'/index.db')
             self.con = lite.connect(self.filecacheroot+'/index.db',1000)
         return self.con
 
     def __init__(self,*a,**aa):
-        cprint(a,aa)
+        log(a,aa)
         super(CacheSqlite, self).__init__(*a, **aa)
         self.con=None
         #self.connect()
@@ -704,7 +704,7 @@ class CacheSqlite(Cache):
     def list(self,select=None,nlast=None):
 
         con=self.connect()
-        cprint("listing cache")
+        log("listing cache")
 
         selection_string=""
         if select is not None:
@@ -717,21 +717,21 @@ class CacheSqlite(Cache):
         with con:    
             cur = con.cursor()    
 
-            cprint("SELECT * FROM cacheindex"+selection_string+nlast_string)
+            log("SELECT * FROM cacheindex"+selection_string+nlast_string)
 
             t0=time.time()
             self.retry_execute(cur,"SELECT * FROM cacheindex"+selection_string+nlast_string)
             rows = cur.fetchall()
-            cprint("mysql request took",time.time()-t0,"{log:top}")
+            log("mysql request took",time.time()-t0,"{log:top}")
 
 
-            cprint("found rows",len(rows))
+            log("found rows",len(rows))
             for h,c in rows:
                 try:
                     c=cPickle.loads(str(c))
-                    cprint(str(h),str(c))
+                    log(str(h),str(c))
                 except Exception as e:
-                    cprint("exception while loading:",e)
+                    log("exception while loading:",e)
                     raise
 
         return len(rows)
@@ -742,7 +742,7 @@ class CacheSqlite(Cache):
             try:
                 return cur.execute(*a)
             except Exception as e:
-                cprint(render("{RED}sqlite execute failed, try again{/}: "+repr(e)),x)
+                log(render("{RED}sqlite execute failed, try again{/}: "+repr(e)),x)
                 time.sleep(1)
         raise e
 
@@ -750,30 +750,30 @@ class CacheSqlite(Cache):
 
         con=self.connect()
 
-        cprint("requested to find",hashe)
+        log("requested to find",hashe)
 
         with con:    
             cur = con.cursor()    
-            cprint("now rows",cur.rowcount)
+            log("now rows",cur.rowcount)
 
             try:
                 self.retry_execute(cur,"SELECT content FROM cacheindex WHERE hashe=?",(self.hashe2signature(hashe),))
             except Exception as e:
-                cprint("failed:",e)
+                log("failed:",e)
                 return None
             #cur.execute("SELECT content FROM cacheindex WHERE hashe=?",(self.hashe2signature(hashe),))
             try:
                 rows = cur.fetchall()
             except Exception as e:
-                cprint("exception while fetching",e)
+                log("exception while fetching",e)
                 return None
 
         if len(rows)==0:
-            cprint("found no cache")
+            log("found no cache")
             return None
         
         if len(rows)>1:
-            cprint("multiple entries for same cache!")
+            log("multiple entries for same cache!")
             #raise Exception("confused cache! mupltile entries! : "+str(rows))
             print ("confused cache! mupltile entries! : "+str(rows),"{log:reflections}")
             print ("confused cache will run it again","{log:reflections}")
@@ -784,24 +784,24 @@ class CacheSqlite(Cache):
 
     def make_record(self,hashe,content):
 
-        cprint("will store",hashe,content)
+        log("will store",hashe,content)
 
         #con = lite.connect(self.filecacheroot+'/index.db')
         con=self.connect()
 
         c=cPickle.dumps(content)
-        cprint("content as",c)
+        log("content as",c)
 
         with con:
             cur = con.cursor()    
             self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS cacheindex(hashe TEXT, content TEXT)")
             self.retry_execute(cur,"INSERT INTO cacheindex VALUES(?,?)",(self.hashe2signature(hashe),c))
 
-            cprint("now rows",cur.rowcount)
+            log("now rows",cur.rowcount)
 
     def load_content(self,hashe,c):
-        cprint("restoring from sqlite")
-        cprint("content",c['content'])
+        log("restoring from sqlite")
+        log("content",c['content'])
         return c['content']
 
 #import MySQLdb
@@ -815,15 +815,15 @@ class CacheMySQL(CacheSqlite):
 
     def statistics(self):
         if self.con is None:
-            cprint("NOT connected")
+            log("NOT connected")
         else:
-            cprint("connected to",self.con)
-        cprint("operations total/failed",self.total_attempts,self.failed_attempts)
+            log("connected to",self.con)
+        log("operations total/failed",self.total_attempts,self.failed_attempts)
 
     def connect(self):
         raise Exception("mysql disabled")
         if self.db is None:
-            cprint("connecting to mysql")
+            log("connecting to mysql")
             self.db = MySQLdb.connect(host="apcclwn12", # your host, usually localhost
                       user="root", # your username
                       port=42512,
@@ -834,7 +834,7 @@ class CacheMySQL(CacheSqlite):
         return self.db
 
     def __init__(self,*a,**aa):
-        cprint(a,aa)
+        log(a,aa)
         super(CacheMySQL, self).__init__(*a, **aa)
         self.db=None
         #self.connect()
@@ -842,7 +842,7 @@ class CacheMySQL(CacheSqlite):
     def list(self,select=None,nlast=None):
 
         con=self.connect()
-        cprint("listing cache")
+        log("listing cache")
 
         selection_string=""
         if select is not None:
@@ -855,18 +855,18 @@ class CacheMySQL(CacheSqlite):
         with con:    
             cur = con.cursor()
 
-            cprint("SELECT * FROM cacheindex"+selection_string+nlast_string)
+            log("SELECT * FROM cacheindex"+selection_string+nlast_string)
 
             self.retry_execute(cur,"SELECT * FROM cacheindex"+selection_string+nlast_string)
             rows = cur.fetchall()
 
-            cprint("found rows",len(rows))
+            log("found rows",len(rows))
             for h,fh,c in rows:
                 try:
                     c=cPickle.loads(str(c))
-                    cprint(str(h),str(c))
+                    log(str(h),str(c))
                 except Exception as e:
-                    cprint("exception while loading:",e)
+                    log("exception while loading:",e)
                     raise
 
         return len(rows)
@@ -875,43 +875,43 @@ class CacheMySQL(CacheSqlite):
         timeout=a['timeout'] if 'timeout' in aa else 10
         for x in range(timeout):
             try:
-                cprint(a)
+                log(a)
                 self.total_attempts+=1
                 return cur.execute(*a)
             except Exception as e:
                 self.failed_attempts+=1
-                cprint(render("{RED}mysql execute failed, try again{/}: "+repr(e)),x)
+                log(render("{RED}mysql execute failed, try again{/}: "+repr(e)),x)
                 time.sleep(1)
         raise e
 
     def find(self,hashe):
 
-        cprint("requested to find",hashe)
-        cprint("hashed",hashe,"as",self.hashe2signature(hashe))
+        log("requested to find",hashe)
+        log("hashed",hashe,"as",self.hashe2signature(hashe))
 
         db=self.connect()
 
         if True:    
             cur = db.cursor()    
-            cprint("now rows",cur.rowcount)
+            log("now rows",cur.rowcount)
 
             try:
                 t0=time.time()
                 self.retry_execute(cur,"SELECT content FROM cacheindex WHERE hashe=%s",(self.hashe2signature(hashe),))
-                cprint("mysql request took",time.time()-t0,"{log:top}")
+                log("mysql request took",time.time()-t0,"{log:top}")
             except Exception as e:
-                cprint("failed:",e)
+                log("failed:",e)
                 return None
             #cur.execute("SELECT content FROM cacheindex WHERE hashe=?",(self.hashe2signature(hashe),))
             rows = cur.fetchall()
 
         if len(rows)==0:
-            cprint("found no cache")
+            log("found no cache")
             return None
         
         if len(rows)>1:
-            cprint("multiple entries for same cache!")
-            cprint(rows)
+            log("multiple entries for same cache!")
+            log(rows)
             return None
             #raise Exception("confused cache! mupltile entries!")
 
@@ -921,13 +921,13 @@ class CacheMySQL(CacheSqlite):
     def make_record(self,hashe,content):
         import json
 
-        cprint("will store",hashe,content)
+        log("will store",hashe,content)
 
         #con = lite.connect(self.filecacheroot+'/index.db')
         db=self.connect()
 
         c=cPickle.dumps(content)
-        cprint("content as",c)
+        log("content as",c)
 
         if "_da_cached_path" in content:
             aux1=content['_da_cached_path']
@@ -939,17 +939,17 @@ class CacheMySQL(CacheSqlite):
             self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS cacheindex(hashe TEXT, fullhashe TEXT, content TEXT)")
             self.retry_execute(cur,"INSERT INTO cacheindex (hashe,fullhashe,content,timestamp,refdir) VALUES(%s,%s,%s,%s,%s)",(self.hashe2signature(hashe),json.dumps(hashe),c,time.time(),aux1))
 
-            cprint("now rows",cur.rowcount)
+            log("now rows",cur.rowcount)
 
     def load_content(self,hashe,c):
-        cprint("restoring from sqlite")
-        cprint("content",c['content'])
+        log("restoring from sqlite")
+        log("content",c['content'])
         return c['content']
     
     def make_delegation_record(self,hashe,module_description,dependencies):
         import json
 
-        cprint("will store",hashe,module_description)
+        log("will store",hashe,module_description)
 
         #con = lite.connect(self.filecacheroot+'/index.db')
         db=self.connect()
@@ -966,7 +966,7 @@ class CacheMySQL(CacheSqlite):
             self.retry_execute(cur,"CREATE TABLE IF NOT EXISTS delegationindex(id MEDIUMINT NOT NULL AUTO_INCREMENT, timestamp DOUBLE, hashe TEXT, fullhashe TEXT, modules TEXT, status TEXT, PRIMARY KEY (id))")
             self.retry_execute(cur,"INSERT INTO delegationindex (timestamp,hashe,fullhashe,modules,status) VALUES(%s,%s,%s,%s,%s)",(time.time(),shorthashe,json.dumps(hashe),json.dumps(module_description),status))
 
-            cprint("now rows",cur.rowcount)
+            log("now rows",cur.rowcount)
 
         return shorthashe
 
@@ -990,11 +990,11 @@ class TransientCache(Cache): #d
 
     def list(self):
         for a,b in self.cache.items():
-            cprint(a,":",b)
+            log(a,":",b)
 
     def reset(self):
         self.cache={}
-        cprint("resetting cache",self,"was",self.cache)
+        log("resetting cache",self,"was",self.cache)
 
     def restore(self,hashe,obj,rc=None):
         #return # problem with files
@@ -1008,41 +1008,41 @@ class TransientCache(Cache): #d
         c=self.find(hashe)
         if c is None:
             if not obj.cached:
-                cprint("object is not cached, i.e. only transient level cache; not leading to parent")
+                log("object is not cached, i.e. only transient level cache; not leading to parent")
                 return
             return self.restore_from_parent(hashe,obj,rc)
 
         if hasattr(c,'_da_recovered_restore_config') and c._da_recovered_restore_config!=rc:
-            cprint("object in Transient cache was recovered with a different restore config: need to restore from parent")
+            log("object in Transient cache was recovered with a different restore config: need to restore from parent")
             return self.restore_from_parent(hashe,obj,rc)
 
-        cprint("transient cache stores results in the memory, found:",c)
+        log("transient cache stores results in the memory, found:",c)
 
 
         obj.import_data(c)
         
-        cprint("also files restores are ignored")
+        log("also files restores are ignored")
 
-        cprint("restored")
+        log("restored")
         return True
 
     def store_to_parent(self,hashe,obj):
         return
         if not obj.cached:
-            cprint("object is not cached, i.e. only transient level cache; not leading to parent")
+            log("object is not cached, i.e. only transient level cache; not leading to parent")
             return
 
         #if self.parent is None:
-            cprint("no parent to push up to")
+            log("no parent to push up to")
          #   return
 
-        #cprint("parent to push up to:",self.parent)
+        #log("parent to push up to:",self.parent)
         #self.parent.store(hashe,obj)
 
     def store(self,hashe,obj):
        # return # problem with files
 
-        cprint("storing in memory cache:",hashe)
+        log("storing in memory cache:",hashe)
         if obj.run_for_hashe or obj.mutating:
             return 
         if self.readonly_cache:
@@ -1057,7 +1057,7 @@ class TransientCache(Cache): #d
 
         self.cache[hashe]=content
 
-        cprint("stored")
+        log("stored")
         #self.list()
 
 #        self.guarantee_unique_names(obj)
@@ -1069,25 +1069,25 @@ class TransientCache(Cache): #d
 
 class CacheIndex(Cache):
     def __init__(self,*a,**aa):
-       # cprint(a,aa)
+       # log(a,aa)
         print("vvvvv:")
         super(CacheIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
 
-        cprint("requested to find",hashe)
+        log("requested to find",hashe)
 
         cached_path=self.construct_cached_file_path(hashe,None)
 
         if os.path.exists(cached_path+"/cache.pickle.gz"):
-            cprint("found cache file:",cached_path+"/cache.pickle.gz")
+            log("found cache file:",cached_path+"/cache.pickle.gz")
             try:
                 return self.load_content(hashe,None)
             except Exception as e:
-                cprint("failed to load content! :"+repr(e))
+                log("failed to load content! :"+repr(e))
                 return None
 
-        cprint("no file found in",cached_path)
+        log("no file found in",cached_path)
         return None
 
     def make_record(self,hashe,content):
@@ -1096,23 +1096,23 @@ class CacheIndex(Cache):
 
 class CacheNoIndex(Cache):
     def __init__(self,*a,**aa):
-        cprint(a,aa)
+        log(a,aa)
         super(CacheNoIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
 
-        cprint("requested to find",hashe)
+        log("requested to find",hashe)
 
         cached_path=self.construct_cached_file_path(hashe,None)
         if self.filebackend.exists(cached_path+"/cache.pickle.gz"):
-            cprint("found cache file:",cached_path+"/cache.pickle.gz")
+            log("found cache file:",cached_path+"/cache.pickle.gz")
             try:
                 return self.load_content(hashe,None)
             except Exception as e:
-                cprint("faild to load content! :"+repr(e))
+                log("faild to load content! :"+repr(e))
                 return None
 
-        cprint("no file found in",cached_path)
+        log("no file found in",cached_path)
         return None
 
     def make_record(self,hashe,content):
