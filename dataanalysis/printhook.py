@@ -167,8 +167,9 @@ class LogStream(object):
         self.levels=levels
         self.name=name
 
+    def register(self):
         for i,l in enumerate(LogStreams):
-            if target==l.target:
+            if self.target==l.target:
                 LogStreams[i]=self
                 return
         LogStreams.append(self)
@@ -219,9 +220,16 @@ class LogStream(object):
         r=super(LogStream,self).__repr__()
         if self.name is not None:
             r+=": "+self.name
+        r += "; target: "+repr(self.target)
+        if hasattr(self.target,'name'):
+            r+=": "+self.target.name
         return "["+r+"]"
 
 LogStreams=[]
 
-cprint=print
+def reset(comment="at init"):
+    global LogStreams
+    LogStreams=[LogStream(sys.stdout, levels=None, name="original stdout "+comment)]
+
+reset()
 

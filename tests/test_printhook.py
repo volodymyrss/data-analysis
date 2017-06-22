@@ -44,3 +44,41 @@ def test_print():
     assert 'testoutput' in pipe.getvalue()
 
     assert 'testoutput' in A._da_main_log_content
+
+
+def test_standard_output():
+    import StringIO,sys
+    pipe=StringIO.StringIO()
+
+    raw_stdout=sys.stdout
+    sys.raw_stdout=raw_stdout
+    sys.stdout=pipe
+    pipe.name="piped for test"
+
+    dataanalysis.printhook.reset()
+
+    for ls in dataanalysis.printhook.LogStreams:
+        raw_stdout.write("+ logstream now:" + repr(ls) + "\n")
+
+    class Analysis(dataanalysis.core.DataAnalysis):
+        def main(self):
+            print "testoutput\n"*10
+            raw_stdout.write("\n")
+            for ls in dataanalysis.printhook.LogStreams:
+                raw_stdout.write("- logstream now:"+repr(ls)+"\n")
+
+    A=Analysis()
+
+    A.get()
+
+    sys.stdout=raw_stdout
+    #print pipe.getvalue()
+
+    assert 'running main' not in pipe.getvalue()
+
+    print "A._da_main_log_content:",A._da_main_log_content
+
+    assert 'testoutput' in A._da_main_log_content
+
+    assert 'testoutput' in pipe.getvalue()
+

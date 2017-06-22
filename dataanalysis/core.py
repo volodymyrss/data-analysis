@@ -738,7 +738,9 @@ class DataAnalysis(object):
         t0=time.time()
         main_log=StringIO.StringIO()
         main_logstream= printhook.LogStream(main_log, lambda x:True, name="main stream")
+        main_logstream.register()
         main_logstream_file= printhook.LogStream("main.log", lambda x:True, name="main stream file")
+        main_logstream_file.register()
         log("starting main log stream",main_log,main_logstream,level='logstreams')
 
         self.start_main_watchdog()
@@ -1501,7 +1503,7 @@ def debug_output():
     printhook.global_all_output=True
     printhook.global_permissive_output=True
     printhook.global_fancy_output=True
-    printhook.LogStreams=[printhook.LogStream(sys.stdout,levels=None,name="original stdout")]
+    printhook.LogStreams=[printhook.LogStream(sys.stdout,levels=None,name="original stdout set in debug")]
 
 AnalysisFactory.blueprint_class=DataAnalysis
 AnalysisFactory.blueprint_DataHandle=DataHandle

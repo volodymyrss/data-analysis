@@ -88,7 +88,7 @@ def test_caching():
     from dataanalysis import core as da
     import time
 
-    da.debug_output()
+   # da.debug_output()
     da.reset()
 
     class Analysis(da.DataAnalysis):

@@ -2,7 +2,7 @@ import sys
 from dataanalysis.bcolors import render
 
 from dataanalysis import printhook
-from dataanalysis.printhook import cprint,decorate_method_log,debug_print
+from dataanalysis.printhook import log,decorate_method_log,debug_print
 
 #from dataanalysis import core
 #print(core.__file__)
@@ -50,15 +50,15 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.put(obj)
 
     def put(self, obj, sig=None):
-        cprint("requested to put in factory:", obj, sig)
-        cprint("factory assumptions:", self.cache_assumptions)
+        log("requested to put in factory:", obj, sig)
+        log("factory assumptions:", self.cache_assumptions)
 
         if not obj.infactory:
-            cprint("object is not in-factory, not putting")
+            log("object is not in-factory, not putting")
             return obj
 
         if obj.assumptions != []:
-            cprint("object has assumptions:", obj, obj.assumptions)
+            log("object has assumptions:", obj, obj.assumptions)
             raise Exception("can not store in cache object with assumptions")
 
         module_record = sys.modules[obj.__module__]
@@ -66,11 +66,11 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             self.dda_modules_used.append(module_record)
 
         if isinstance(obj, type):
-            cprint("requested to put class, it will be constructed")
+            log("requested to put class, it will be constructed")
             obj = obj()
 
         sig = obj.get_signature() if sig is None else sig  # brutal
-        cprint("put object:", obj, "signature", sig)
+        log("put object:", obj, "signature", sig)
         saved = None
         if sig in self.cache:
             saved = self.cache[sig]
@@ -83,50 +83,50 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
         """
 
-        cprint("interpreting", item)
-        cprint("factory knows", self.cache)  # .keys())
+        log("interpreting", item)
+        log("factory knows", self.cache)  # .keys())
 
         if item is None:
-            cprint("item is None: is it a virtual class? should not be in the analysis!")
+            log("item is None: is it a virtual class? should not be in the analysis!")
             raise Exception("virtual class, class with None inputs, is not allowed directly in the analysis")
 
         if not hasattr(self,'blueprint_class'):
-            cprint("no analysis yet")
+            log("no analysis yet")
             return item
 
         if isinstance(item, type) and issubclass(item, self.blueprint_class):
-            cprint("is subclass of DataAnalysis, probably need to construct it")
+            log("is subclass of DataAnalysis, probably need to construct it")
             name = item.__name__
-            cprint("class name:", name)
+            log("class name:", name)
             if name in self.cache:
                 c = self.cache[name]
-                cprint("have cache for this name:", c)
+                log("have cache for this name:", c)
                 if isinstance(item, type):
-                    cprint("it is class, constructing")
+                    log("it is class, constructing")
                     c = c()
-                    cprint("constructed", c)
+                    log("constructed", c)
                     self.put(c)
-                    # cprint("will store",c)
+                    # log("will store",c)
                     return c
                 if isinstance(item, self.blueprint_class):
-                    cprint("cache returns object, will use it:", c)
+                    log("cache returns object, will use it:", c)
                     return c
             else:
-                cprint("there is no such class registered!", name)
+                log("there is no such class registered!", name)
                 raise Exception("there is no such class registered: " + name + " !")
 
         if isinstance(item, self.blueprint_class):
-            cprint("is instance of DataAnalysis, signature", item.get_signature())
+            log("is instance of DataAnalysis, signature", item.get_signature())
 
             if item.trivial:
-                cprint("trivial class: is datahandle or file, returning", item)
+                log("trivial class: is datahandle or file, returning", item)
                 return item
             #if isinstance(item, DataHandle) or isinstance(item, DataFile):  # make as object call
-            #    cprint("is datahandle or file, returning", item)
+            #    log("is datahandle or file, returning", item)
             #    return item
 
             if not item.infactory:  # make as object call
-                cprint("is not in-factory, returning")
+                log("is not in-factory, returning")
                 return item
 
             s = item.get_signature()
@@ -139,23 +139,23 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                 # if item!=storeditem: # object was constructed during the declaration of the class or interpreted earlier, either way the ___new__ call had to guarantee it is the same. it has to be the same
                 #    raise Exception("critical violation of sanity check! object was constructed twice "+str(item)+" vs "+str(storeditem))
 
-                cprint("so, offered object:", item)
-                cprint("     stored object:", storeditem)
+                log("so, offered object:", item)
+                log("     stored object:", storeditem)
 
                 if not item.is_virtual():  # careful!
-                    cprint("     offered object is non-virtual, simply returning")
-                    cprint("     offered object complettion:", item._da_locally_complete)
-                    cprint("     offered virtual reason:",
+                    log("     offered object is non-virtual, simply returning")
+                    log("     offered object complettion:", item._da_locally_complete)
+                    log("     offered virtual reason:",
                            item._da_virtual_reason if hasattr(item, '_da_virtual_reason') else "")
-                    # cprint("     offered object is non-virtual, forcing it")
+                    # log("     offered object is non-virtual, forcing it")
                     # update=True #!!!!
                     ## think about this! update??
                     return item
 
                 if len(item.assumptions) != 0:
-                    cprint("     offered object has assumptions", item.assumptions)
-                    cprint("     offered object complettion:", item._da_locally_complete)
-                    cprint("     will copy and assign assumptions")
+                    log("     offered object has assumptions", item.assumptions)
+                    log("     offered object complettion:", item._da_locally_complete)
+                    log("     will copy and assign assumptions")
 
                     copied_storeditem = storeditem.__class__(dynamic=False)
                     copied_storeditem.assumptions = item.assumptions
@@ -163,29 +163,29 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                     return copied_storeditem
 
                 if update:
-                    cprint("recommendation is to force update")
+                    log("recommendation is to force update")
                     self.put(item)
                     return item
                 else:
-                    cprint("attention! offered object is discarded:", item)  # ,item.export_data())
-                    cprint("stored in factory (this will be the valid instance):",
+                    log("attention! offered object is discarded:", item)  # ,item.export_data())
+                    log("stored in factory (this will be the valid instance):",
                            storeditem)  # ,storeditem.export_data())
                     return storeditem
 
-            cprint("no such object registered! registering")  # attention!
+            log("no such object registered! registering")  # attention!
             self.put(item)
             return item
 
         if isinstance(item, str):
-            cprint("considering string data handle")
+            log("considering string data handle")
             return self.blueprint_DataHandle(item)
 
         if isinstance(item, unicode):
-            cprint("considering unicode string data handle")
+            log("considering unicode string data handle")
             return self.blueprint_DataHandle(str(item))
 
-        cprint("unable to interpret item: " + repr(item))
-        cprint("factory knows",AnalysisFactory.cache)
+        log("unable to interpret item: " + repr(item))
+        log("factory knows",AnalysisFactory.cache)
         raise Exception("unable to interpret item: " + repr(item)+" blueprint: "+repr(self.blueprint_class))
         # return None
 
@@ -199,53 +199,53 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         if not isinstance(new_assumptions, list):
             new_assumptions = [new_assumptions]
 
-        cprint(render("{RED}go deeper! what if?{/} stack of size %i" % len(self.cache_stack)))
+        log(render("{RED}go deeper! what if?{/} stack of size %i" % len(self.cache_stack)))
         if self.comment == description:
-            cprint("will not push copy, already in the assumption", description)
+            log("will not push copy, already in the assumption", description)
             return
 
-        cprint("pushing into stack current version, using copy", description)
+        log("pushing into stack current version, using copy", description)
         self.comment = description
         self.cache_stack.append(self.cache)
         self.cache_assumptions.append(new_assumptions)
         self.cache = {}  # this makes assumptions reset
-        cprint("cache stack of size", len(self.cache_stack))
-        cprint("cache stack last entry:", self.cache_stack[-1])
+        log("cache stack of size", len(self.cache_stack))
+        log("cache stack last entry:", self.cache_stack[-1])
 
         for i, o in self.cache_stack[-1].items():
-            cprint("promoting", i, 'assumptions', o.assumptions)
+            log("promoting", i, 'assumptions', o.assumptions)
             # if o.is_virtual():
-            #    cprint("virtual object, constructing empty copy")
+            #    log("virtual object, constructing empty copy")
             o.__class__(dynamic=False).promote()  # assume??
 
         for assumptions in self.cache_assumptions:
-            cprint("assumption group:", assumptions)
+            log("assumption group:", assumptions)
             for a in assumptions:
-                cprint("assumption", a)
+                log("assumption", a)
                 a.promote()
 
                 #   else:
-                #       cprint("non-virtual object! promoting object itself")
+                #       log("non-virtual object! promoting object itself")
                 #       o.promote() # assume??
         # self.cache=copy.deepcopy(self.cache_stack[-1]) # dangerous copy: copying call __new__, takes them from current cache
-        cprint("current cache copied:", self.cache)
+        log("current cache copied:", self.cache)
 
     def WhatIfNot(self):
-        cprint("factory knows", self.cache)  # .keys())
+        log("factory knows", self.cache)  # .keys())
         if self.cache_stack == []:
-            cprint("empty stack!")
+            log("empty stack!")
             return
             # raise Exception("empty stack!")
 
-        cprint("poping from stack last version")
+        log("poping from stack last version")
         self.cache = self.cache_stack.pop()
         assumptions = self.cache_assumptions.pop()
-        cprint("discarding last stacked", self.comment)
-        cprint("discarding:", assumptions)
-        cprint("current assumptions level %i:" % len(self.cache_assumptions),
+        log("discarding last stacked", self.comment)
+        log("discarding:", assumptions)
+        log("current assumptions level %i:" % len(self.cache_assumptions),
                self.cache_assumptions[-1] if self.cache_assumptions != [] else "none")
         self.comment = ""
-        cprint("factory knows", self.cache)  # .keys())
+        log("factory knows", self.cache)  # .keys())
 
     def byname(self, name):
         if name not in self.cache:
@@ -282,7 +282,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                 if graph[0] == 'list':
                     return any([contains(k, key) for k in graph[1:]])
 
-        # cprint('aliases:',self.aliases)
+        # log('aliases:',self.aliases)
         return self.aliases
 
     def get_definitions(self):
@@ -293,9 +293,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
     def get_module_description(self):
         module_description = []
         for m in AnalysisFactory.dda_modules_used:
-            cprint("module", m)
+            log("module", m)
             if hasattr(m, "__dda_module_global_name__"):
-                cprint("dda module global name", m.__dda_module_global_name__)
+                log("dda module global name", m.__dda_module_global_name__)
                 module_description.append(['cache', m.__name__, m.__dda_module_global_name__])
             else:
                 module_description.append(['filesystem', m.__name__, m.__file__])
