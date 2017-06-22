@@ -21,6 +21,36 @@ def test_base_cache():
 
     assert B.data == A.data
 
+def test_base_cache_object():
+    from dataanalysis import core as da
+    from dataanalysis import caches
+
+    cache=caches.cache_core.Cache()
+
+    class Analysis(da.DataAnalysis):
+        cached=True
+
+        def main(self):
+            self.data="test123"
+
+    A=Analysis()
+    A.get()
+
+    da.reset()
+
+    class Analysis(da.DataAnalysis):
+        cached = True
+        produce_disabled=True
+
+    B = Analysis()
+    B.get()
+
+
+    assert B.data == A.data
+
+def test_unhandled_handling():
+    pass
+
 def test_cache_blob():
     from dataanalysis import core as da
     from dataanalysis import caches

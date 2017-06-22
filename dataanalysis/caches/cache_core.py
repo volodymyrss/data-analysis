@@ -17,8 +17,9 @@ import socket
 from bcolors import render
 
 import dataanalysis
+from dataanalysis.printhook import log
 
-print(dataanalysis.__file__)
+log(dataanalysis.__file__)
 
 from dataanalysis import analysisfactory
 from dataanalysis import hashtools
@@ -107,7 +108,7 @@ class Cache(object):
         from_parent=self.parent.restore(hashe,obj,rc)
             
         if from_parent is not None:
-            print("storing what restored from parent")
+            log("storing what restored from parent")
             self.store(hashe,obj)
 
         return from_parent
@@ -144,13 +145,13 @@ class Cache(object):
     def restore_file(self,origin,dest,obj,hashe):
        # statistics 
         log("restore file:")
-        print("< ",origin,'{log:top}',level='top')
-        print("> ",dest,'{log:top}',level='top')
+        log("< ",origin,'{log:top}',level='top')
+        log("> ",dest,'{log:top}',level='top')
         
         dest_unique=dest+"."+self.hashe2signature(hashe)
-        print("> ",dest_unique,'{log:top}',level='top')
+        log("> ",dest_unique,'{log:top}',level='top')
         
-        print("as",dest_unique,level='top')
+        log("as",dest_unique,level='top')
 
         fsize=self.filebackend.getsize(origin)/1024./1024.
         log("restoring file of",fsize,'{log:resources}','{log:cache}')
@@ -186,30 +187,30 @@ class Cache(object):
 # this should be elsewhere!
     def test_file(self,fn):
         if fn.endswith('fits') or fn.endswith('fits.gz'):
-            print("fits, will test it")
+            log("fits, will test it")
             from astropy.io import fits as pyfits
             try:
                 pyfits.open(fn)
             except Exception as e:
-                print("corrupt fits file",fn,e)
+                log("corrupt fits file",fn,e)
                 raise Exception('corrupt fits file in cache: '+fn)
         
         if fn.endswith('npy'):
-            print("npy, will test it")
+            log("npy, will test it")
             import numpy
             try:
                 numpy.load(fn)
             except:
-                print("corrupt npy file",fn)
+                log("corrupt npy file",fn)
                 raise Exception('corrupt fits file in cache: '+fn)
         
         if fn.endswith('npy.gz'):
-            print("npy.gz, will test it")
+            log("npy.gz, will test it")
             import numpy
             try:
                 numpy.load(gzip.open(fn))
             except:
-                print("corrupt npy.gz file",fn)
+                log("corrupt npy.gz file",fn)
                 raise Exception('corrupt fits file in cache: '+fn)
 
     def store_file(self,origin,dest):
@@ -262,7 +263,7 @@ class Cache(object):
         restore_config_default=dict(datafile_restore_mode="copy",datafile_target_dir=None) # no string
         restore_config=dict(restore_config_default.items()+(restore_config.items() if restore_config is not None else []))
 
-        print("will restore",self,obj,"restore_config",restore_config)
+        log("will restore",self,obj,"restore_config",restore_config)
 
         if obj.datafile_restore_mode is not None:
             restore_config['datafile_restore_mode']=obj.datafile_restore_mode
@@ -287,11 +288,11 @@ class Cache(object):
             return self.restore_from_parent(hashe,obj,restore_config)
 
         if not self.can_url_to_cache:
-            print("cache can not be url, will copy all output",level="cache")
+            log("cache can not be url, will copy all output",level="cache")
             restore_config['datafile_restore_mode']="copy"
 
         if obj.only_verify_cache_record:
-            print("established cache record: will not acutally restore",level="cache")
+            log("established cache record: will not acutally restore",level="cache")
             return True
 
         if isinstance(c,dict):
@@ -314,7 +315,7 @@ class Cache(object):
                             stored_filename=cached_path+os.path.basename(b.path) # just by name? # gzip optional
                         else:
                             stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
-                        print("stored filename:",stored_filename)
+                        log("stored filename:",stored_filename)
                     except Exception as e:
                         log("wat",e)
                     if not self.filebackend.exists(stored_filename): # and
@@ -325,7 +326,7 @@ class Cache(object):
                     # other way
                     if restore_config['datafile_restore_mode']=="copy":
                         try:
-                        #    print("attempt to restore file",stored_filename,b,id(b),level='top')
+                        #    log("attempt to restore file",stored_filename,b,id(b),level='top')
  #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
 
                             if not self.filebackend.exists(stored_filename):
@@ -337,13 +338,13 @@ class Cache(object):
                             log("stored file:",stored_filename,"will restore as",prefix,b.path,level='top') 
 
                             b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+os.path.basename(b.path),obj,hashe)
-                            print("restored as",restored_file)
+                            log("restored as",restored_file)
 
                             obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
                             b._da_unique_local_path=restored_file
                             b.restored_path_prefix=os.getcwd()+"/"+prefix
                         
-                            print("note unique file name",b._da_unique_local_path)
+                            log("note unique file name",b._da_unique_local_path)
 
                         except IOError:
                             if IOError.errno==20:
@@ -359,6 +360,8 @@ class Cache(object):
                         except Exception as e:
                             log("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
                             log("details:"+repr(e))
+                            if not self.ingore_unhandled:
+                                raise
                  #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                             # just reproduce?
                             return None
@@ -375,7 +378,7 @@ class Cache(object):
                         if not os.path.exists(b.cached_path):
                             raise Exception("cached file does not exist!")
                         b.cached_path_valid_url=True
-                        print("stored url:",b.cached_path,b.cached_path_valid_url)
+                        log("stored url:",b.cached_path,b.cached_path_valid_url)
 
                         if 'test_files' in restore_config and restore_config['test_files']:
                             try:
@@ -399,7 +402,7 @@ class Cache(object):
                 if a is None:
                     raise Exception("returned none")
             except Exception as e:
-                print("verify_content failed",e)
+                log("verify_content failed",e)
                 return
 
             return True
@@ -482,9 +485,9 @@ class Cache(object):
                     try:
                         p = cached_path + os.path.basename(b.path)
                     except Exception as e:
-                        print("failed:", e)
-                        print("path:", b.path)
-                        print("b:", b)
+                        log("failed:", e)
+                        log("path:", b.path)
+                        log("b:", b)
                         raise
                     b.cached_path = p + ".gz" if not p.endswith(".gz") else p
                     b.store_stats = self.store_file(b.path, p)
@@ -602,9 +605,9 @@ class Cache(object):
 
         dependencies=obj._da_delegated_input
 
-        print ("will store hashe       ",hashe)
-        print ("will store modules     ",module_description,dependencies)
-        print ("will store dependencies",dependencies)
+        log ("will store hashe       ",hashe)
+        log ("will store modules     ",module_description,dependencies)
+        log ("will store dependencies",dependencies)
 
         return self.make_delegation_record(hashe,module_description,dependencies)
     
@@ -615,7 +618,7 @@ class Cache(object):
         try:
             os.makedirs(state_dir)
         except os.error:
-            print("unable to create state dir!") # exist?
+            log("unable to create state dir!") # exist?
 
         state_ticket_fn=repr(obj)+"_"+time.strftime("%Y%m%d_%H%M%S")+".txt"
         state_ticket_fn=state_ticket_fn.replace("]","")
@@ -638,7 +641,7 @@ class Cache(object):
         try:
             f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
         except Exception as e:
-            print(e)
+            log(e)
         
 
     def report_exception(self,obj,e):
@@ -648,7 +651,7 @@ class Cache(object):
         try:
             os.makedirs(exception_dir)
         except os.error:
-            print("unable to create exception dir!") # exissst?
+            log("unable to create exception dir!") # exissst?
 
         exception_ticket_fn=repr(obj)+"_"+time.strftime("%Y%m%d_%H%M%S")+".txt"
         exception_ticket_fn=exception_ticket_fn.replace("]","")
@@ -667,10 +670,10 @@ class Cache(object):
             try:
                 f.write("factory knows: "+repr(analysisfactory.AnalysisFactory.cache)+"\n\n")
             except Exception as e:
-                print(e)
+                log(e)
         except Exception:
-            print("unable to write exception!")
-            print(e)
+            log("unable to write exception!")
+            log(e)
 
 
         # check
@@ -775,8 +778,8 @@ class CacheSqlite(Cache):
         if len(rows)>1:
             log("multiple entries for same cache!")
             #raise Exception("confused cache! mupltile entries! : "+str(rows))
-            print ("confused cache! mupltile entries! : "+str(rows),"{log:reflections}")
-            print ("confused cache will run it again","{log:reflections}")
+            log ("confused cache! mupltile entries! : "+str(rows),"{log:reflections}")
+            log ("confused cache will run it again","{log:reflections}")
             return None
 
         return cPickle.loads(str(rows[0][0]))
@@ -1070,7 +1073,7 @@ class TransientCache(Cache): #d
 class CacheIndex(Cache):
     def __init__(self,*a,**aa):
        # log(a,aa)
-        print("vvvvv:")
+        log("vvvvv:")
         super(CacheIndex, self).__init__(*a, **aa)
 
     def find(self,hashe):
@@ -1133,7 +1136,7 @@ class CacheModule(Cache):
     filecacheroot=os.environ['DDA_MODULE_CACHE'] if 'DDA_MODULE_CACHE' in os.environ else ""
 
     def construct_cached_file_path(self,hashe,obj):
-        print("requested path for",hashe,obj)
+        log("requested path for",hashe,obj)
 
         def hash_to_path(hashe):
             if isinstance(hashe,tuple):
@@ -1157,7 +1160,7 @@ class CacheModuleIRODS(CacheNoIndex):
     filebackend=backends.IRODSFileBackend()
 
     def construct_cached_file_path(self,hashe,obj):
-        print("requested path for",hashe,obj)
+        log("requested path for",hashe,obj)
 
         def hash_to_path(hashe):
             if isinstance(hashe,tuple):
