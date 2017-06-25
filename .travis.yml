@@ -20,5 +20,10 @@ install:
  - pip install -r requirements.txt
 
 script:
- - pytest
+ - coverage run pytest
  #docker run smth run
+
+
+after_success:
+  - codecov
+
