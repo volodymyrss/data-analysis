@@ -1,6 +1,6 @@
 data-analysis
 =============
-[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png)](https://travis-ci.org/volodymyrss/data-analysis)
+[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png)](https://travis-ci.org/volodymyrss/data-analysis)[![codebeat badge](https://codebeat.co/badges/be1fafc7-ebdc-4fdd-8f60-18b1630c85bc)](https://codebeat.co/projects/github-com-volodymyrss-data-analysis-master)
 
 The ideas described below are related to those of the
 lambda-architecture.  It is intended for ingesting and processing new
