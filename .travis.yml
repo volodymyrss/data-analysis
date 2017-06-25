@@ -11,5 +11,6 @@ before_install:
 # - docker pull smth
 
 
-#script:
-# - docker run --rm -it -e user_id=`id -u` -v $TRAVIS_BUILD_DIR:/travis_build_dir smth run
+script:
+ - pytest
+ #docker run smth run
