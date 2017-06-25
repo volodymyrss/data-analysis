@@ -1,1 +1,3 @@
 pydot
+numpy
+astropy

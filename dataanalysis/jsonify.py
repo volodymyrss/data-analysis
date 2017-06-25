@@ -1,5 +1,13 @@
 import numpy as np
-from astropy.io import fits as pyfits
+
+#TODO: this should be moved to astronomy-specific package
+
+try:
+    from astropy.io import fits as pyfits
+except ImportError:
+    print("WARNING: no astropy, disabling fits jsonification")
+    print("ERROR: and failing, for not")
+    raise
 
 import core as da
 
