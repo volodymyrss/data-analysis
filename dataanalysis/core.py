@@ -20,7 +20,7 @@ from collections import Mapping, Set, Sequence
 from dataanalysis import hashtools
 from dataanalysis import jsonify
 from dataanalysis.bcolors import render
-from caches import cache_core
+from dataanalysis.caches import cache_core
 
 from dataanalysis.analysisfactory import AnalysisFactory
 
