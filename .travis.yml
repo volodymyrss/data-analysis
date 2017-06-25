@@ -1,0 +1,15 @@
+#sudo: required
+
+language: python
+dist: trusty
+
+services:
+  - docker
+
+before_install:
+ - pip install codecov
+# - docker pull smth
+
+
+#script:
+# - docker run --rm -it -e user_id=`id -u` -v $TRAVIS_BUILD_DIR:/travis_build_dir smth run
