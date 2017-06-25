@@ -80,11 +80,11 @@ def test_cache_blob():
 
     cache.store_to_directory(A._da_locally_complete,A,"/tmp/blob/")
 
-    print glob.glob("/tmp/blob/*")
+    print(glob.glob("/tmp/blob/*"))
     assert len(glob.glob("/tmp/blob/*")) > 2
 
     blob=cache.assemble_blob(A._da_locally_complete, A).read()
 
-    print blob
+    print(blob)
     assert len(blob)>50
 

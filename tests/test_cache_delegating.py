@@ -45,7 +45,7 @@ def test_queue_cache():
 
     worker=caches.delegating.QueueCacheWorker()
 
-    print worker.run_once()
+    print(worker.run_once())
 
 
 #    worker.run_all()

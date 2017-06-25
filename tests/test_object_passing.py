@@ -11,14 +11,14 @@ def test_object_export_import():
 
 
         def main(self):
-            print "test"
+            print("test")
             # time.sleep(3)
             self.data = "data1"
 
     A=Analysis()
     A.get()
 
-    print A.data
+    print(A.data)
 
     assert A.data == "data1"
 
@@ -29,7 +29,7 @@ def test_object_export_import():
     B=Analysis()
 
     with pytest.raises(AttributeError):
-        print B.data
+        print(B.data)
 
     B.import_data(object_data)
     assert B.data == "data1"
@@ -44,7 +44,7 @@ def test_object_injection():
         #cached = True
 
         def main(self):
-            print "test"
+            print("test")
             # time.sleep(3)
             self.data = "data2"
 
@@ -79,7 +79,7 @@ def test_object_input_injection():
 
     assert  A1.arg == "arg1"
     d1 = A1.export_data()
-    print "has data:", d1
+    print("has data:", d1)
     assert d1['arg'] == 'arg1'
 
     A2 = AAnalysis(use_arg="arg2")
@@ -90,7 +90,7 @@ def test_object_input_injection():
 
     da.AnalysisFactory.inject_serialization(a1)
 
-    print "factory has",da.AnalysisFactory.cache['AAnalysis']
+    print("factory has",da.AnalysisFactory.cache['AAnalysis'])
 
     aanalysis=da.AnalysisFactory['AAnalysis']
     assert aanalysis.arg == "arg1"
@@ -100,14 +100,14 @@ def test_object_input_injection():
         input_arg=AAnalysis
 
         def main(self):
-            print "test"
+            print("test")
             # time.sleep(3)
             self.data = "data_"+self.input_arg.arg
 
     A=Analysis()
     A.get()
 
-    print A.data
+    print(A.data)
 
     assert A.data == "data_arg1"
 
@@ -122,7 +122,7 @@ def test_object_input_injection():
         input_arg=AAnalysis
 
         def main(self):
-            print "test"
+            print("test")
             # time.sleep(3)
             self.data = "data_"+self.input_arg.arg
 

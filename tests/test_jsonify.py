@@ -7,7 +7,7 @@ def test_one_object():
     class Analysis(da.DataAnalysis):
 
         def main(self):
-            print "test"
+            print("test")
             self.data ="datacontent"
 
 

@@ -37,9 +37,9 @@ class QueueCacheWorker(object):
 
     def run_once(self):
         object_name,hashe,modules=self.queue.get(block=False)
-        print "object name",object_name
-        print "modules",modules
-        print "hashe",hashe
+        print("object name",object_name)
+        print("modules",modules)
+        print("hashe",hashe)
 
         A=dataanalysis.core.AnalysisFactory[object_name]
 
@@ -47,7 +47,7 @@ class QueueCacheWorker(object):
 
     def run_all(self,burst=True):
         while True:
-            print time.time()
+            print(time.time())
 
             try:
                 item=self.queue.get(block=False)
@@ -55,8 +55,8 @@ class QueueCacheWorker(object):
                 break
 
             hashe, modules = item
-            print hashe
-            print modules
+            print(hashe)
+            print(modules)
             self.queue.task_done()
 
 

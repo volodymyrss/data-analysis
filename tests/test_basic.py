@@ -2,7 +2,7 @@
 
 def test_import():
     from dataanalysis import core as da
-    print da.__file__
+    print(da.__file__)
 
 
 def test_one_object():
@@ -10,7 +10,7 @@ def test_one_object():
 
     class Analysis(da.DataAnalysis):
         def main(self):
-            print "test"
+            print("test")
             self.data="data"
     A=Analysis()
     A.get()
@@ -22,14 +22,14 @@ def test_two_object():
 
     class BAnalysis(da.DataAnalysis):
         def main(self):
-            print "test"
+            print("test")
             self.data="data"
     
     class Analysis(da.DataAnalysis):
         input_b=BAnalysis
 
         def main(self):
-            print "test"
+            print("test")
             self.data=self.input_b.data
 
     A=Analysis()
@@ -48,13 +48,13 @@ def test_optional_object():
 
         class aAnalysis(da.DataAnalysis):
             def main(self):
-                print "test"
+                print("test")
                 self.data="data"
         
         class bAnalysis(da.DataAnalysis):
             produce_disabled=True
             def main(self):
-                print "test"
+                print("test")
                 self.data="data"
         
         aA=aAnalysis()
@@ -67,7 +67,7 @@ def test_optional_object():
             force_complete_input=False
 
             def main(self):
-                print "test"
+                print("test")
                 self.data=self.input_a.data
 
 
@@ -97,7 +97,7 @@ def test_caching():
         read_caches = []
 
         def main(self):
-            print "test"
+            print("test")
             #time.sleep(3)
             self.data="data"
 
@@ -106,8 +106,8 @@ def test_caching():
 
     da.reset()
 
-    print A
-    print "constructing again.."
+    print(A)
+    print("constructing again..")
     
     class Analysis(da.DataAnalysis):
         cached=True
@@ -116,7 +116,7 @@ def test_caching():
             raise
 
     A1=Analysis()
-    print A1
+    print(A1)
 
     t0=time.time()
     A1.get()
@@ -124,6 +124,6 @@ def test_caching():
         
     assert tspent<1
     assert hasattr(A1,'data')
-    print A1.data
+    print(A1.data)
     assert A1.data == 'data'
 
