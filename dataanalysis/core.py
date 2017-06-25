@@ -740,7 +740,7 @@ class DataAnalysis(object):
 
         log(render("{RED}running main{/}"),'{log:top}')
         t0=time.time()
-        main_log=StringIO.StringIO()
+        main_log=StringIO()
         main_logstream= printhook.LogStream(main_log, lambda x:True, name="main stream")
         main_logstream.register()
         main_logstream_file= printhook.LogStream("main.log", lambda x:True, name="main stream file")
