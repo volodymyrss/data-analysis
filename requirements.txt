@@ -1,4 +1,4 @@
 pydot
 numpy
 astropy
-persistqueue
+persist-queue
