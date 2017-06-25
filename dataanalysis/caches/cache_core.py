@@ -135,7 +135,7 @@ class Cache(object):
         except TypeError as e:
             log("typeerror! "+repr(e))
             raise
-        except IOError,cPickle.UnpicklingError:
+        except (IOError,cPickle.UnpicklingError) as e:
             log("problem loading cache! corrupt cache!")
             raise
         except Exception:
@@ -824,15 +824,18 @@ class CacheMySQL(CacheSqlite):
         log("operations total/failed",self.total_attempts,self.failed_attempts)
 
     def connect(self):
-        raise Exception("mysql disabled")
-        if self.db is None:
-            log("connecting to mysql")
-            self.db = MySQLdb.connect(host="apcclwn12", # your host, usually localhost
-                      user="root", # your username
-                      port=42512,
-                      #unix_socket="/workdir/savchenk/mysql/var/mysql.socket",
-                      passwd=open(os.environ['HOME']+"/.secret_mysql_password").read().strip(), # your password
-                      db="ddacache") # name of the data base
+        if not hasattr(self,'mysql_enabled'):
+            raise Exception("mysql disabled")
+        else:
+            import MySQLdb
+            if self.db is None:
+                log("connecting to mysql")
+                self.db = MySQLdb.connect(host="apcclwn12", # your host, usually localhost
+                          user="root", # your username
+                          port=42512,
+                          #unix_socket="/workdir/savchenk/mysql/var/mysql.socket",
+                          passwd=open(os.environ['HOME']+"/.secret_mysql_password").read().strip(), # your password
+                          db="ddacache") # name of the data base
 
         return self.db
 
@@ -1031,16 +1034,6 @@ class TransientCache(Cache): #d
 
     def store_to_parent(self,hashe,obj):
         return
-        if not obj.cached:
-            log("object is not cached, i.e. only transient level cache; not leading to parent")
-            return
-
-        #if self.parent is None:
-            log("no parent to push up to")
-         #   return
-
-        #log("parent to push up to:",self.parent)
-        #self.parent.store(hashe,obj)
 
     def store(self,hashe,obj):
        # return # problem with files
