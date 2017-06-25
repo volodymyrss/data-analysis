@@ -16,7 +16,7 @@ from collections import Mapping, Set, Sequence
 import hashtools
 import jsonify
 import printhook
-from bcolors import render as render
+from dataanalysis.bcolors import render
 from caches import cache_core
 from printhook import decorate_method_log
 

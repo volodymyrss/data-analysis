@@ -14,7 +14,7 @@ import subprocess
 import time
 import socket
 
-from bcolors import render
+from dataanalysis.bcolors import render
 
 import dataanalysis
 from dataanalysis.printhook import log
