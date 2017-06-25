@@ -1,5 +1,6 @@
 data-analysis
 =============
+[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png)](https://travis-ci.org/volodymyrss/data-analysis)
 
 The ideas described below are related to those of the
 lambda-architecture.  It is intended for ingesting and processing new
