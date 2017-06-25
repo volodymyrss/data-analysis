@@ -266,7 +266,7 @@ class Cache(object):
         if restore_config is None:
             restore_config={}
         restore_config_default=dict(datafile_restore_mode="copy",datafile_target_dir=None) # no string
-        restore_config=list(dict(restore_config_default.items()))+list((restore_config.items() if restore_config is not None else []))
+        restore_config=dict(list(restore_config_default.items())+list(restore_config.items()) if restore_config is not None else [])
 
         log("will restore",self,obj,"restore_config",restore_config)
 
