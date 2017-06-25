@@ -17,13 +17,15 @@ import tempfile
 import time
 from collections import Mapping, Set, Sequence
 
-import hashtools
-import jsonify
-import printhook
+from dataanalysis import hashtools
+from dataanalysis import jsonify
+from dataanalysis import printhook
 from dataanalysis.bcolors import render
 from caches import cache_core
-from printhook import decorate_method_log
 
+from dataanalysis.analysisfactory import AnalysisFactory
+
+from printhook import decorate_method_log,log,debug_print
 
 global_log_enabled=True
 global_fancy_output=False
@@ -32,9 +34,6 @@ global_all_output=True
 #global_readonly_caches=False
 global_output_levels=('top')
 
-from  printhook import log,debug_print
-
-from dataanalysis.analysisfactory import AnalysisFactory
 
 Cache = cache_core.CacheNoIndex()
 TransientCacheInstance = cache_core.TransientCache()
@@ -44,21 +43,12 @@ TransientCacheInstance = cache_core.TransientCache()
 
 # approprate logging
 # reporting classes
-# optional input
 # cache migration
-# track all exceptions!!!
 # hashe to picture
 # deleting files: cleanup after analysis
-# cache module not irods but git
-
-# delegation simple, in scripts
 
 # data intergity: prevent corruption during copying to/from hashe
 
-# transient cache no work as expected? call same analysis?
-
-# cache-only analysis
-# cache migration
 # hashe operations: hashe spearation
 
 # need more flexible system to interpret object:
@@ -78,12 +68,6 @@ TransientCacheInstance = cache_core.TransientCache()
 # add advanced verification while setting arguments: do not allow objects of DA (or treat them?) and big data
 
 # an option for "testing" state object, forces all requesters to recompute
-
-
-
-#
-
-#AnalysisDict={}
 
 
 # dual python 2/3 compatability, inspired by the "six" library
