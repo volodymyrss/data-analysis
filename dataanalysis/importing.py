@@ -6,7 +6,7 @@ import sys
 from dataanalysis.caches import cache_core
 from dataanalysis.core import DataAnalysis, DataFile
 from dataanalysis.hashtools import *
-from printhook import cprint
+from printhook import log
 
 
 class find_module_standard(DataAnalysis):
@@ -14,15 +14,15 @@ class find_module_standard(DataAnalysis):
     input_module_name=None
 
     def main(self):
-        cprint("find module",self.input_module_name)
+        log("find module",self.input_module_name)
 
         module_name=self.input_module_name.handle
         self.found=imp.find_module(module_name,["."]+sys.path)
         fp, pathname, description=self.found
         
-        cprint("will search in",["."]+sys.path)
+        log("will search in",["."]+sys.path)
 
-        cprint("found as",pathname)
+        log("found as",pathname)
 
         self.module_path=pathname
 
@@ -41,7 +41,7 @@ class find_module_cached(DataAnalysis):
     input_module_version=None
 
     def main(self):
-        cprint("find module as ",self.input_module_name)
+        log("find module as ",self.input_module_name)
 
         pathname=self.input_module_name.handle+".py"
 
@@ -54,8 +54,8 @@ class find_module_cached(DataAnalysis):
 
         shutil.copyfile(pathname,hashedfn)
 
-        cprint("found as",pathname)
-        cprint("will store as",hashedfn)
+        log("found as",pathname)
+        log("will store as",hashedfn)
 
         self.module_path=hashedfn
         self.module_file=DataFile(hashedfn)
@@ -66,8 +66,8 @@ class load_module(DataAnalysis):
     input_module_path=None
 
     def main(self):
-        cprint("load module",self.input_module_path.input_module_name.handle)
-        cprint("load as",self.input_module_path.module_path)
+        log("load module",self.input_module_path.input_module_name.handle)
+        log("load as",self.input_module_path.module_path)
 
 #        self.module = __import__(self.input_module_path.module_path)
         if not os.path.exists(self.input_module_path.module_path):
@@ -87,7 +87,7 @@ def import_git_module(name,version):
 
 def load_by_name(m):
     if m.startswith("/"):
-        cprint("will import modul from cache")
+        log("will import modul from cache")
         ms=m[1:].split("/",1)
         if len(ms)==2:
             m0,m1=ms
@@ -95,12 +95,12 @@ def load_by_name(m):
             m0=ms[0]
             m1="master"
 
-        cprint("as",m0,m1)
+        log("as",m0,m1)
         result=import_analysis_module(m0,m1),m0
         result[0].__dda_module_global_name__=(m0,m1)
         return result
     elif m.startswith("git://"):
-        cprint("will import modul from cache")
+        log("will import modul from cache")
         ms=m[len("git://"):].split("/")
 
         if len(ms)==2:
@@ -109,13 +109,13 @@ def load_by_name(m):
             m0=ms[0]
             m1="master"
 
-        cprint("as",m0,m1)
+        log("as",m0,m1)
         result=import_git_module(m0,m1),m0
         result[0].__dda_module_global_name__=(m0,m1)
         return result
     else:
         fp, pathname, description=imp.find_module(m,["."]+sys.path)
-        cprint("found as",  fp, pathname, description)
+        log("found as",  fp, pathname, description)
         return imp.load_module(m,fp,pathname,description), m
 
     return load_module(input_module_path=find_module_standard(input_module_name=name)).get().module

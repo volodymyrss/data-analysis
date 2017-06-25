@@ -19,13 +19,13 @@ from collections import Mapping, Set, Sequence
 
 from dataanalysis import hashtools
 from dataanalysis import jsonify
-from dataanalysis import printhook
 from dataanalysis.bcolors import render
 from caches import cache_core
 
 from dataanalysis.analysisfactory import AnalysisFactory
 
-from printhook import decorate_method_log,log,debug_print
+from dataanalysis import printhook
+from dataanalysis.printhook import decorate_method_log,log,debug_print
 
 global_log_enabled=True
 global_fancy_output=False

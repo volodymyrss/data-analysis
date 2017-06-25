@@ -1,6 +1,8 @@
-import numpy as np
+import dataanalysis.core as da
 
 #TODO: this should be moved to astronomy-specific package
+
+import numpy as np
 
 try:
     from astropy.io import fits as pyfits
@@ -9,7 +11,6 @@ except ImportError:
     print("ERROR: and failing, for not")
     raise
 
-import core as da
 
 
 def jsonify(item):
