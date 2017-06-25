@@ -40,6 +40,8 @@ def test_two_object():
 def test_optional_object():
     try:
         from dataanalysis import core as da
+        from dataanalysis import analysisfactory
+
         da.AnalysisFactory.reset()
        # da.printhook.global_all_output=True
        # da.printhook.global_permissive_output=True
@@ -60,7 +62,6 @@ def test_optional_object():
         aA=aAnalysis()
         aA.get()
 
-        from dataanalysis import analysisfactory
 
         print(analysisfactory.AnalysisFactory.get("aAnalysis"), aA)
         #assert analysisfactory.AnalysisFactory.get("aAnalysis") == aA
