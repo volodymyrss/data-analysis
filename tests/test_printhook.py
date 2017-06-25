@@ -3,8 +3,14 @@ import dataanalysis
 def test_print():
     print("permissive:",dataanalysis.printhook.global_permissive_output)
 
-    import StringIO,sys
-    pipe=StringIO.StringIO()
+    import sys
+
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+    pipe=StringIO()
 
     raw_stdout=sys.stdout
     sys.raw_stdout=raw_stdout
@@ -47,8 +53,13 @@ def test_print():
 
 
 def test_standard_output():
-    import StringIO,sys
-    pipe=StringIO.StringIO()
+    import sys
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
+    pipe=StringIO()
 
     raw_stdout=sys.stdout
     sys.raw_stdout=raw_stdout

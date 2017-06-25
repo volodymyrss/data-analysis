@@ -151,7 +151,7 @@ def objwalk(obj, path=(), memo=None, sel=lambda x:True):
 #/objwalk
 
 def update_dict(a,b):
-    return dict(a.items()+b.items())
+    return dict(list(a.items())+list(b.items()))
 
 class AnalysisException(Exception):
     pass
@@ -954,7 +954,7 @@ class DataAnalysis(object):
 
         self.process_checkin_assumptions()
 
-        rr= dict(restore_rules.items() + dict(output_required=False).items()) # no need to request input results unless see below
+        rr= list(dict(restore_rules.items())) + list(dict(output_required=False).items()) # no need to request input results unless see below
 
         #### process input
         input_hash,input=self.process_input(obj=None,
@@ -1140,7 +1140,7 @@ class DataAnalysis(object):
         log("{CYAN}PROCESS INPUT{/}")
 
         restore_rules_default=dict(explicit_input_required=False,restore_complete=False)
-        restore_rules=dict(restore_rules_default.items()+restore_rules.items() if restore_rules is not None else [])
+        restore_rules=dict(list(restore_rules_default.items())+list(restore_rules.items()) if restore_rules is not None else [])
 
         # to simplify input
         for k in extra.keys():
@@ -1243,7 +1243,7 @@ class DataAnalysis(object):
             log("noanalysis!")
             return None,item
 
-        rr=dict(restore_rules.items()+dict(explicit_input_required=False,output_required=restore_rules['explicit_input_required']).items())
+        rr=dict(list(restore_rules.items())+list(dict(explicit_input_required=False,output_required=restore_rules['explicit_input_required']).items()))
         if self.run_for_hashe:
             log("for run_for_hashe, input need a right to run")
             restore_rules['run_if_haveto']=True

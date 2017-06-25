@@ -266,7 +266,7 @@ class Cache(object):
         if restore_config is None:
             restore_config={}
         restore_config_default=dict(datafile_restore_mode="copy",datafile_target_dir=None) # no string
-        restore_config=dict(restore_config_default.items()+(restore_config.items() if restore_config is not None else []))
+        restore_config=list(dict(restore_config_default.items()))+list((restore_config.items() if restore_config is not None else []))
 
         log("will restore",self,obj,"restore_config",restore_config)
 
@@ -444,8 +444,8 @@ class Cache(object):
 
         cPickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
         cPickle.dump(hashe, self.filebackend.open(cached_path + "hash.pickle.gz", "w", gz=True))
-        self.filebackend.open(cached_path + "hash.txt", "w").write(pprint.pformat(hashe) + "\n")
-        self.filebackend.open(cached_path + "log.txt.gz", "w", gz=True).write(obj._da_main_log_content)
+        self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
+        self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)
 
         aliases = obj.factory.list_relevant_aliases(obj)
 

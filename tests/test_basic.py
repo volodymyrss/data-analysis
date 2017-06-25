@@ -59,7 +59,12 @@ def test_optional_object():
         
         aA=aAnalysis()
         aA.get()
-        
+
+        from dataanalysis import analysisfactory
+
+        print(analysisfactory.AnalysisFactory.get("aAnalysis"), aA)
+        assert analysisfactory.AnalysisFactory.get("aAnalysis") == aA
+
         class gAnalysis(da.DataAnalysis):
             input_a=aAnalysis
             input_b=bAnalysis
@@ -79,9 +84,6 @@ def test_optional_object():
         assert A.input_b.incomplete == True
         
     except:
-        dataanalysis.printhook.global_all_output=False
-        dataanalysis.printhook.global_permissive_output=False
-        dataanalysis.printhook.LogStreams=[]
         raise
     
 def test_caching():

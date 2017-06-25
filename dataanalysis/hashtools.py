@@ -15,7 +15,7 @@ def shhash(x):
         x=hashe_replace_object(x,None,'None')
     except:
         pass
-    return sha224(str(hash(x))).hexdigest()
+    return sha224(str(hash(x)).encode('utf-8')).hexdigest()
 
 def hashe_replace_object(hashe,what,witha):
     if hashe==what:
