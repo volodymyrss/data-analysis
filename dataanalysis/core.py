@@ -636,7 +636,7 @@ class DataAnalysis(object):
                     run_if_can_not_delegate=True,
                     force_complete=True,
                     force_complete_input=True)
-        restore_rules=dict(restore_rules_default.items()+(restore_rules.items() if restore_rules is not None else []))
+        restore_rules=dict(list(restore_rules_default.items())+(list(restore_rules.items()) if restore_rules is not None else []))
         # to simplify input
         for k in extra.keys():
             if k in restore_rules:
