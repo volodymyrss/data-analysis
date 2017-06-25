@@ -557,10 +557,6 @@ class Cache(object):
         self.save()
         log("now entries",len(self.cache))
 
-    def runtime_update(self,hashe,content):
-        pass
-        #self.make_record(self,hashe,content)
-
     def construct_cached_file_path(self,hashe,obj):
         log("requested default cached file path")
 
@@ -990,10 +986,10 @@ class TransientCache(Cache): #d
 
     parent=None
 
-    def load(self):
+    def load(self,target=None):
         pass
     
-    def save(self):
+    def save(self,target=None):
         pass
 
     def __repr__(self):
@@ -1007,7 +1003,7 @@ class TransientCache(Cache): #d
         self.cache={}
         log("resetting cache",self,"was",self.cache)
 
-    def restore(self,hashe,obj,rc=None):
+    def restore(self,hashe,obj,restore_config=None):
         #return # problem with files
 
         if obj.run_for_hashe or obj.mutating:
@@ -1021,11 +1017,11 @@ class TransientCache(Cache): #d
             if not obj.cached:
                 log("object is not cached, i.e. only transient level cache; not leading to parent")
                 return
-            return self.restore_from_parent(hashe,obj,rc)
+            return self.restore_from_parent(hashe,obj,restore_config)
 
-        if hasattr(c,'_da_recovered_restore_config') and c._da_recovered_restore_config!=rc:
+        if hasattr(c,'_da_recovered_restore_config') and c._da_recovered_restore_config!=restore_config:
             log("object in Transient cache was recovered with a different restore config: need to restore from parent")
-            return self.restore_from_parent(hashe,obj,rc)
+            return self.restore_from_parent(hashe,obj,restore_config)
 
         log("transient cache stores results in the memory, found:",c)
 
