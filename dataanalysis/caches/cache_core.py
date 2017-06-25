@@ -1,6 +1,11 @@
 from __future__ import print_function
 
-import cPickle
+try:
+    import cPickle
+except ImportError:
+    import pickle as cPickle
+
+
 import tarfile
 import glob
 import copy
