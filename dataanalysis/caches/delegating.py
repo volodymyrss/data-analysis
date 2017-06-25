@@ -2,7 +2,6 @@ import time
 
 from persistqueue import Queue, Empty
 
-import analysisfactory
 import dataanalysis.caches
 import dataanalysis.caches.cache_core
 
