@@ -1,6 +1,6 @@
-import dataanalysis.core as da
 
-#TODO: this should be moved to astronomy-specific package
+
+#TODO: this should be moved to astronomy-specific package and avoid late import
 
 import numpy as np
 
@@ -14,6 +14,7 @@ except ImportError:
 
 
 def jsonify(item):
+    from dataanalysis import core as da # late import
     if isinstance(item, da.DataFile):
         return ('DataFile', item.path, item.jsonify())
 
