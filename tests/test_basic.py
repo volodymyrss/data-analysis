@@ -85,6 +85,10 @@ def test_constructor_input():
 
     assert A.data == 'data'
 
+    inputs=A.list_inputs()
+    assert isinstance(inputs,list)
+    assert len(inputs)==1
+
 
 def test_optional_object():
     try:

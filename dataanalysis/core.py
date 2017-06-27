@@ -1145,8 +1145,20 @@ class DataAnalysis(object):
 
         return restore_rules
 
+    def list_inputs(self):
+        hashe, inputs_dda = self.process_input()
+        print("\n\ncalling REQUIRES for", self, "\n\n")
+        print(inputs_dda)
 
-    def process_input(self,obj=None, restore_rules=None,restore_config=None,requested_by=None, return_list=False,**extra):
+        if inputs_dda is None:
+            inputs_dda = []
+
+        if not isinstance(inputs_dda, list):
+            inputs_dda = [inputs_dda]
+
+        return inputs_dda
+
+    def process_input(self,obj=None, restore_rules=None,restore_config=None,requested_by=None, **extra):
         """
         walk over all input; apply process_function and implement if neccessary
         """
@@ -1192,8 +1204,9 @@ class DataAnalysis(object):
                     inputhashes.append(h)
                     inputs.append(l)
 
-            if len(inputhashes)>1 or ((len(inputhashes)==1) and return_list):
+            if len(inputhashes)>1:
                 return ('list',)+tuple(inputhashes),inputs
+
             if len(inputhashes)==1:
                 return inputhashes[0],inputs[0]
 
