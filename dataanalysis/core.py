@@ -529,7 +529,8 @@ class DataAnalysis(object):
             return r
         return r # twice
 
-
+    def get_hashe(self):
+        return self.process(output_required=False)
 
 
     def get(self,**aa):
@@ -1191,7 +1192,7 @@ class DataAnalysis(object):
                     inputhashes.append(h)
                     inputs.append(l)
 
-            if len(inputhashes)>1:
+            if len(inputhashes)>1 or ((len(inputhashes)==1) and return_list):
                 return ('list',)+tuple(inputhashes),inputs
             if len(inputhashes)==1:
                 return inputhashes[0],inputs[0]
@@ -1486,33 +1487,31 @@ def get_object(a):
     return AnalysisFactory[a]
 
 
-class Schema(): # non-functional class so far
-    def plot_schema(self,fn="schema.png"):
-        self.get_schema().write_png(fn)
+def get_schema(self,graph=None,write_png_fn=None):
+    import pydot
 
-    def get_schema(self,graph=None):
-        import pydot
+    graph = pydot.Dot(graph_type='digraph')
 
-        graph = pydot.Dot(graph_type='digraph')
+    def make_schema(i1,i2):
 
-        def make_schema(i1,i2):
+        if not isinstance(i2,DataAnalysis):
+            return
 
-            if not isinstance(i2,DataAnalysis):
-                return
+        if i2.schema_hidden:
+            return
 
-            if i2.schema_hidden:
-                return
+        node = pydot.Node(repr(i2), style="filled", fillcolor="green")
+        node = pydot.Node(repr(i1), style="filled", fillcolor="green")
 
-            node = pydot.Node(repr(i2), style="filled", fillcolor="green")
-            node = pydot.Node(repr(i1), style="filled", fillcolor="green")
+        edge = pydot.Edge(repr(i2), repr(i1))
+        graph.add_edge(edge)
 
-            edge = pydot.Edge(repr(i2), repr(i1))
-            graph.add_edge(edge)
+    #self.process_input(obj=None,process_function=make_schema,explicit_input_required=False)
 
-        #self.process_input(obj=None,process_function=make_schema,explicit_input_required=False)
+    # do it all from hash, no need to construct again
 
-        # do it all from hash, no need to construct again
-        return graph
+    if write_png_fn is not None:
+        self.get_schema().write_png(write_png_fn)
 
-    def get_hashe(self):
-        return self.process(output_required=False)
+    return graph
+
