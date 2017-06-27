@@ -41,6 +41,7 @@ def test_two_object():
 def test_constructor_input():
     from dataanalysis import analysisfactory
     from dataanalysis import core as da
+    da.reset()
 
     class BAnalysis(da.DataAnalysis):
         def main(self):
@@ -63,6 +64,9 @@ def test_constructor_input():
     assert A.data == 'otherdata'
 
     A=Analysis(input_b=BAnalysis())
+
+    assert hasattr(A,'input_b')
+
     da.debug_output()
     print("*" * 80)
     A.promote()
