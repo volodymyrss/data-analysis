@@ -51,6 +51,8 @@ class Cache(object):
 
     readonly_cache=False
 
+    ingore_unhandled=True
+
     filebackend=backends.FileBackend()
 
     can_url_to_cache=True

@@ -557,6 +557,10 @@ class DataAnalysis(object):
         # do it all from hash, no need to construct again
         return graph
 
+    def get_hashe(self):
+        return self.process(output_required=False)
+
+
     def get(self,**aa):
         if 'saveonly' in aa and aa['saveonly'] is not None:
             import errno
