@@ -112,7 +112,7 @@ class DataHandle:
     pass
 
 
-class NoAnalysis:
+class NoAnalysis():
     pass
 
 def isdataanalysis(obj,alsofile=False):
@@ -530,35 +530,6 @@ class DataAnalysis(object):
         return r # twice
 
 
-    def plot_schema(self,fn="schema.png"):
-        self.get_schema().write_png(fn)
-
-    def get_schema(self,graph=None):
-        import pydot
-
-        graph = pydot.Dot(graph_type='digraph')
-
-        def make_schema(i1,i2):
-
-            if not isinstance(i2,DataAnalysis):
-                return
-
-            if i2.schema_hidden:
-                return
-
-            node = pydot.Node(repr(i2), style="filled", fillcolor="green")
-            node = pydot.Node(repr(i1), style="filled", fillcolor="green")
-
-            edge = pydot.Edge(repr(i2), repr(i1))
-            graph.add_edge(edge)
-
-        self.process_input(obj=None,process_function=make_schema,explicit_input_required=False)
-
-        # do it all from hash, no need to construct again
-        return graph
-
-    def get_hashe(self):
-        return self.process(output_required=False)
 
 
     def get(self,**aa):
@@ -1136,21 +1107,8 @@ class DataAnalysis(object):
         self.alias=hash2
         AnalysisFactory.register_alias(hash1,hash2)
 
-    def process_input(self,obj=None,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
-        """
-        walk over all input; apply process_function and implement if neccessary
-        """
 
-        log("{CYAN}PROCESS INPUT{/}")
-
-        restore_rules_default=dict(explicit_input_required=False,restore_complete=False)
-        restore_rules=dict(list(restore_rules_default.items())+list(restore_rules.items()) if restore_rules is not None else [])
-
-        # to simplify input
-        for k in extra.keys():
-            if k in restore_rules:
-                restore_rules[k]=extra[k]
-
+    def prepare_restore_config(self,restore_config):
         if restore_config is None:
             restore_config={}
 
@@ -1166,12 +1124,37 @@ class DataAnalysis(object):
         else:
             restore_config['test_files']=False
 
+        return restore_config
+
+    def prepare_restore_rules(self,restore_rules, extra):
+        restore_rules_default = dict(explicit_input_required=False, restore_complete=False)
+        restore_rules = dict(
+            list(restore_rules_default.items()) + list(restore_rules.items()) if restore_rules is not None else [])
+
+        # to simplify input
+        for k in extra.keys():
+            if k in restore_rules:
+                restore_rules[k] = extra[k]
+
         if self.force_complete_input:
             restore_rules['force_complete']=True
         else:
             restore_rules['force_complete']=False
             log("input will not be forced!")
 
+        return restore_rules
+
+
+    def process_input(self,obj=None, restore_rules=None,restore_config=None,requested_by=None, return_list=False,**extra):
+        """
+        walk over all input; apply process_function and implement if neccessary
+        """
+
+        log("{CYAN}PROCESS INPUT{/}")
+
+
+        restore_config=self.prepare_restore_config(restore_config)
+        restore_rules=self.prepare_restore_rules(restore_rules,extra)
 
         log("input restore_rules:",restore_rules)
         log("input restore_config:",restore_config)
@@ -1191,7 +1174,7 @@ class DataAnalysis(object):
                     if o is None:
                         raise Exception("input is None: virtual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
 
-                    h,l=self.process_input(obj=o,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+                    h,l=self.process_input(obj=o,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
 
                     if not isinstance(l,list) and l.is_noanalysis():
                         log("NoAnalysis:",o,o.__class__)
@@ -1227,7 +1210,7 @@ class DataAnalysis(object):
                 nitems=[]
                 for i in obj:
                     log("item:",i)
-                    hi,ni=self.process_input(obj=i,process_function=process_function,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+                    hi,ni=self.process_input(obj=i,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
                     hashes.append(hi)
                     nitems.append(ni)
                 if all([i is None for i in nitems]):
@@ -1259,11 +1242,8 @@ class DataAnalysis(object):
             log("item:",item._da_locally_complete)
         except Exception as e:
             raise Exception(str(item)+" has no locally complete!")
-        input_hash,newitem=item.process(process_function=process_function,restore_rules=rr,restore_config=restore_config,requested_by=requested_by) # recursively for all inputs process input
+        input_hash,newitem=item.process(restore_rules=rr,restore_config=restore_config,requested_by=requested_by) # recursively for all inputs process input
         log("process_input finishing at the end",input_hash,newitem)
-
-        if process_function is not None:
-            process_function(self,newitem) # then run something to each input item
 
         return input_hash,newitem # return path to the item (hash) and the item
 
@@ -1504,3 +1484,35 @@ byname = lambda x: AnalysisFactory.byname(x)
 
 def get_object(a):
     return AnalysisFactory[a]
+
+
+class Schema(): # non-functional class so far
+    def plot_schema(self,fn="schema.png"):
+        self.get_schema().write_png(fn)
+
+    def get_schema(self,graph=None):
+        import pydot
+
+        graph = pydot.Dot(graph_type='digraph')
+
+        def make_schema(i1,i2):
+
+            if not isinstance(i2,DataAnalysis):
+                return
+
+            if i2.schema_hidden:
+                return
+
+            node = pydot.Node(repr(i2), style="filled", fillcolor="green")
+            node = pydot.Node(repr(i1), style="filled", fillcolor="green")
+
+            edge = pydot.Edge(repr(i2), repr(i1))
+            graph.add_edge(edge)
+
+        #self.process_input(obj=None,process_function=make_schema,explicit_input_required=False)
+
+        # do it all from hash, no need to construct again
+        return graph
+
+    def get_hashe(self):
+        return self.process(output_required=False)
