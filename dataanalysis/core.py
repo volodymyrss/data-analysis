@@ -530,7 +530,7 @@ class DataAnalysis(object):
         return r # twice
 
     def get_hashe(self):
-        return self.process(output_required=False)
+        return self.process(output_required=False)[0]
 
 
     def get(self,**aa):
