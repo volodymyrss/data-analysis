@@ -1007,7 +1007,8 @@ class TransientCache(Cache): #d
         #return # problem with files
 
         if obj.run_for_hashe or obj.mutating:
-            return False
+            return
+
         # check if updated
 
         self.list()
