@@ -466,8 +466,10 @@ class DataAnalysis(object):
 
      #   c=MemCacheLocal.store(fih,self.export_data())
         #log(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
+
         TransientCacheInstance.store(fih,self)
         self.cache.store(fih,self)
+
         #c=MemCacheLocal.store(oh,self.export_data())
 
     def post_restore(self):
@@ -506,7 +508,7 @@ class DataAnalysis(object):
 
         if r and r is not None:
             log("restored from transient: this object will be considered restored and complete: will not do again",self)
-            self._da_locally_complete=True # info save
+            self._da_locally_complete=fih # info save
             return r
 
         if not self.cached:
@@ -698,7 +700,7 @@ class DataAnalysis(object):
         dll=self.default_log_level
         self.default_log_level="main"
 
-        log(render("{RED}running main{/}"),'{log:top}')
+        log(render("{RED}running main{/} of "+repr(self)),'{log:top}')
         t0=time.time()
         main_log=StringIO()
         main_logstream= printhook.LogStream(main_log, lambda x:True, name="main stream")
@@ -958,9 +960,11 @@ class DataAnalysis(object):
 
         if restore_rules['output_required']: #
             log("output required, try to GET from cache")
+            output_origin=None
             if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
                 log("cache found and retrieved",'{log:top}')
                 log(fih,'{log:top}')
+                output_origin = "cache"
             else:
                 log("no cache",'{log:top}')
                 log(fih,'{log:top}')
@@ -1024,7 +1028,7 @@ class DataAnalysis(object):
                     else:
                         log("not allowed to run here. hopefully will run as part of higher-level delegation")
                         raise Exception("not allowed to run but has to (delegation)!")
-                        return fih,self # RETURN!
+                        #return fih, self # RETURN!
 
                     if restore_rules['run_if_haveto'] or self.run_for_hashe:
 
@@ -1032,6 +1036,8 @@ class DataAnalysis(object):
                         self.process_timespent_interpret()
                     else:
                         raise Exception("not allowed to run but has to! at "+repr(self))
+
+                    output_origin="main"
 
                     #log("new output:",self.export_data())
 
@@ -1072,7 +1078,7 @@ class DataAnalysis(object):
                     log("+++ new input hash:",fih)
 
             log("processing finished, main, object is locally complete")
-            log("locally complete:",id(self))
+            log("locally complete:",id(self),"from",output_origin)
             log("locally complete:",fih,'{log:top}')
             self._da_locally_complete=fih
         else:

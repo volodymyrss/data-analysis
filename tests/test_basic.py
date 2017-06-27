@@ -89,6 +89,33 @@ def test_constructor_input():
     assert isinstance(inputs,list)
     assert len(inputs)==1
 
+def test_transient_cache():
+    from dataanalysis import core as da
+
+    da.reset()
+
+    class Analysis(da.DataAnalysis):
+        def main(self):
+            print("test")
+            self.data = "data"
+
+    A=Analysis()
+
+    A.get()
+    assert A.data == "data"
+
+    assert A._da_locally_complete is not None
+    assert isinstance(A._da_locally_complete,tuple)
+
+    B=Analysis()
+
+    assert A._da_locally_complete in da.TransientCacheInstance.cache
+    data=da.TransientCacheInstance.cache[A._da_locally_complete]
+
+    assert  data['data']=='data'
+
+
+
 
 def test_optional_object():
     try:

@@ -1007,12 +1007,13 @@ class TransientCache(Cache): #d
         #return # problem with files
 
         if obj.run_for_hashe or obj.mutating:
-            return 1
+            return False
         # check if updated
 
         self.list()
 
         c=self.find(hashe)
+
         if c is None:
             if not obj.cached:
                 log("object is not cached, i.e. only transient level cache; not leading to parent")
@@ -1054,7 +1055,8 @@ class TransientCache(Cache): #d
 
         self.cache[hashe]=content
 
-        log("stored")
+        log("stored in transient",obj,hashe)
+
         #self.list()
 
 #        self.guarantee_unique_names(obj)
