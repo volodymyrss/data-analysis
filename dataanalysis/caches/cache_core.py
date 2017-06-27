@@ -13,7 +13,6 @@ import gzip
 import os
 import pprint
 import shutil
-import socket
 import sqlite3 as lite
 import subprocess
 import time
@@ -193,7 +192,6 @@ class Cache(object):
     def test_file(self,fn):
         if fn.endswith('fits') or fn.endswith('fits.gz'):
             log("fits, will test it")
-            from astropy.io import fits as pyfits
             try:
                 pyfits.open(fn)
             except Exception as e:
@@ -1007,7 +1005,7 @@ class TransientCache(Cache): #d
         #return # problem with files
 
         if obj.run_for_hashe or obj.mutating:
-            return 
+            return 1
         # check if updated
 
         self.list()

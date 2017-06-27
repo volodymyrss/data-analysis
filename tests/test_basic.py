@@ -36,7 +36,52 @@ def test_two_object():
     A.get()
         
     assert A.data == 'data'
-    
+
+
+def test_constructor_input():
+    from dataanalysis import analysisfactory
+    from dataanalysis import core as da
+
+    class BAnalysis(da.DataAnalysis):
+        def main(self):
+            print("test")
+            self.data="data"
+
+    class Analysis(da.DataAnalysis):
+        #input_b=BAnalysis
+
+        def main(self):
+            print("test")
+            if hasattr(self,'input_b'):
+                self.data = self.input_b.data
+            else:
+                self.data = 'otherdata'
+
+    A=Analysis()
+    A.get()
+
+    assert A.data == 'otherdata'
+
+    A=Analysis(input_b=BAnalysis())
+    da.debug_output()
+    print("*" * 80)
+    A.promote()
+    print("/" * 80)
+
+    A_fn=analysisfactory.AnalysisFactory.get_by_name(A.get_signature()).get()
+    print(A, A_fn)
+    assert A == A_fn
+
+    A_f = analysisfactory.AnalysisFactory.get(A).get()
+
+    print(A,A_f)
+    assert A == A_f
+
+    A.get()
+
+    assert A.data == 'data'
+
+
 def test_optional_object():
     try:
         from dataanalysis import core as da

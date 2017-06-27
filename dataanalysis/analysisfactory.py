@@ -1,8 +1,9 @@
 import sys
-from dataanalysis.bcolors import render
 
 from dataanalysis import printhook
-from dataanalysis.printhook import log,decorate_method_log,debug_print
+from dataanalysis.bcolors import render
+from dataanalysis.printhook import log, decorate_method_log, debug_print
+
 
 #from dataanalysis import core
 #print(core.__file__)
@@ -251,6 +252,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         if name not in self.cache:
             raise Exception("name is not known, can not get this: " + name)
         return self.cache[name]
+
+    def get_by_name(self, name):
+        return self.byname(name)
 
     def __getitem__(self, name):
         return self.byname(name)
