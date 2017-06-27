@@ -913,7 +913,7 @@ class DataAnalysis(object):
 
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
-        log(render("{BLUE}PROCESS{/}"))
+        log(render("{BLUE}PROCESS{/} "+repr(self)))
 
         if requested_by is None:
             requested_by=['direct']
@@ -1494,7 +1494,7 @@ def reset():
 def debug_output():
     printhook.global_all_output=True
     printhook.global_permissive_output=True
-    printhook.global_fancy_output=True
+    printhook.global_fancy_output=False
     printhook.LogStreams=[printhook.LogStream(sys.stdout,levels=None,name="original stdout set in debug")]
 
 AnalysisFactory.blueprint_class=DataAnalysis
