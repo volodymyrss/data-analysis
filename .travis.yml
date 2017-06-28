@@ -15,7 +15,7 @@ script:
 - py.test --cov=./
 after_success:
 - coverage xml
-- python-codacy-coverage -r coverage.xml -v
+- python-codacy-coverage -r coverage.xml
 - codecov
 env:
   global:
