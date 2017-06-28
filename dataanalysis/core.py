@@ -390,7 +390,7 @@ class DataAnalysis(object):
         if verify_jsonifiable:
             res=[]
             for a,b in r.items():
-                res.append([a,jsonify(b)])
+                res.append([a,jsonify.jsonify(b)])
             r=dict(res)
 
         log("resulting output:",r)
