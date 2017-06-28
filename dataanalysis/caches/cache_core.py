@@ -413,6 +413,7 @@ class Cache(object):
             return True
         raise Exception("content from cache is not dict! "+str(c))
 
+    # TODO: clear the directory!
     def assemble_blob(self,hashe,obj):
         self.store_to_directory(hashe,obj,"./blob")
 
