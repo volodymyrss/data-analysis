@@ -4,10 +4,16 @@ from persistqueue import Queue, Empty
 
 import dataanalysis.caches
 import dataanalysis.caches.cache_core
+import dataanalysis.core as da
 
 
-class DelegatedNoticeException(Exception):
+class DelegatedNoticeException(da.AnalysisDelegatedException):
     pass
+
+class DelegatingCache(dataanalysis.caches.cache_core.Cache):
+
+    def restore(self,hashe,obj,restore_config=None):
+        raise da.AnalysisDelegatedException(hashe)
 
 
 class QueueCache(dataanalysis.caches.cache_core.Cache):
@@ -19,7 +25,7 @@ class QueueCache(dataanalysis.caches.cache_core.Cache):
     def restore(self,hashe,obj,restore_config=None):
         self.queue.put([obj.get_factory_name(),dataanalysis.core.AnalysisFactory.get_module_description(),hashe])
 
-        raise DelegatedNoticeException()
+        raise DelegatedNoticeException(hashe)
 
     def wipe_queue(self):
         while True:

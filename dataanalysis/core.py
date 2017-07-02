@@ -11,9 +11,7 @@ import json
 import os
 import shutil
 import socket
-import subprocess
 import sys
-import tempfile
 import time
 from collections import Mapping, Set, Sequence
 
@@ -74,39 +72,6 @@ TransientCacheInstance = cache_core.TransientCache()
 string_types = (str, unicode) if str is bytes else (str, bytes)
 iteritems = lambda mapping: getattr(mapping, 'iteritems', mapping.items)()
 
-def get_cwd():
-    tf=tempfile.NamedTemporaryFile()
-    ppw=subprocess.Popen(["pwd"],stdout=tf)
-    ppw.wait()
-
-    try:
-        ppw.terminate()
-    except OSError:
-        pass
-    tf.seek(0)
-    owd=tf.read()[:-1]
-    log("old pwd gives me",owd)
-    tf.close()
-    del tf
-    return owd
-
-
-def athostdir(f):
-    def wrapped(self,*a,**aa):
-        owd=get_cwd()
-        try:
-            if not os.path.exists(self.hostdir):
-                os.makedirs(self.hostdir)
-            os.chdir(self.hostdir)
-            r=f(self,*a,**aa)
-        except Exception as e:
-            log("exception in wrapped:",e)
-            os.chdir(owd)
-            raise
-        os.chdir(owd)
-        return r
-    return wrapped
-
 class DataHandle:
     trivial = True
     pass
@@ -156,6 +121,21 @@ def update_dict(a,b):
 class AnalysisException(Exception):
     pass
 
+class AnalysisDelegatedException(Exception):
+    def __init__(self,hashe):
+        self.hashe=hashe
+        self.expectations=[self] # oh?
+
+    @classmethod
+    def from_list(cls,exceptions):
+        obj=cls(None)
+
+        obj.expectations=exceptions
+
+        return obj
+
+    def __repr__(self):
+        return "[{}: {}]".format(self.__class__.__name__,self.hashe[-1])
 
 class decorate_all_methods(type):
     def __new__(cls, name, bases, local):
@@ -935,6 +915,7 @@ class DataAnalysis(object):
         rr= list(dict(restore_rules.items())) + list(dict(output_required=False).items()) # no need to request input results unless see below
 
         #### process input
+
         input_hash,input=self.process_input(obj=None,
                                             process_function=process_function,
                                             restore_rules=update_dict(restore_rules,dict(
@@ -1166,11 +1147,10 @@ class DataAnalysis(object):
 
     def process_input(self,obj=None, restore_rules=None,restore_config=None,requested_by=None, **extra):
         """
-        walk over all input; apply process_function and implement if neccessary
+        walk over all input
         """
 
         log("{CYAN}PROCESS INPUT{/}")
-
 
         restore_config=self.prepare_restore_config(restore_config)
         restore_rules=self.prepare_restore_rules(restore_rules,extra)
@@ -1182,33 +1162,44 @@ class DataAnalysis(object):
             # start from the object dir, look for input
             inputhashes=[]
             inputs=[]
+            delegated=[]
             for a in dir(self):
                 if a.startswith("input"):
                     o=getattr(self,a)
                     log("input item",a,o)
                     if o is NoAnalysis:
-                        log("NoAnalysis:",o) #,o.__class__)
-                        continue # yes?
+                        log("NoAnalysis:",o)
+                        continue
 
                     if o is None:
                         raise Exception("input is None: virtual class: "+repr(self)+" input "+a+" requested by "+" ".join(requested_by))
 
-                    h,l=self.process_input(obj=o,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+                    try:
+                        h,l=self.process_input(obj=o,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+                    except AnalysisDelegatedException as delegated_exception:
+                        delegated.append(delegated_exception)
+                        continue
 
                     if not isinstance(l,list) and l.is_noanalysis():
                         log("NoAnalysis:",o,o.__class__)
-                        continue # yes?
+                        continue
 
+                    # results are put instead
                     if l is not None:
                         log("input item",a)
                         log("implemented as",h,l)
                         setattr(self,a,l)
                     else:
-                        log("input item None!",a,l)
+                        log("processed input item None!",a,l)
                         raise Exception("?")
 
                     inputhashes.append(h)
                     inputs.append(l)
+
+            if delegated != []:
+                log("delegated:",len(delegated),delegated)
+                log("still implemented:", len(inputhashes),inputs)
+                raise AnalysisDelegatedException.from_list(delegated)
 
             if len(inputhashes)>1:
                 return ('list',)+tuple(inputhashes),inputs
@@ -1228,11 +1219,22 @@ class DataAnalysis(object):
                 log("parse list")
                 hashes=[]
                 nitems=[]
+                delegated=[]
                 for i in obj:
                     log("item:",i)
-                    hi,ni=self.process_input(obj=i,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+                    try:
+                        hi,ni=self.process_input(obj=i,restore_rules=restore_rules,restore_config=restore_config,requested_by=requested_by)
+                    except AnalysisDelegatedException as delegated_exception:
+                        delegated.append(delegated_exception)
+                        continue
+
                     hashes.append(hi)
                     nitems.append(ni)
+
+                if delegated!=[]:
+                    log("delegated:", len(delegated), delegated)
+                    AnalysisDelegatedException.from_list(delegated)
+
                 if all([i is None for i in nitems]):
                     return tuple(['list']+hashes),None
 

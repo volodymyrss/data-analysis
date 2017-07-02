@@ -63,7 +63,20 @@ class Cache(object):
     def reset_stack(self):
         self.reset()
         if self.parent is not None:
-                self.parent.reset()
+            self.parent.reset()
+
+    def tail_parent(self,new_tail_parent):
+        if self.parent is None:
+            self.parent=new_tail_parent
+        else:
+            self.parent.tail_parent(new_tail_parent)
+
+    def list_parent_stack(self):
+        if self.parent is None:
+            return [self]
+        else:
+            return [self]+self.parent.list_parent_stack()
+
 
     def statistics(self):
         pass
