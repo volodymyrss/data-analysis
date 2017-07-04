@@ -39,6 +39,9 @@ TransientCacheInstance = cache_core.TransientCache()
 
 # TODO:
 
+# once identical data was produced, forget about the origins
+# configuration nodes have this property: their
+
 # approprate logging
 # reporting classes
 # cache migration
