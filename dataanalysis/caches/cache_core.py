@@ -5,6 +5,7 @@ try:
 except ImportError:
     import pickle as cPickle
 
+import astropy.io.fits as fits # this should be specific to ddosa!
 
 import tarfile
 import glob
@@ -208,7 +209,7 @@ class Cache(object):
         if fn.endswith('fits') or fn.endswith('fits.gz'):
             log("fits, will test it")
             try:
-                pyfits.open(fn)
+                fits.open(fn)
             except Exception as e:
                 log("corrupt fits file",fn,e)
                 raise Exception('corrupt fits file in cache: '+fn)
