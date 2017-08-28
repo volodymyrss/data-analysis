@@ -372,8 +372,13 @@ class DataAnalysis(object):
             print("using class attributes",self.__dict__.keys())
             updates=self.__dict__.keys()+empty_copy.__dict__.keys()
 
+        # revise as follows:
+        #  - need to be able to retore DataAnalysis references, as currently known
+        #  - use behavir more clear
 
         def qualifies_for_export(a):
+            if isinstance(getattr(self, a),DataFile): return True
+            #if isinstance(getattr(self, a),DataAnalysis): return True #?
             if callable(getattr(self,a)): return False
             if isinstance(getattr(self, a),cache_core.Cache): return False
             if a.startswith("_"): return False
