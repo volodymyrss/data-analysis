@@ -8,6 +8,7 @@ parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name o
 parser.add_argument('-m', dest='module', metavar='MODULE_NAME', type=str, help='module to load', nargs='+', action='append', default=[])
 parser.add_argument('-a', dest='assume', metavar='ASSUME', type=str, help='...', nargs='+', action='append', default=[])
 parser.add_argument('-j', dest='json',  help='...',action='store_true', default=False)
+parser.add_argument('-J', dest='serialize_json',  help='...',action='store_true', default=False)
 parser.add_argument('-i', dest='inject', metavar='INJECT_JSON', type=str, help='json filename to inject', nargs='+', action='append', default=[])
 parser.add_argument('-t', dest='tar',  help='...',action='store_true', default=False)
 parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default=False)
@@ -105,11 +106,13 @@ for inj_fn in args.inject:
 A.process(output_required=True)
 
 if args.json:
-    print "will dump state json"
+    print "will dump serialization to json",fn
     json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
                       indent=4, separators=(',', ': '))
 
-    json.dump(A.export_data(embed_datafiles=True, verify_jsonifiable=True), open(a[0]+".json", "w"),
+if args.serialize_json:
+    fn = A.get_factory_name() + "_data.json"
+    json.dump(A.serialize(embed_datafiles=True, verify_jsonifiable=True), open(fn, "w"),
               sort_keys=True,
               indent=4, separators=(',', ': '))
 
