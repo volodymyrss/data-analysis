@@ -2,6 +2,8 @@ from __future__ import print_function
 
 import pytest
 
+import dataanalysis.core as da
+
 
 def define_analysis():
     class Analysis(da.DataAnalysis):
