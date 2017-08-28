@@ -4,15 +4,12 @@ import pytest
 
 
 def define_analysis():
-    from dataanalysis import core as da
-
     class Analysis(da.DataAnalysis):
         def main(self):
             self.data="datadata"
 
 
 def test_queue_cache():
-    from dataanalysis import core as da
     from dataanalysis import caches
     import dataanalysis.caches.delegating
 
@@ -31,6 +28,8 @@ def test_queue_cache():
 
     with pytest.raises(caches.delegating.DelegatedNoticeException):
         A.get()
+
+    q_cache
 
     # worker part
 
@@ -52,7 +51,6 @@ def test_queue_cache():
 #    worker.run_all()
 
 def test_delegating_analysis():
-    from dataanalysis import core as da
     #import dataanalysis
     from dataanalysis import caches
     import dataanalysis.caches.delegating
