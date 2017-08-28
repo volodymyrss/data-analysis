@@ -141,7 +141,6 @@ def test_object_serialization_with_use():
     da.reset()
 
     class AAnalysis(da.DataAnalysis):
-#        arg=None
         class_arg=1
 
     A=AAnalysis(use_usearg=2)
@@ -151,6 +150,8 @@ def test_object_serialization_with_use():
     aac=AA.serialize()
 
     assert aac[1]['usearg'] == 2
+    assert aac[1]['class_arg'] == 1
+
 
 
 def test_object_injection_external():

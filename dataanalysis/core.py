@@ -357,18 +357,35 @@ class DataAnalysis(object):
     def jsonify(self,embed_datafiles=False,verify_jsonifiable=False):
         return self.export_data(embed_datafiles,verify_jsonifiable)
 
-    def export_data(self,embed_datafiles=False,verify_jsonifiable=False):
+    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False):
+        log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes)
         empty_copy=self.__class__
+        log("my keys:", self.__dict__.keys())
         log("my class is",self.__class__)
+        log("class keys:", empty_copy.__dict__.keys())
+
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
         log("new keys:",updates)
         # or state of old keys??
+
+        if include_class_attributes:
+            print("using class attributes",self.__dict__.keys())
+            updates=self.__dict__.keys()+empty_copy.__dict__.keys()
+
+        def qualifies_for_export(a):
+            if a.startswith("_"): return False
+            if a.startswith("set_"): return False
+            if a.startswith("use_"): return False
+            if a.startswith("input"): return False
+            if a.startswith('assumptions'): return False
+            if a.startswith('virtual'): return False
+            return True
 
         if self.explicit_output is not None:
             log("explicit output requested",self.explicit_output)
             r=dict([[a,getattr(self,a)] for a in self.explicit_output if hasattr(self,a)])
         else:
-            r=dict([[a,getattr(self,a)] for a in updates if not a.startswith("_") and not a.startswith("set_") and not a.startswith("use_") and not a.startswith("input") and not a.startswith('assumptions')])
+            r=dict([[a,getattr(self,a)] for a in updates if qualifies_for_export(a)])
 
         if verify_jsonifiable:
             res=[]
@@ -385,8 +402,9 @@ class DataAnalysis(object):
             log("restoring", k, i)
             setattr(self, k, i)
 
-    def serialize(self,embed_datafiles=False,verify_jsonifiable=False):
-        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable)
+    def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True):
+        log("serialize as",embed_datafiles,verify_jsonifiable,include_class_attributes)
+        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
     # it can be done differently
