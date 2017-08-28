@@ -106,7 +106,7 @@ for inj_fn, in args.inject:
 A.process(output_required=True)
 
 if args.json:
-    print "will dump serialization to json",fn
+    print "will dump serialization to json"
     json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
                       indent=4, separators=(',', ': '))
 
