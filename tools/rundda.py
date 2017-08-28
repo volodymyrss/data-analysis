@@ -97,7 +97,7 @@ for a in args.disable_run:
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
-for inj_fn in args.inject:
+for inj_fn, in args.inject:
     print("injecting from",inj_fn)
     inj_content=json.load(open(inj_fn))
 
