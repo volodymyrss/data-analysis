@@ -152,6 +152,8 @@ def test_object_serialization_with_use():
     assert aac[1]['usearg'] == 2
     assert aac[1]['class_arg'] == 1
 
+    assert 'version' in aac[1]
+
 
 
 def test_object_injection_external():

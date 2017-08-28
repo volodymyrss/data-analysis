@@ -357,8 +357,8 @@ class DataAnalysis(object):
     def jsonify(self,embed_datafiles=False,verify_jsonifiable=False):
         return self.export_data(embed_datafiles,verify_jsonifiable)
 
-    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False):
-        log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes)
+    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False):
+        log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
         empty_copy=self.__class__
         log("my keys:", self.__dict__.keys())
         log("my class is",self.__class__)
@@ -372,14 +372,23 @@ class DataAnalysis(object):
             print("using class attributes",self.__dict__.keys())
             updates=self.__dict__.keys()+empty_copy.__dict__.keys()
 
+
         def qualifies_for_export(a):
+            if callable(getattr(self,a)): return False
+            if isinstance(getattr(self, a),cache_core.Cache): return False
             if a.startswith("_"): return False
             if a.startswith("set_"): return False
             if a.startswith("use_"): return False
             if a.startswith("input"): return False
             if a.startswith('assumptions'): return False
             if a.startswith('virtual'): return False
+            if a.startswith('read_caches'): return False
+            if a.startswith('write_caches'): return False
             return True
+
+        if deep_export:
+            updates = dir(self)
+            print("deep export", [u for u in updates if qualifies_for_export(u)])
 
         if self.explicit_output is not None:
             log("explicit output requested",self.explicit_output)
@@ -402,9 +411,9 @@ class DataAnalysis(object):
             log("restoring", k, i)
             setattr(self, k, i)
 
-    def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True):
+    def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
         log("serialize as",embed_datafiles,verify_jsonifiable,include_class_attributes)
-        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes)
+        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
     # it can be done differently
