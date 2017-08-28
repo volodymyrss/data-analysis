@@ -385,8 +385,8 @@ class DataAnalysis(object):
             log("restoring", k, i)
             setattr(self, k, i)
 
-    def serialize(self):
-        return self.get_factory_name(),self.export_data()
+    def serialize(self,embed_datafiles=False,verify_jsonifiable=False):
+        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
     # it can be done differently
