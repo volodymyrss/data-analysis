@@ -49,6 +49,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         obj.infactory = True
         obj.virtual = True
         self.put(obj)
+        print("result of injection",self.byname(obj.get_signature()))
 
     def put(self, obj, sig=None):
         log("requested to put in factory:", obj, sig)
@@ -217,7 +218,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             log("promoting", i, 'assumptions', o.assumptions)
             # if o.is_virtual():
             #    log("virtual object, constructing empty copy")
+            serialization=o.serialize()
             o.__class__(dynamic=False).promote()  # assume??
+            self.inject_serialization(serialization) # conditional reality contains pale copies of the fundamentals
 
         for assumptions in self.cache_assumptions:
             log("assumption group:", assumptions)
