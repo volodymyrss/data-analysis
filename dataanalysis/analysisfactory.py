@@ -42,14 +42,14 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.cache = {}
 
     def inject_serialization(self, serialization):
-        print("injecting", serialization)
+        log("injecting", serialization)
         name, data = serialization
         obj = self[name]
         obj.import_data(data)
         obj.infactory = True
         obj.virtual = True
         self.put(obj)
-        print("result of injection",self.byname(obj.get_signature()))
+        log("result of injection",self.byname(obj.get_signature()))
 
     def put(self, obj, sig=None):
         log("requested to put in factory:", obj, sig)

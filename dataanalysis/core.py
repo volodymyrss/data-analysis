@@ -369,7 +369,7 @@ class DataAnalysis(object):
         # or state of old keys??
 
         if include_class_attributes:
-            print("using class attributes",self.__dict__.keys())
+            log("using class attributes",self.__dict__.keys())
             updates=self.__dict__.keys()+empty_copy.__dict__.keys()
 
         # revise as follows:
@@ -379,6 +379,7 @@ class DataAnalysis(object):
         def qualifies_for_export(a):
             if hasattr(type(self), a) and isinstance(getattr(type(self), a), property): return False
             if isinstance(getattr(self, a),DataFile): return True
+            if isinstance(getattr(self, a), AnalysisFactory.__class__): return False
             #if isinstance(getattr(self, a),DataAnalysis): return True #?
             if callable(getattr(self,a)): return False
             if isinstance(getattr(self, a),cache_core.Cache): return False
@@ -394,7 +395,7 @@ class DataAnalysis(object):
 
         if deep_export:
             updates = dir(self)
-            print("deep export", [u for u in updates if qualifies_for_export(u)])
+            log("deep export", [u for u in updates if qualifies_for_export(u)])
 
         if self.explicit_output is not None:
             log("explicit output requested",self.explicit_output)

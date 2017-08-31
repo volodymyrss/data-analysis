@@ -457,8 +457,13 @@ class Cache(object):
 
         content = obj.export_data()
 
-        cPickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
-        cPickle.dump(hashe, self.filebackend.open(cached_path + "hash.pickle.gz", "w", gz=True))
+        try:
+            cPickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
+            cPickle.dump(hashe, self.filebackend.open(cached_path + "hash.pickle.gz", "w", gz=True))
+        except cPickle.PicklingError as pe:
+            log("pickling issue",pe)
+            log("was pickling content",content)
+            raise
         self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
         self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)
 
