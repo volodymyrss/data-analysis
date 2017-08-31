@@ -377,6 +377,7 @@ class DataAnalysis(object):
         #  - use behavir more clear
 
         def qualifies_for_export(a):
+            if hasattr(type(self), a) and isinstance(getattr(type(self), a), property): return False
             if isinstance(getattr(self, a),DataFile): return True
             #if isinstance(getattr(self, a),DataAnalysis): return True #?
             if callable(getattr(self,a)): return False

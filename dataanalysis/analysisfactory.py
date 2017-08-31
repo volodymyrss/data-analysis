@@ -218,7 +218,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             log("promoting", i, 'assumptions', o.assumptions)
             # if o.is_virtual():
             #    log("virtual object, constructing empty copy")
-            serialization=o.serialize()
+            serialization=o.serialize(verify_jsonifiable=False)
             o.__class__(dynamic=False).promote()  # assume??
             self.inject_serialization(serialization) # conditional reality contains pale copies of the fundamentals
 
