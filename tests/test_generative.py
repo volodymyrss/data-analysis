@@ -1,3 +1,4 @@
+from dataanalysis import cache_core as cache_core
 from dataanalysis import core as da
 
 
@@ -140,8 +141,12 @@ def test_generate_aliased():
     debug_output()
     da.reset()
 
+    my_cache=cache_core.Cache()
+
     class BAnalysis(da.DataAnalysis):
         c = None
+
+        cache=my_cache
 
         cached=True
 
