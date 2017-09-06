@@ -798,6 +798,7 @@ class DataAnalysis(object):
         log("was",output_objects,level='output_objects')
         log("has",implemented_objects,level='output_objects')
 
+        assert len(output_objects) == len(implemented_objects)
 
         try:
             for newobj,obj in zip(implemented_objects,output_objects):

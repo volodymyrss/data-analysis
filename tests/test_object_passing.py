@@ -203,9 +203,8 @@ def test_object_injection_external():
 
 def test_object_injection_reset():
     from dataanalysis import core as da
-
-    da.debug_output()
     da.reset()
+    da.debug_output()
 
     class AAnalysis(da.DataAnalysis):
 #        arg=None

@@ -102,3 +102,6 @@ def test_delegating_analysis():
         A.get()
     except da.AnalysisDelegatedException as e:
         print("expectations:",e.expectations)
+
+    del da.DataAnalysis.cache.parent
+

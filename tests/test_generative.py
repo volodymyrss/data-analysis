@@ -138,8 +138,8 @@ def test_generate_structures():
     assert r[1]._da_locally_complete
 
 def test_generate_aliased():
-    debug_output()
     da.reset()
+    da.debug_output()
 
     my_cache=cache_core.Cache("./local-test")
 
