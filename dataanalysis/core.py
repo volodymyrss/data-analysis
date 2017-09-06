@@ -798,8 +798,6 @@ class DataAnalysis(object):
         log("was",output_objects,level='output_objects')
         log("has",implemented_objects,level='output_objects')
 
-        assert len(output_objects) == len(implemented_objects)
-
         try:
             for newobj,obj in zip(implemented_objects,output_objects):
                 log("replace", obj, id(obj), "with", newobj, id(newobj), level='top')
@@ -808,11 +806,15 @@ class DataAnalysis(object):
             implemented_objects=[implemented_objects]
             output_objects=[output_objects]
 
+        assert len(output_objects) == len(implemented_objects)
+
         for newobj,obj in zip(implemented_objects,output_objects):
             log("replace",obj,id(obj),"with",newobj,id(newobj),level='top')
 
-            for key in newobj.export_data().keys(): # or all??
-                obj._da_locally_complete=newobj._da_locally_complete
+            #for key in newobj.export_data().keys(): # or all??
+            obj._da_locally_complete = newobj._da_locally_complete
+            for key in newobj.export_data(include_class_attributes=True, deep_export=True).keys():  # or all??
+                log("key to",obj,"from newobj",newobj,key)
                 setattr(obj,key,getattr(newobj,key))
 
 

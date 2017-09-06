@@ -35,3 +35,50 @@ def test_whatif():
 
     assert aa1.nonearg is None
 
+
+
+def test_assumption():
+    from dataanalysis import core as da
+
+  #  da.debug_output()
+    da.reset()
+
+    class AAnalysis(da.DataAnalysis):
+        pass
+
+    class BAnalysis(da.DataAnalysis):
+        input_a=AAnalysis
+
+        def main(self):
+            self.d=self.input_a.arg
+
+
+    ba=BAnalysis(assume=AAnalysis(use_arg="arg1",use_nonearg=None)).get()
+    assert ba._da_locally_complete
+    assert ba.d=="arg1"
+
+
+
+
+def test_self_assumption():
+    from dataanalysis import core as da
+
+    da.debug_output()
+    da.reset()
+
+    class AAnalysis(da.DataAnalysis):
+        pass
+
+    aa = AAnalysis(assume=AAnalysis(use_arg="arg2", use_nonearg=None)).get()
+    assert aa._da_locally_complete
+
+    assert not hasattr(aa,'arg') # current behavoir and it is bad
+    #assert aa.arg == "arg2"
+
+
+
+
+
+
+
+
