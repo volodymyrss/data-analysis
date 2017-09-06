@@ -936,6 +936,7 @@ class DataAnalysis(object):
         except Exception as e:
             print("failed:",e)
 
+    _da_output_origin=None
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         log(render("{BLUE}PROCESS{/} "+repr(self)))
@@ -991,6 +992,7 @@ class DataAnalysis(object):
                 log("cache found and retrieved",id(self),'{log:top}')
                 log(fih,'{log:top}')
                 output_origin = "cache"
+                self._da_output_origin=output_origin
             else:
                 log("no cache",'{log:top}')
                 log(fih,'{log:top}')
@@ -1064,6 +1066,7 @@ class DataAnalysis(object):
                         raise Exception("not allowed to run but has to! at "+repr(self))
 
                     output_origin="main"
+                    self._da_output_origin=output_origin
 
                     #log("new output:",self.export_data())
 

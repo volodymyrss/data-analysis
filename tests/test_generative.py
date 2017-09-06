@@ -141,7 +141,7 @@ def test_generate_aliased():
     debug_output()
     da.reset()
 
-    my_cache=cache_core.Cache()
+    my_cache=cache_core.Cache("./local-test")
 
     class BAnalysis(da.DataAnalysis):
         c = None
@@ -177,7 +177,7 @@ def test_generate_aliased():
             self.data = "data " + repr(self.c)
 
         def __repr__(self):
-            return "[A %s]" % repr(self.c)
+            return "[B %s]" % repr(self.c)
 
     class CAnalysis(da.DataAnalysis):
         c = None
@@ -206,6 +206,11 @@ def test_generate_aliased():
 
     print r
     print r.output
+
+    for b,c in r.output:
+        print b,b.data,b._da_locally_complete
+        print c, c.data,c._da_locally_complete
+        print
 
     print(r.output[1][0].c, r.output[1][0].data)
 
