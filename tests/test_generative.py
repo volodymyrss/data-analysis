@@ -83,3 +83,111 @@ def test_generate_join():
     print(got_hashe)
 
     assert expected_hashe != got_hashe
+
+
+def test_generate_structures():
+    debug_output()
+    da.reset()
+
+    class BAnalysis(da.DataAnalysis):
+        c = None
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[A %s]" % repr(self.c)
+
+    class CAnalysis(da.DataAnalysis):
+        c = None
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[C %s]" % repr(self.c)
+
+
+    class AAnalysis(da.DataAnalysis):
+        # run_for_hashe=True
+        def main(self):
+            print("test", self.__class__)
+            r = [[BAnalysis(use_c=c),CAnalysis(use_c=c)] for c in range(3)]
+            return r
+
+    A = AAnalysis()
+    r = A.get()
+
+    print r
+
+    print(r[1].c, r[1].data)
+
+    #assert r[0]
+
+    #assert isinstance(r[0][0],BAnalysis)
+    assert r[0].data == 'data 0'
+    assert r[2].data == 'data 1'
+
+    assert r[1]._da_locally_complete
+
+def test_generate_aliased():
+    debug_output()
+    da.reset()
+
+    class BAnalysis(da.DataAnalysis):
+        c = None
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[A %s]" % repr(self.c)
+
+    class CAnalysis(da.DataAnalysis):
+        c = None
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[C %s]" % repr(self.c)
+
+
+    class AAnalysis(da.DataAnalysis):
+        run_for_hashe=True
+        allow_alias=True
+
+        def main(self):
+            print("test", self.__class__)
+            r = [[BAnalysis(use_c=c),CAnalysis(use_c=c)] for c in range(3)]
+            return r
+
+    A = AAnalysis()
+    r = A.get()
+
+    print r
+
+    print(r.output[1][0].c, r.output[1][0].data)
+
+    #assert r[0]
+
+    assert isinstance(r.output[0][0],BAnalysis)
+    assert isinstance(r.output[0][1], CAnalysis)
+    assert r.output[0][0].data == 'data 0'
+    assert r.output[1][1].data == 'data 1'
+
+    assert r.output[0][0]._da_locally_complete
+    assert r.output[0][1]._da_locally_complete
+
