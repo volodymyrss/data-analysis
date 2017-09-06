@@ -492,8 +492,14 @@ class DataAnalysis(object):
     def post_restore(self):
         pass
 
+    _da_cache_retrieve_requests=None
+
     def retrieve_cache(self,fih,rc=None):
         log("requested cache for",fih)
+
+        if self._da_cache_retrieve_requests is None:
+            self._da_cache_retrieve_requests=[]
+        self._da_cache_retrieve_requests.append([fih,rc])
 
         if self._da_locally_complete is not None:
             log("this object has been already restored and complete",self)
@@ -795,17 +801,19 @@ class DataAnalysis(object):
 
         try:
             for newobj,obj in zip(implemented_objects,output_objects):
-                log("replace",obj,"with",newobj,level='top')
+                log("replace", obj, id(obj), "with", newobj, id(newobj), level='top')
+
         except TypeError:
             implemented_objects=[implemented_objects]
             output_objects=[output_objects]
 
         for newobj,obj in zip(implemented_objects,output_objects):
-            log("replace",obj,"with",newobj,level='top')
+            log("replace",obj,id(obj),"with",newobj,id(newobj),level='top')
 
-            #for key in newobj.))dir:
             for key in newobj.export_data().keys(): # or all??
+                obj._da_locally_complete=newobj._da_locally_complete
                 setattr(obj,key,getattr(newobj,key))
+
 
     def get_delegation(self):
     #def list_delegated(self):
@@ -980,7 +988,7 @@ class DataAnalysis(object):
             log("output required, try to GET from cache")
             output_origin=None
             if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
-                log("cache found and retrieved",'{log:top}')
+                log("cache found and retrieved",id(self),'{log:top}')
                 log(fih,'{log:top}')
                 output_origin = "cache"
             else:

@@ -143,6 +143,28 @@ def test_generate_aliased():
     class BAnalysis(da.DataAnalysis):
         c = None
 
+        cached=True
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[A %s]" % repr(self.c)
+
+    b=BAnalysis(use_c=1).get()
+    assert b.cached
+    assert b._da_locally_complete
+
+    da.reset()
+
+    class BAnalysis(da.DataAnalysis):
+        c = None
+
+        cached=True
+
         _da_settings = ["c"]
 
         def main(self):
@@ -181,13 +203,16 @@ def test_generate_aliased():
 
     print(r.output[1][0].c, r.output[1][0].data)
 
+    assert isinstance(r.output[0][0], BAnalysis)
+    assert r.output[0][0].cached
+    assert r.output[0][0]._da_locally_complete
+    assert r.output[0][0].data == 'data 0'
+
+    assert isinstance(r.output[0][1], CAnalysis)
+    assert not r.output[0][1].cached
+    assert r.output[0][1]._da_locally_complete
+    assert r.output[1][1].data == 'data 1'
     #assert r[0]
 
-    assert isinstance(r.output[0][0],BAnalysis)
-    assert isinstance(r.output[0][1], CAnalysis)
-    assert r.output[0][0].data == 'data 0'
-    assert r.output[1][1].data == 'data 1'
 
-    assert r.output[0][0]._da_locally_complete
-    assert r.output[0][1]._da_locally_complete
 
