@@ -205,6 +205,7 @@ def test_generate_aliased():
     r = A.get()
 
     print r
+    print r.output
 
     print(r.output[1][0].c, r.output[1][0].data)
 
