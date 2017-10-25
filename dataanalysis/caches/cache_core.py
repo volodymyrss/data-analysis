@@ -18,6 +18,7 @@ import sqlite3 as lite
 import subprocess
 import time
 import socket
+import yaml
 
 from dataanalysis.bcolors import render
 
@@ -464,6 +465,12 @@ class Cache(object):
             log("pickling issue",pe)
             log("was pickling content",content)
             raise
+
+        if hasattr(obj,'store_preview_yaml') and obj.store_preview_yaml:
+            yamlfn=cached_path + "cache_preview.yaml.gz"
+            log("storing preview yaml to",yamlfn)
+            yaml.dump(obj.jsonify(), self.filebackend.open(yamlfn,"w",gz=True),default_flow_style=False)
+
         self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
         self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)
 

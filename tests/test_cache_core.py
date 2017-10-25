@@ -88,3 +88,31 @@ def test_cache_blob():
     print(blob)
     assert len(blob)>50
 
+def test_base_cache_check_location():
+    from dataanalysis import core as da
+    from dataanalysis import caches
+    da.reset()
+    da.debug_output()
+
+    cache=caches.cache_core.Cache()
+
+    class Analysis(da.DataAnalysis):
+        cached=True
+        read_caches=[]
+        store_preview_yaml=True
+
+        def main(self):
+            self.data="test123"
+
+    A=Analysis()
+    A.get()
+
+    cached_path=cache.construct_cached_file_path(A._da_locally_complete,A)
+
+    import os
+    assert os.path.exists(cached_path)
+    assert os.path.exists(cached_path+"/hash.txt")
+    assert os.path.exists(cached_path + "/cache_preview.yaml.gz")
+
+
+    #assert B.data == A.data
