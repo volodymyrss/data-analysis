@@ -14,6 +14,7 @@ global_output_levels=['top','cache']
 global_permissive_output=False
 global_all_output=True
 global_log_enabled=True
+global_debug_enabled=False
 
 def log(*args,**kwargs):
     if global_suppress_output:
@@ -28,7 +29,8 @@ def log(*args,**kwargs):
             print(level, *args)
 
 def debug_print(text):
-    open("debug.txt","a").write(text+"\n")
+    if global_debug_enabled:
+        open("debug.txt","a").write(text+"\n")
 
 class PrintHook:
     """
