@@ -2,3 +2,4 @@ pydot
 numpy
 astropy
 persist-queue
+pyyaml
