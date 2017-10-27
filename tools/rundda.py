@@ -3,6 +3,8 @@
 import argparse
 import json
 
+import yaml
+
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
 parser.add_argument('-m', dest='module', metavar='MODULE_NAME', type=str, help='module to load', nargs='+', action='append', default=[])
@@ -68,9 +70,10 @@ for m in modules:
 
 
 
-assumptions=",".join([a[0] for a in args.assume])
-print assumptions
-core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+if len(args.assume)>0:
+    assumptions = ",".join([a[0] for a in args.assume])
+    print assumptions
+    core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
 
 A= core.AnalysisFactory[args.object_name]()
 
@@ -106,7 +109,16 @@ for inj_fn, in args.inject:
 try:
     A.process(output_required=True)
 except dataanalysis.UnhandledAnalysisException as e:
-    print("Node exception", e)
+    yaml.dump(
+              dict(
+                  analysis_node_name=e.argdict['requested_by'],
+                  requested_by=e.argdict['requested_by'],
+                  main_log=e.argdict['main_log'],
+                  traceback=e.argdict['tb'],
+                ),
+              open("exception.yaml","w"),
+              default_flow_style=False,
+        )
     raise
 except Exception as e:
     print("graph exception",e)

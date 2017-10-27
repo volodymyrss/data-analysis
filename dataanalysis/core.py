@@ -135,8 +135,8 @@ class UnhandledAnalysisException(Exception):
 
     def __repr__(self):
         print(self.argdict)
-        return  ">>> main log\n" + \
-                self.argdict['main_log']+ "\n" + \
+        return  "\n\n>>> main log\n" + \
+                "\n".join([">>> "+l for l in self.argdict['main_log'].split("\n")])+ "\n\n" + \
                 self.argdict['tb']+"\n"+ \
                 ">>> "+repr(self.argdict['exception']) + '\n\n'+ \
                 "in DataAnalysis node: "+self.argdict['analysis_node_name'] + '\n' +\
