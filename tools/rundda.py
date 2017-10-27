@@ -111,6 +111,7 @@ try:
 except dataanalysis.UnhandledAnalysisException as e:
     yaml.dump(
               dict(
+                  exception_type="node",
                   analysis_node_name=e.argdict['requested_by'],
                   requested_by=e.argdict['requested_by'],
                   main_log=e.argdict['main_log'],
@@ -122,6 +123,14 @@ except dataanalysis.UnhandledAnalysisException as e:
     raise
 except Exception as e:
     print("graph exception",e)
+    yaml.dump(
+        dict(
+            exception_type="graph",
+            exception=repr(e),
+        ),
+        open("exception.yaml", "w"),
+        default_flow_style=False,
+    )
     raise
 
 if args.json:
