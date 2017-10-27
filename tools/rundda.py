@@ -133,6 +133,7 @@ except Exception as e:
     )
     raise
 
+
 if args.json:
     print "will dump serialization to json"
     json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
@@ -149,7 +150,8 @@ if args.tar:
     print A._da_cached_path
 
 if args.cachelink:
-    print "will note cache link"
-    open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
+    if hasattr(A,'_da_cached_pathes'):
+        print "will note cache link"
+        open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
 
 
