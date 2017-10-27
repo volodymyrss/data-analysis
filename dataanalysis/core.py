@@ -12,6 +12,7 @@ import os
 import shutil
 import socket
 import sys
+import traceback
 import time
 from collections import Mapping, Set, Sequence
 
@@ -25,12 +26,12 @@ from dataanalysis.analysisfactory import AnalysisFactory
 from dataanalysis import printhook
 from dataanalysis.printhook import decorate_method_log,log,debug_print
 
-global_log_enabled=True
-global_fancy_output=False
-#global_suppress_output=False
-global_all_output=True
+#global_log_enabled=True
+#global_fancy_output=False
+##global_suppress_output=False
+#global_all_output=True
 #global_readonly_caches=False
-global_output_levels=('top')
+#global_output_levels=('top')
 
 
 Cache = cache_core.CacheNoIndex()
@@ -120,6 +121,29 @@ def objwalk(obj, path=(), memo=None, sel=lambda x:True):
 
 def update_dict(a,b):
     return dict(list(a.items())+list(b.items()))
+
+class UnhandledAnalysisException(Exception):
+    def __init__(self,analysis_node,main_log,exception):
+        self.argdict=dict(
+            analysis_node_name = repr(analysis_node),
+            requested_by = " ".join(analysis_node._da_requested_by),
+            main_log = main_log,
+            exception=exception,
+            exc_info=sys.exc_info(),
+            tb=traceback.format_exc(),
+        )
+
+    def __repr__(self):
+        print(self.argdict)
+        return  ">>> main log\n" + \
+                self.argdict['main_log']+ "\n" + \
+                self.argdict['tb']+"\n"+ \
+                ">>> "+repr(self.argdict['exception']) + '\n\n'+ \
+                "in DataAnalysis node: "+self.argdict['analysis_node_name'] + '\n' +\
+                "requested by: "+self.argdict['requested_by'] + '\n'
+
+    def __str__(self):
+        return repr(self)
 
 class AnalysisException(Exception):
     pass
@@ -739,18 +763,23 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
-        except Exception as e:
+        except Exception as ex:
             #os.system("ls -ltor")
             self.stop_main_watchdog()
-            os.system("echo current dir;pwd")
+
+
 
             try:
-                self.cache.report_exception(self,e)
-                self.report_runtime("failed "+repr(e))
+                self.cache.report_exception(self,ex)
+                self.report_runtime("failed "+repr(ex))
             except Exception:
                 print("unable to report exception!")
 
-            raise
+            raise UnhandledAnalysisException(
+                analysis_node=self,
+                main_log=main_log.getvalue(),
+                exception=ex,
+            )
         self.stop_main_watchdog()
 
         main_logstream.forget()

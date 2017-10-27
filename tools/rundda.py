@@ -103,7 +103,14 @@ for inj_fn, in args.inject:
 
     core.AnalysisFactory.inject_serialization(inj_content)
 
-A.process(output_required=True)
+try:
+    A.process(output_required=True)
+except dataanalysis.UnhandledAnalysisException as e:
+    print("Node exception", e)
+    raise
+except Exception as e:
+    print("graph exception",e)
+    raise
 
 if args.json:
     print "will dump serialization to json"
