@@ -17,6 +17,7 @@ setup(
 		"dataanalysis.importing",
 		"dataanalysis.printhook",
 		"dataanalysis.jsonify",
+		"dataanalysis.context",
 		],
     scripts=['tools/rundda.py'],
     license='Creative Commons Attribution-Noncommercial-Share Alike license',
