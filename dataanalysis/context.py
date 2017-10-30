@@ -6,36 +6,29 @@ import dataanalysis.core as da
 
 
 class InContext(da.DataAnalysis):
-    root=None
-    leaves=None
+    input_root=None
+    input_leaves=None
 
     include_class_attributes=True
-
-    def get_version(self):
-        v=self.get_signature()+"."+self.version
-        v+=".root_%s"%self.root
-
-        if self.leaves is not None:
-            v += ".leaves_%s" % repr(self.leaves)
-
-        return v
-
 
     def main(self):
         self.data={}
 
-        if self.leaves is not None:
-            leaves=self.leaves
+        if len(self.input_leaves)!=0:
+            leaves=self.input_leaves
         else:
-            leaves=da.AnalysisFactory.cache.keys()
+            leaves=da.AnalysisFactory.cache.keys() # no
 
-        self.data[self.root]={}
 
-        for leaf_name in leaves:
-            leaf=da.AnalysisFactory.get_by_name(leaf_name)
-            if leaf._da_locally_complete and da.hashtools.find_object(leaf._da_locally_complete,self.root):
+        root=da.AnalysisFactory.get_by_name(self.input_root.get_signature())
+
+        self.data[self.input_root.get_signature()]={}
+
+        for leaf in leaves:
+            leaf_name=leaf.get_signature()
+            if leaf._da_locally_complete and da.hashtools.find_object(leaf._da_locally_complete,root.get_version()):
                 print(leaf)
-                self.data[self.root][leaf_name]=leaf.export_data(
+                self.data[self.input_root.get_signature()][leaf_name]=leaf.export_data(
                         include_class_attributes=self.include_class_attributes,
                     )
 

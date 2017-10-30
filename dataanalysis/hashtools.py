@@ -43,7 +43,7 @@ def find_object(hashe,what):
         raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
     #if hashe==what:
     #    return witha
-    return hashe
+    return False
 
 def hashe_list_objects(hashe):
     if isinstance(hashe,tuple):

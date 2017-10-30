@@ -33,7 +33,7 @@ def test_context():
     BAnalysis().get()
 
 
-    ctx=context.InContext(use_root='RAnalysis').get()
+    ctx=context.InContext(input_root=RAnalysis,input_leaves=[AAnalysis,BAnalysis]).get()
     #ctx = context.InContext(use_root='RAnalysis', use_leaves=['AAnalysis', 'BAnalysis']).get()
 
     print ctx.data
