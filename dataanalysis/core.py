@@ -26,19 +26,14 @@ from dataanalysis.analysisfactory import AnalysisFactory
 from dataanalysis import printhook
 from dataanalysis.printhook import decorate_method_log,log,debug_print
 
-#global_log_enabled=True
-#global_fancy_output=False
-##global_suppress_output=False
-#global_all_output=True
-#global_readonly_caches=False
-#global_output_levels=('top')
-
 
 Cache = cache_core.CacheNoIndex()
 TransientCacheInstance = cache_core.TransientCache()
 
 
 # TODO:
+
+# doi. contexual projection
 
 # once identical data was produced, forget about the origins
 # configuration nodes have this property: their

@@ -1,5 +1,6 @@
-from hashlib import sha224
 import hashlib
+from hashlib import sha224
+
 
 def hash_for_file(f, block_size=2**20):
     md5 = hashlib.md5()
@@ -30,6 +31,20 @@ def hashe_replace_object(hashe,what,witha):
     #    return witha
     return hashe
 
+def find_object(hashe,what):
+    if hashe==what:
+        return True
+
+    if isinstance(hashe,tuple):
+        if hashe[0]=='analysis':
+            return find_object(hashe[1],what) or find_object(hashe[2],what)
+        if hashe[0]=='list':
+            return any([find_object(h,what) for h in hashe[1:]])
+        raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
+    #if hashe==what:
+    #    return witha
+    return hashe
+
 def hashe_list_objects(hashe):
     if isinstance(hashe,tuple):
         if hashe[0]=='analysis':
@@ -39,5 +54,5 @@ def hashe_list_objects(hashe):
             for h in hashe[1:]:
                 l+=hashe_list_objects(h)
             return l
-        raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tpule!")
+        raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve tuple!")
     return []
