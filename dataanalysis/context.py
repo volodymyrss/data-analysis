@@ -9,6 +9,8 @@ class InContext(da.DataAnalysis):
     root=None
     leaves=None
 
+    include_class_attributes=True
+
     def get_version(self):
         v=self.get_signature()+"."+self.version
         v+=".root_%s"%self.root
@@ -33,6 +35,8 @@ class InContext(da.DataAnalysis):
             leaf=da.AnalysisFactory.get_by_name(leaf_name)
             if leaf._da_locally_complete and da.hashtools.find_object(leaf._da_locally_complete,self.root):
                 print(leaf)
-                self.data[self.root][leaf_name]=leaf.export_data()
+                self.data[self.root][leaf_name]=leaf.export_data(
+                        include_class_attributes=self.include_class_attributes,
+                    )
 
 

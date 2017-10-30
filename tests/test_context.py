@@ -11,6 +11,8 @@ def test_context():
     class AAnalysis(da.DataAnalysis):
         input_b=RAnalysis
 
+        data_class="aclassdata"
+
         def main(self):
             print("test")
             self.data=self.input_b.data+".a"
@@ -42,6 +44,7 @@ def test_context():
     assert 'CAnalysis' not in ctx.data['RAnalysis']
 
     assert ctx.data['RAnalysis']['AAnalysis']['data']=='data-r.a'
+    assert ctx.data['RAnalysis']['AAnalysis']['data_class'] == 'aclassdata'
     assert ctx.data['RAnalysis']['BAnalysis']['data'] == 'data-r.b'
 
     #assert A.data == 'data'

@@ -305,7 +305,10 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                 log("dda module global name", m.__dda_module_global_name__)
                 module_description.append(['cache', m.__name__, m.__dda_module_global_name__])
             else:
-                module_description.append(['filesystem', m.__name__, m.__file__])
+                if hasattr(m,'__file__'):
+                    module_description.append(['filesystem', m.__name__, m.__file__])
+                else:
+                    module_description.append(['filesystem', m.__name__, None])
 
         return module_description
 
