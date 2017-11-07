@@ -1,5 +1,6 @@
 pydot
 numpy
+pandas
 astropy
 persist-queue
 pyyaml
