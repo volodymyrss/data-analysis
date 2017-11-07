@@ -9,6 +9,7 @@ import collections
 import gzip
 import json
 import os
+import re
 import shutil
 import socket
 import sys
@@ -1573,7 +1574,10 @@ class DataFile(DataAnalysis):
 
     @classmethod
     def from_object(cls, key, obj, optional=True):
-        name="_".join(map(str,key)) if not isinstance(key,str) else key # or unicode
+        if isinstance(key,str):
+            name = key
+        else:
+            name = re.sub("[^a-zA-Z0-9\-]", "_", "_".join(map(str, key)))
 
         import numpy as np
         if isinstance(obj,np.ndarray):

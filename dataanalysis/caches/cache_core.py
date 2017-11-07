@@ -12,6 +12,7 @@ import glob
 import copy
 import gzip
 import os
+import re
 import pprint
 import shutil
 import sqlite3 as lite
@@ -493,7 +494,7 @@ class Cache(object):
         remove_keys=[]
 
         def mapping_adoption(k, b):
-            a = "_".join(map(str,k))
+            a = re.sub("[^a-zA-Z0-9\-]", "_", "_".join(map(str,k)))
 
             adopted_b=DataFile.from_object(k,b,optional=True)
             if adopted_b is not b:

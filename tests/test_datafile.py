@@ -104,6 +104,7 @@ def test_numpy_to_datafile_recursive():
     da.reset()
 
     import numpy as np
+    import pandas as pd
 
     class Analysis(da.DataAnalysis):
         read_caches=[]
@@ -112,7 +113,7 @@ def test_numpy_to_datafile_recursive():
 
         def main(self):
             print("test")
-            self.data = {'a':np.linspace(0,1,100)}
+            self.data = {'a':np.linspace(0,1,100),'b/c!':pd.DataFrame(np.linspace(0,2,200))}
 
 
     A = Analysis()
