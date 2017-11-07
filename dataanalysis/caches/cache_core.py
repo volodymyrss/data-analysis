@@ -500,6 +500,7 @@ class Cache(object):
             if adopted_b is not b:
                 log("storing adopted DataFile",a,adopted_b)
                 extra_content["_datafile_"+a]=adopted_b
+                return None # datafile is put elsewhere
 
             return adopted_b
 
@@ -573,7 +574,10 @@ class Cache(object):
         if hasattr(obj,'store_preview_yaml') and obj.store_preview_yaml:
             yamlfn=cached_path + "cache_preview.yaml.gz"
             log("storing preview yaml to",yamlfn)
-            yaml.dump(obj.jsonify(), self.filebackend.open(yamlfn,"w",gz=True),default_flow_style=False)
+
+            jsonified=self.adopt_datafiles(obj.jsonify())
+
+            yaml.dump(jsonified, self.filebackend.open(yamlfn,"w",gz=True),default_flow_style=False)
 
         self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
         self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)

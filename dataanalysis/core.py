@@ -401,7 +401,7 @@ class DataAnalysis(object):
             setattr(self,a,b)
 
     def jsonify(self,embed_datafiles=False,verify_jsonifiable=False):
-        return self.export_data(embed_datafiles,verify_jsonifiable)
+        return self.cache.adopt_datafiles(self.export_data(embed_datafiles,verify_jsonifiable))
 
     def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False):
         log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)

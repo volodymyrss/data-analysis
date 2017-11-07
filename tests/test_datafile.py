@@ -121,7 +121,7 @@ def test_numpy_to_datafile_recursive():
 
     content=A.export_data()
     cc=A.cache.adopt_datafiles(content)
-    assert isinstance(cc['data']['a'],da.DataFile)
+    assert cc['data']['a'] is None
 
     #da.TransientCacheInstance.reset()
     da.reset()
