@@ -37,6 +37,7 @@ global_readonly_caches=False
 def is_datafile(b):
 # delayed import
     from dataanalysis.core import DataFile
+
     return isinstance(b,DataFile)
 
 def update_dict(a,b):
@@ -316,6 +317,8 @@ class Cache(object):
             return True
 
         if isinstance(c,dict):
+            add_keys={}
+            remove_keys=[]
             for a,b in c.items(): 
                 if is_datafile(b):
                     log("requested to restore DataFile",b,"mode",restore_config['datafile_restore_mode'],'{log:top}')
@@ -346,9 +349,6 @@ class Cache(object):
                     # other way
                     if restore_config['datafile_restore_mode']=="copy":
                         try:
-                        #    log("attempt to restore file",stored_filename,b,id(b),level='top')
- #                           stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
-
                             if not self.filebackend.exists(stored_filename):
                                 log("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename,level='top')
                                 #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
@@ -411,8 +411,22 @@ class Cache(object):
                     b.cached_path=stored_filename
                     b.restored_mode=restore_config['datafile_restore_mode']
 
+                    if hasattr(b,'adopted_format'):
+                        add_keys[b.pre_adoption_key_name]=b.restore_adoption()
+                        remove_keys.append(a)
+
+            for k, i in add_keys.items():
+                print("adding key:",k,i)
+                c[k]=i
+
+            #for k in remove_keys:
+            #    print("removing key:", k, i)
+            #    del c[k]
+
             for k,i in c.items():
                 setattr(obj,k,i)
+
+
             obj._da_recovered_restore_config=copy.copy(restore_config)
 
             log("restored with",obj._da_recovered_restore_config)
@@ -439,6 +453,60 @@ class Cache(object):
         tar.close()
         return open("tmp.tgz")
 
+    def adopt_datafiles(self,content):
+        from dataanalysis.core import DataFile  # very delayed import
+        if isinstance(content, dict):
+            extra_content={}
+            remove_keys=[]
+
+            for a, b in content.items():
+                adopted_b=DataFile.from_object(a,b,optional=True)
+                if adopted_b is not b:
+                    log("storing adopted DataFile",a,adopted_b)
+                    extra_content["_datafile_"+a]=adopted_b
+                    remove_keys.append(a)
+
+            if len(extra_content)>0:
+                log("extra content:",extra_content)
+
+            if len(extra_content)>0:
+                log("keys to remove:",remove_keys)
+
+            content=dict(content.items() + extra_content.items())
+            for key in remove_keys:
+                del content[key]
+
+        log("after adoption, keys",content.keys())
+
+        return content
+
+    def recover_adopted_datafiles(self, content):
+        from dataanalysis.core import DataFile  # very delayed import
+        if isinstance(content, dict):
+            extra_content = {}
+            remove_keys = []
+
+            for a, b in content.items():
+                adopted_b = DataFile.from_object(a, b, optional=True)
+                if adopted_b is not b:
+                    log("storing adopted DataFile", a, adopted_b)
+                    extra_content["_datafile_" + a] = adopted_b
+                    remove_keys.append(a)
+
+            if len(extra_content) > 0:
+                log("extra content:", extra_content)
+
+            if len(extra_content) > 0:
+                log("keys to remove:", remove_keys)
+
+            content = dict(content.items() + extra_content.items())
+            for key in remove_keys:
+                del content[key]
+
+        log("after adoption, keys", content.keys())
+
+        return content
+
     def store_to_directory(self, hashe, obj, cached_path):
         if not cached_path.endswith("/"):
             cached_path=cached_path+"/"
@@ -457,6 +525,8 @@ class Cache(object):
             self.filebackend.makedirs(dn)
 
         content = obj.export_data()
+
+        content=self.adopt_datafiles(content)
 
         try:
             cPickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
@@ -528,6 +598,7 @@ class Cache(object):
                     obj.note_resource_stats(
                         {'resource_type': 'cache', 'resource_source': repr(self), 'filename': b.path,
                          'stats': b.store_stats, 'operation': 'store'})
+
         return content
 
     def store_object_content(self,hashe,obj):

@@ -1,7 +1,9 @@
-import pydot 
 import argparse
 import ast
 import subprocess
+
+import pydot
+
 
 def plot_hashe(hashe,pngfn,show=True):
     graph = pydot.Dot(graph_type='digraph')
@@ -15,10 +17,10 @@ def plot_hashe(hashe,pngfn,show=True):
                 process_hashe(h,graph,root)
 
         if hashe[0]=="analysis":
-            graph.add_node(pydot.Node(repr(hashe[-1]), style="filled", fillcolor="green"))
+            graph.add_node(pydot.Node(repr(hashe[-1]).replace(":",""), style="filled", fillcolor="green"))
 
             if root is not None:
-                graph.add_edge(pydot.Edge(repr(hashe[-1]), repr(root)))
+                graph.add_edge(pydot.Edge(repr(hashe[-1]).replace(":",""), repr(root)))
 
             process_hashe(hashe[1],graph,hashe[-1])
 

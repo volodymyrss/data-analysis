@@ -1457,6 +1457,7 @@ class DataHandle(DataAnalysis):
         return '[%s]'%self.handle
 
 
+
 class DataAnalysisGroup(DataAnalysis): # make it
     def process(self):
         pass
@@ -1543,6 +1544,46 @@ class DataFile(DataAnalysis):
                 return str(self)+" can not encode "+str(self.size)+" fits error "+str(e)
         else:
             return str(self)+" too big "+str(self.size)
+
+    @classmethod
+    def from_object(cls, name, obj, optional=True):
+
+        import numpy as np
+        if isinstance(obj,np.ndarray):
+            if len(obj)>50:
+                fn=name+"_numpy_array.txt"
+                np.savetxt(fn,obj)
+                r=cls(fn)
+                r.adopted_format="numpy"
+                r.pre_adoption_key_name = name
+                return r
+
+        import pandas as pd
+        if isinstance(obj,pd.DataFrame):
+            if len(obj)>50:
+                fn = name + "_pandas_dataframe.csv"
+                obj.to_csv(fn)
+                r=cls(fn)
+                r.adopted_format = "pandas"
+                r.pre_adoption_key_name = name
+                return r
+
+        return obj
+
+    def restore_adoption(self):
+        if not hasattr(self,'adopted_format'):
+            raise Exception("requested to restore adoption when no format was saved!")
+
+        if self.adopted_format == "numpy":
+            import numpy as np
+            return np.loadtxt(self.open())
+        elif self.adopted_format == "pandas":
+            import pandas as pd
+            return pd.read_csv(self.open())
+        else:
+            raise Exception("unknown adopted format:",self.adopted_format)
+
+
 
 
 class DataFileStatic(DataFile):
