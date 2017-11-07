@@ -1,53 +1,5 @@
 
 
-def test_numpy_to_datafile():
-    from dataanalysis import core as da
-    import os
-    da.reset()
-
-    import numpy as np
-
-    class Analysis(da.DataAnalysis):
-        read_caches=[]
-
-        cached=True
-
-        def main(self):
-            print("test")
-            self.data = np.linspace(0,1,100)
-
-
-    A = Analysis()
-    A.get()
-
-    #da.TransientCacheInstance.reset()
-    da.reset()
-    da.debug_output()
-
-    B = Analysis()
-    B.produce_disabled=True
-    B.read_caches = [A.cache.__class__]
-    B.get()
-
-    #B.cache.restore(A._da_locally_complete,A)
-
-    assert hasattr(B,'_datafile_data')
-
-    assert hasattr(B._datafile_data,'adopted_format')
-    assert B._datafile_data.adopted_format == "numpy"
-
-    print B._datafile_data.get_path()
-    assert os.path.exists(B._datafile_data.get_path())
-
-    assert hasattr(B, 'data')
-
-    assert all(A.data == B.data)
-
-
-
-
-
-
 def test_recursive_datafile():
     from dataanalysis import core as da
     import os
@@ -97,7 +49,106 @@ def test_recursive_datafile():
 
     #assert hasattr(B, 'data')
 
+
+
+
+def test_numpy_to_datafile():
+    from dataanalysis import core as da
+    import os
+    da.reset()
+
+    import numpy as np
+
+    class Analysis(da.DataAnalysis):
+        read_caches=[]
+
+        cached=True
+
+        def main(self):
+            print("test")
+            self.data = np.linspace(0,1,100)
+
+
+    A = Analysis()
+    A.get()
+
+    #da.TransientCacheInstance.reset()
+    da.reset()
+    da.debug_output()
+
+    B = Analysis()
+    B.produce_disabled=True
+    B.read_caches = [A.cache.__class__]
+    B.get()
+
+    #B.cache.restore(A._da_locally_complete,A)
+
+    assert hasattr(B,'_datafile_data')
+
+    assert hasattr(B._datafile_data,'adopted_format')
+    assert B._datafile_data.adopted_format == "numpy"
+
+    print B._datafile_data.get_path()
+    assert os.path.exists(B._datafile_data.get_path())
+
+    assert hasattr(B, 'data')
+
+    assert all(A.data == B.data)
+
 #    assert all(A.data == B.data)
+
+
+def test_numpy_to_datafile_recursive():
+    from dataanalysis import core as da
+    import os
+    da.reset()
+
+    import numpy as np
+
+    class Analysis(da.DataAnalysis):
+        read_caches=[]
+
+        cached=True
+
+        def main(self):
+            print("test")
+            self.data = {'a':np.linspace(0,1,100)}
+
+
+    A = Analysis()
+    A.get()
+
+    content=A.export_data()
+    cc=A.cache.adopt_datafiles(content)
+    assert isinstance(cc['data']['a'],da.DataFile)
+
+    #da.TransientCacheInstance.reset()
+    da.reset()
+    da.debug_output()
+
+    B = Analysis()
+    B.produce_disabled=True
+    B.read_caches = [A.cache.__class__]
+    B.get()
+
+    print(B.data['a'])
+
+    #B.cache.restore(A._da_locally_complete,A)
+
+    assert hasattr(B,'_datafile_data_a')
+
+    assert hasattr(B._datafile_data_a,'adopted_format')
+    assert B._datafile_data_a.adopted_format == "numpy"
+
+    print B._datafile_data_a.get_path()
+    assert os.path.exists(B._datafile_data_a.get_path())
+
+    assert hasattr(B, 'data')
+
+    assert all(A.data['a'] == B.data['a'])
+
+#    assert all(A.data == B.data)
+
 
 
 

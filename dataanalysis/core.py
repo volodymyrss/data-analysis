@@ -1572,7 +1572,8 @@ class DataFile(DataAnalysis):
             return str(self)+" too big "+str(self.size)
 
     @classmethod
-    def from_object(cls, name, obj, optional=True):
+    def from_object(cls, key, obj, optional=True):
+        name="_".join(map(str,key)) if not isinstance(key,str) else key # or unicode
 
         import numpy as np
         if isinstance(obj,np.ndarray):
@@ -1581,7 +1582,7 @@ class DataFile(DataAnalysis):
                 np.savetxt(fn,obj)
                 r=cls(fn)
                 r.adopted_format="numpy"
-                r.pre_adoption_key_name = name
+                r.pre_adoption_key = key
                 return r
 
         import pandas as pd
@@ -1591,7 +1592,7 @@ class DataFile(DataAnalysis):
                 obj.to_csv(fn)
                 r=cls(fn)
                 r.adopted_format = "pandas"
-                r.pre_adoption_key_name = name
+                r.pre_adoption_key = key
                 return r
 
         return obj

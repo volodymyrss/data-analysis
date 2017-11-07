@@ -56,6 +56,8 @@ class Cache(object):
 
     readonly_cache=False
 
+    restore_adoptions=True
+
     ingore_unhandled=True
 
     filebackend=backends.FileBackend()
@@ -369,8 +371,12 @@ class Cache(object):
         b.restored_mode = restore_config['datafile_restore_mode']
 
         if hasattr(b, 'adopted_format'):
-            add_keys[b.pre_adoption_key_name] = b.restore_adoption()
-            remove_keys.append(a)
+            log("found adopted format in",a,b,"old name",b.pre_adoption_key)
+            if self.restore_adoptions:
+                log("restoring adoption")
+                add_keys.append([b.pre_adoption_key,b.restore_adoption()])
+            else:
+                log("NOT restoring adoption")
 
     def restore(self,hashe,obj,restore_config=None):
         # check if updated
@@ -420,7 +426,7 @@ class Cache(object):
             return True
 
         if isinstance(c,dict):
-            add_keys={}
+            add_keys=[]
             remove_keys=[]
 
             from dataanalysis.core import map_nested_structure
@@ -438,9 +444,13 @@ class Cache(object):
 
             map_nested_structure(c, datafile_restore_mapper)
 
-            for k, i in add_keys.items():
+            for k, i in add_keys:
                 print("adding key:",k,i)
-                c[k]=i
+
+                sub_c=c
+                for ck in k[:-1]:
+                    sub_c=sub_c[ck]
+                sub_c[k[-1]]=i
 
             #for k in remove_keys:
             #    print("removing key:", k, i)
@@ -476,40 +486,34 @@ class Cache(object):
         tar.close()
         return open("tmp.tgz")
 
-    def adopt_datafiles(self,content,path='root'):
-        from dataanalysis.core import DataFile  # very delayed import
-        if isinstance(content, dict):
-            extra_content={}
-            remove_keys=[]
+    def adopt_datafiles(self,content):
+        from dataanalysis.core import DataFile, map_nested_structure  # very delayed import
 
-            for a, b in content.items():
-                #if isinstance(b, dict):
-                    #b = self.adopt_datafiles(content, path=('dict', a, path))
+        extra_content={}
+        remove_keys=[]
 
-                #if isinstance(b, list):
-                #    b = self.adopt_datafiles(content, path=('list', a, path))
+        def mapping_adoption(k, b):
+            a = "_".join(map(str,k))
 
-                adopted_b=DataFile.from_object(a,b,optional=True)
-                if adopted_b is not b:
-                    log("storing adopted DataFile",a,adopted_b)
-                    extra_content["_datafile_"+a]=adopted_b
-                    remove_keys.append(a)
+            adopted_b=DataFile.from_object(k,b,optional=True)
+            if adopted_b is not b:
+                log("storing adopted DataFile",a,adopted_b)
+                extra_content["_datafile_"+a]=adopted_b
 
-            if len(extra_content)>0:
-                log("extra content:",extra_content)
+            return adopted_b
 
-            if len(extra_content)>0:
-                log("keys to remove:",remove_keys)
+        content=map_nested_structure(content,mapping_adoption)
 
-            content=dict(content.items() + extra_content.items())
-            for key in remove_keys:
-                del content[key]
+        if len(extra_content)>0:
+            log("extra content:",extra_content)
+
+        content=dict(content.items() + extra_content.items())
 
         log("after adoption, keys",content.keys())
 
         return content
 
-    def recover_adopted_datafiles(self, content):
+    def _NOT_recover_adopted_datafiles(self, content):
         from dataanalysis.core import DataFile  # very delayed import
         if isinstance(content, dict):
             extra_content = {}
@@ -634,7 +638,7 @@ class Cache(object):
             mapped=map_nested_structure(content,datafile_mapper)
             log("mapped structure (%i):"%len(mapped))
             for k,v in flatten_nested_structure(mapped, lambda x,y:(x,y)):
-                log("---",v)
+                log("---",k,v)
 
 
         return content
