@@ -43,6 +43,8 @@ def is_datafile(b):
 def update_dict(a,b):
     return dict(a.items()+b.items())
 
+
+
 class Cache(object):
     # currently store each cache in a file; this is not neccesary 
    # __metaclass__ = decorate_all_methods
@@ -269,6 +271,107 @@ class Cache(object):
 
         return {'size':fsize,'copytime':tspent,'compressiontime':tspentc}
 
+    def restore_datafile(self, a, b, cached_path, restore_config, obj, hashe, add_keys, remove_keys):
+        log("requested to restore DataFile", b, "mode", restore_config['datafile_restore_mode'], '{log:top}')
+
+        prefix = restore_config['datafile_target_dir']
+        if prefix is not None:
+            prefix = prefix + "/"
+            try:
+                os.makedirs(prefix)
+            except:
+                pass
+        else:
+            prefix = ""
+
+        try:
+            if os.path.basename(b.path).endswith(".gz"):
+                stored_filename = cached_path + os.path.basename(b.path)  # just by name? # gzip optional
+            else:
+                stored_filename = cached_path + os.path.basename(b.path) + ".gz"  # just by name? # gzip optional
+            log("stored filename:", stored_filename)
+        except Exception as e:
+            log("wat", e)
+        if not self.filebackend.exists(stored_filename):  # and
+            log("file from cache does not exist, while cache record exists! inconsistent cache!")  # ,stored_filename)
+            return None
+
+        b.cached_path_valid_url = False
+        # other way
+        if restore_config['datafile_restore_mode'] == "copy":
+            try:
+                if not self.filebackend.exists(stored_filename):
+                    log("can not copy from from cache, while cache record exists! inconsistent cache!", stored_filename,
+                        level='top')
+                    # raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                    # just reproduce?
+                    return None
+
+                log("stored file:", stored_filename, "will restore as", prefix, b.path, level='top')
+
+                b.restore_stats, restored_file = self.restore_file(stored_filename, prefix + os.path.basename(b.path),
+                                                                   obj, hashe)
+                log("restored as", restored_file)
+
+                obj.note_resource_stats({'resource_type': 'cache', 'resource_source': repr(self), 'filename': b.path,
+                                         'stats': b.restore_stats, 'operation': 'restore'})
+                b._da_unique_local_path = restored_file
+                b.restored_path_prefix = os.getcwd() + "/" + prefix
+
+                log("note unique file name", b._da_unique_local_path)
+
+            except IOError:
+                if IOError.errno == 20:
+                    log("can not copy from from cache, while cache record exists! inconsistent cache!")
+                    #          raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                    # just reproduce?
+                    return None
+            except subprocess.CalledProcessError:
+                log("can not copy from from cache, while cache record exists! inconsistent cache!")
+                #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                # just reproduce?
+                return None
+            except Exception as e:
+                log("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
+                log("details:" + repr(e))
+                if not self.ingore_unhandled:
+                    raise
+                    #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
+                # just reproduce?
+                return None
+        elif restore_config['datafile_restore_mode'] == "symlink":
+            self.filebackend.symlink(stored_filename,
+                                     prefix + os.path.basename(b.path) + ".gz")  # just by name? # gzip optional
+        elif restore_config['datafile_restore_mode'] == "urlfile":
+            b.cached_path_valid_url = True
+            open(prefix + os.path.basename(b.path) + ".url.txt", "w").write(
+                stored_filename + "\n")  # just by name? # gzip optional
+        elif restore_config['datafile_restore_mode'] == "urlfileappend":
+            open(prefix + os.path.basename(b.path) + ".urls.txt", "a").write(
+                stored_filename + "\n")  # just by name? # gzip optional
+            b.cached_path_valid_url = True
+        elif restore_config['datafile_restore_mode'] == "url_in_object":
+            b.cached_path = stored_filename  # just by name? # gzip optional
+            if not os.path.exists(b.cached_path):
+                raise Exception("cached file does not exist!")
+            b.cached_path_valid_url = True
+            log("stored url:", b.cached_path, b.cached_path_valid_url)
+
+            if 'test_files' in restore_config and restore_config['test_files']:
+                try:
+                    self.test_file(b.cached_path)
+                except:
+                    return
+        else:
+            raise Exception("datafile restore mode not understood!")
+
+        b.cached_path = stored_filename
+        b.restored_mode = restore_config['datafile_restore_mode']
+
+        if hasattr(b, 'adopted_format'):
+            add_keys[b.pre_adoption_key_name] = b.restore_adoption()
+            remove_keys.append(a)
+
     def restore(self,hashe,obj,restore_config=None):
         # check if updated
         if obj.run_for_hashe or obj.mutating:
@@ -319,101 +422,21 @@ class Cache(object):
         if isinstance(c,dict):
             add_keys={}
             remove_keys=[]
-            for a,b in c.items(): 
+
+            from dataanalysis.core import map_nested_structure
+
+            def datafile_restore_mapper(k, b):
+                log("processing structure entry",k,b)
                 if is_datafile(b):
-                    log("requested to restore DataFile",b,"mode",restore_config['datafile_restore_mode'],'{log:top}')
-
-                    prefix=restore_config['datafile_target_dir']
-                    if prefix is not None:
-                        prefix=prefix+"/"
-                        try:
-                            os.makedirs(prefix)
-                        except:
-                            pass
+                    if len(k)==1:
+                        a=k[0]
                     else:
-                        prefix=""
+                        a=k
 
-                    try:
-                        if os.path.basename(b.path).endswith(".gz"):
-                            stored_filename=cached_path+os.path.basename(b.path) # just by name? # gzip optional
-                        else:
-                            stored_filename=cached_path+os.path.basename(b.path)+".gz" # just by name? # gzip optional
-                        log("stored filename:",stored_filename)
-                    except Exception as e:
-                        log("wat",e)
-                    if not self.filebackend.exists(stored_filename): # and
-                        log("file from cache does not exist, while cache record exists! inconsistent cache!") #,stored_filename)
-                        return None
+                    self.restore_datafile(a, b, cached_path, restore_config, obj, hashe, add_keys, remove_keys)
+                return b
 
-                    b.cached_path_valid_url=False
-                    # other way
-                    if restore_config['datafile_restore_mode']=="copy":
-                        try:
-                            if not self.filebackend.exists(stored_filename):
-                                log("can not copy from from cache, while cache record exists! inconsistent cache!",stored_filename,level='top')
-                                #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
-                                # just reproduce?
-                                return None
-
-                            log("stored file:",stored_filename,"will restore as",prefix,b.path,level='top') 
-
-                            b.restore_stats,restored_file=self.restore_file(stored_filename,prefix+os.path.basename(b.path),obj,hashe)
-                            log("restored as",restored_file)
-
-                            obj.note_resource_stats({'resource_type':'cache','resource_source':repr(self),'filename':b.path,'stats':b.restore_stats,'operation':'restore'})
-                            b._da_unique_local_path=restored_file
-                            b.restored_path_prefix=os.getcwd()+"/"+prefix
-                        
-                            log("note unique file name",b._da_unique_local_path)
-
-                        except IOError:
-                            if IOError.errno==20:
-                                log("can not copy from from cache, while cache record exists! inconsistent cache!")
-                      #          raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
-                                # just reproduce?
-                                return None
-                        except subprocess.CalledProcessError:
-                            log("can not copy from from cache, while cache record exists! inconsistent cache!")
-                 #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
-                            # just reproduce?
-                            return None
-                        except Exception as e:
-                            log("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
-                            log("details:"+repr(e))
-                            if not self.ingore_unhandled:
-                                raise
-                 #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
-                            # just reproduce?
-                            return None
-                    elif restore_config['datafile_restore_mode']=="symlink":
-                        self.filebackend.symlink(stored_filename,prefix+os.path.basename(b.path)+".gz") # just by name? # gzip optional
-                    elif restore_config['datafile_restore_mode']=="urlfile":
-                        b.cached_path_valid_url=True
-                        open(prefix+os.path.basename(b.path)+".url.txt","w").write(stored_filename+"\n") # just by name? # gzip optional
-                    elif restore_config['datafile_restore_mode']=="urlfileappend":
-                        open(prefix+os.path.basename(b.path)+".urls.txt","a").write(stored_filename+"\n") # just by name? # gzip optional
-                        b.cached_path_valid_url=True
-                    elif restore_config['datafile_restore_mode']=="url_in_object":
-                        b.cached_path=stored_filename # just by name? # gzip optional
-                        if not os.path.exists(b.cached_path):
-                            raise Exception("cached file does not exist!")
-                        b.cached_path_valid_url=True
-                        log("stored url:",b.cached_path,b.cached_path_valid_url)
-
-                        if 'test_files' in restore_config and restore_config['test_files']:
-                            try:
-                                self.test_file(b.cached_path)
-                            except:
-                                return 
-                    else:
-                        raise Exception("datafile restore mode not understood!")
-
-                    b.cached_path=stored_filename
-                    b.restored_mode=restore_config['datafile_restore_mode']
-
-                    if hasattr(b,'adopted_format'):
-                        add_keys[b.pre_adoption_key_name]=b.restore_adoption()
-                        remove_keys.append(a)
+            map_nested_structure(c, datafile_restore_mapper)
 
             for k, i in add_keys.items():
                 print("adding key:",k,i)
@@ -453,13 +476,19 @@ class Cache(object):
         tar.close()
         return open("tmp.tgz")
 
-    def adopt_datafiles(self,content):
+    def adopt_datafiles(self,content,path='root'):
         from dataanalysis.core import DataFile  # very delayed import
         if isinstance(content, dict):
             extra_content={}
             remove_keys=[]
 
             for a, b in content.items():
+                #if isinstance(b, dict):
+                    #b = self.adopt_datafiles(content, path=('dict', a, path))
+
+                #if isinstance(b, list):
+                #    b = self.adopt_datafiles(content, path=('list', a, path))
+
                 adopted_b=DataFile.from_object(a,b,optional=True)
                 if adopted_b is not b:
                     log("storing adopted DataFile",a,adopted_b)
@@ -578,9 +607,11 @@ class Cache(object):
         else:
             log('object has no alias')
 
+        from dataanalysis.core import map_nested_structure, flatten_nested_structure
 
         if isinstance(content, dict):
-            for a, b in content.items():
+            #for a, b in content.items():
+            def datafile_mapper(k,b):
                 if is_datafile(b):
                     log("requested to store DataFile", b)
 
@@ -598,6 +629,13 @@ class Cache(object):
                     obj.note_resource_stats(
                         {'resource_type': 'cache', 'resource_source': repr(self), 'filename': b.path,
                          'stats': b.store_stats, 'operation': 'store'})
+                return b
+
+            mapped=map_nested_structure(content,datafile_mapper)
+            log("mapped structure (%i):"%len(mapped))
+            for k,v in flatten_nested_structure(mapped, lambda x,y:(x,y)):
+                log("---",v)
+
 
         return content
 

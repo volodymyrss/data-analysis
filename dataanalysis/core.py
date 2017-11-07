@@ -140,6 +140,32 @@ class UnhandledAnalysisException(Exception):
     def __str__(self):
         return repr(self)
 
+
+def flatten_nested_structure(structure, mapping, path=[]):
+    if isinstance(structure, list):
+        r=[flatten_nested_structure(a, mapping, path=path + [i]) for i, a in enumerate(structure)]
+        return reduce(lambda x, y: x + y, r) if len(r) > 0 else r
+
+    if isinstance(structure, dict):
+        r=[flatten_nested_structure(a, mapping, path=path + [k]) for k, a in structure.items()]
+        return reduce(lambda x,y:x+y,r) if len(r)>0 else r
+
+    return [mapping(path, structure)]
+
+
+def map_nested_structure(structure, mapping, path=None):
+    if path is None:
+        path=[]
+
+    if isinstance(structure, list):
+        return [map_nested_structure(a, mapping, path=path + [i]) for i, a in enumerate(structure)]
+
+    if isinstance(structure, dict):
+        return dict([(k, map_nested_structure(a, mapping, path=path + [k])) for k, a in structure.items()])
+
+    return mapping(path, structure)
+
+
 class AnalysisException(Exception):
     pass
 
