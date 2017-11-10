@@ -6,3 +6,4 @@ persist-queue
 pyyaml
 flask
 flask-restful
+pytest-flask
