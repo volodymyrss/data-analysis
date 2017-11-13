@@ -209,6 +209,25 @@ class decorate_all_methods(type):
 
         return c
 
+class DataAnalysisIdentity(object):
+    def __init__(self,
+                 factory_name,
+                 full_name,
+                 modules,
+                 extra_objects,
+                 assumptions):
+
+        self.factory_name=factory_name
+        self.full_name=full_name
+        self.modules=modules
+        self.extra_objects=extra_objects
+        self.assumptions=assumptions
+
+    def __repr__(self):
+        return "[%s: %s; %s]"%(self.factory_name,
+                               ",".join([m for o,m,l in self.modules]),
+                               ",".join([a for a,b in self.extra_objects]))
+
 class DataAnalysis(object):
     __metaclass__ = decorate_all_methods
 
@@ -270,15 +289,8 @@ class DataAnalysis(object):
     _da_delegated_input=None
     _da_ignore_output_objects=False
 
-    _da_main_log_content=""
-
     write_caches=[cache_core.Cache]
     read_caches=[cache_core.Cache]
-
-    #def get_dynamic_input(self):
-     #   if hasattr(self,'input_dynamic'):
-      #      return self.input_dynamic
-      #  return []
 
     _da_settings=None
 
@@ -293,6 +305,15 @@ class DataAnalysis(object):
             name = self.__class__.__name__
 
         return name
+
+    def get_identity(self):
+        return DataAnalysisIdentity(
+            factory_name=self.get_factory_name(),
+            full_name=self.get_version(),
+            modules = self.factory.get_module_description(),
+            extra_objects=[a[0].serialize() for a in (self.factory.cache_assumptions + self.assumptions)],
+            assumptions=[],
+        )
 
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
         self=object.__new__(self)
@@ -1664,4 +1685,3 @@ def get_schema(self,graph=None,write_png_fn=None):
         self.get_schema().write_png(write_png_fn)
 
     return graph
-

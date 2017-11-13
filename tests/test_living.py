@@ -9,20 +9,27 @@ def test_api_ping(client):
     assert res.json == {'ping': 'pong'}
 
 def test_app_list(client):
-    factory_list=client.get(url_for('list')).json
+    factory_list=client.get(url_for('list',modules=",".join(["ddmoduletest","ddosa"]))).json
 
     print(factory_list)
     assert len(factory_list)>0
 
 
 def test_app_produce(client):
-    factory_list=client.get(url_for('produce',target="BAnalysis")).json
+    factory_list=client.get(url_for('produce',target="BAnalysis",modules="ddmoduletest")).json
 
     print(factory_list)
     assert len(factory_list)>0
 
 def test_app_delegation(client):
-    factory_list=client.get(url_for('produce',target="BAnalysis")).json
+    factory_list=client.get(url_for('produce',target="BAnalysis",modules="ddmoduletest")).json
+
+    print(factory_list)
+    assert len(factory_list)>0
+
+
+def test_live_delegation(client):
+    factory_list=client.get(url_for('produce',target="BAnalysis",modules="ddmoduletest")).json
 
     print(factory_list)
     assert len(factory_list)>0

@@ -13,12 +13,12 @@ def define_analysis():
 
 def test_queue_cache():
     from dataanalysis import caches
-    import dataanalysis.caches.delegating
+    import dataanalysis.caches.queue
 
     #da.debug_output()
     da.reset()
 
-    q_cache=caches.delegating.QueueCache()
+    q_cache=caches.queue.QueueCache()
     q_cache.wipe_queue()
 
     define_analysis()
@@ -43,7 +43,7 @@ def test_queue_cache():
     A.cache = f_cache
     A.cached = True
 
-    worker=caches.delegating.QueueCacheWorker()
+    worker=caches.queue.QueueCacheWorker()
 
     print(worker.run_once())
 
@@ -138,10 +138,29 @@ def test_selective_delegation():
     B=BAnalysis()
     B.get()
 
+def test_resource_provider():
+    pass
 
 def test_resource_delegation():
-    import dataanalysis.caches.delegating
+    da.reset()
+    da.debug_output()
+    import dataanalysis.caches.resources
 
-    class Cache(dataanalysis.caches.delegating.SelectivelyDelegatingCache):
-        pass
+    class TCache(dataanalysis.caches.resources.CacheDelegateToResources):
+        delegating_analysis=["Analysis"]
+
+    class Analysis(da.DataAnalysis):
+        cache=TCache()
+        cached=True
+
+        def main(self):
+            raise Exception("this should be delegated")
+
+    A=Analysis()
+
+    try:
+        A.get()
+    except dataanalysis.caches.delegating.WaitingForDependency as e:
+        print(e)
+        assert isinstance(e.resource, dataanalysis.caches.resources.Resource)
 

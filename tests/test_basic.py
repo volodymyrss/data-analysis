@@ -210,3 +210,31 @@ def test_caching():
     print(A1.data)
     assert A1.data == 'data'
 
+
+def test_factory():
+    from dataanalysis import core as da
+
+    class Analysis(da.DataAnalysis):
+        x=None
+
+        def main(self):
+            print("test")
+            self.data = "data"
+            if self.x is not None:
+                self.data+=repr(self.x)
+
+
+    A = Analysis()
+    A.get()
+
+    assert A.factory.cache_assumptions == []
+
+    A.factory.WhatIfCopy("testass",Analysis(use_x=1))
+
+    assert len(A.factory.cache_assumptions) == 1
+
+    iden=A.get_identity()
+    print iden.assumptions
+
+
+

@@ -1,12 +1,15 @@
 import importlib
 
 from flask import Flask
-from flask_restful import Resource, Api
+from flask_restful import Resource, Api, reqparse
 
 dd_modules=[]
 
-def import_ddmodules():
-    modules=[importlib.import_module(dd_module) for dd_module in dd_modules]
+def import_ddmodules(modules=None):
+    if modules is None:
+        modules=dd_modules
+
+    modules=[importlib.import_module(dd_module) for dd_module in modules]
     for m in modules:
         reload(m)
 
@@ -18,17 +21,29 @@ class Status(Resource):
 
 class List(Resource):
     def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('modules', type=str, help='')
+        parser.add_argument('assumptions', type=str, help='')
+        args = parser.parse_args()
+
         import dataanalysis.core as da
         da.reset()
-        import_ddmodules()
+        import_ddmodules(args['modules'].split(","))
 
         return da.AnalysisFactory.cache.keys()
 
 class Produce(Resource):
     def get(self,target):
+        parser = reqparse.RequestParser()
+        parser.add_argument('modules', type=str, help='')
+        parser.add_argument('assumptions', type=str, help='')
+        args = parser.parse_args()
+
+        print("args",args)
+
         import dataanalysis.core as da
         da.reset()
-        import_ddmodules()
+        import_ddmodules(args['modules'].split(","))
 
         A=da.AnalysisFactory.byname(target)
         A.get()
@@ -36,7 +51,6 @@ class Produce(Resource):
         return A.export_data(include_class_attributes=True)
 
 def create_app():
-    dd_modules.append('ddmoduletest')
     app = Flask(__name__)
     api = Api(app)
     api.add_resource(List, '/list')
