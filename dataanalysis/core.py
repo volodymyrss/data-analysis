@@ -223,6 +223,9 @@ class DataAnalysisIdentity(object):
         self.extra_objects=extra_objects
         self.assumptions=assumptions
 
+    def get_modules_loadable(self):
+        return [m[1] for m in self.modules]
+
     def __repr__(self):
         return "[%s: %s; %s]"%(self.factory_name,
                                ",".join([m for o,m,l in self.modules]),
