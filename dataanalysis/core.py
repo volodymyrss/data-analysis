@@ -1461,7 +1461,8 @@ class DataHandle(DataAnalysis):
     def __init__(self,h=None,update=False):
         self.handle=h
 
-    def process(self,**args):
+    def process(self,*a,**args):
+        assert len(a)==0, "unexpected arguements:"+repr(a)
         log("datahandle is hash",self)
         self._da_locally_complete=True
         return self.handle,self
@@ -1532,11 +1533,7 @@ class DataFile(DataAnalysis):
                         
 
     def jsonify(self,*a,**aa):
-        if len(a)>0:
-            raise Exception("unexpected:" + repr(a))
-
-        if len(aa) > 0:
-            raise Exception("unexpected:" + repr(aa))
+        assert len(a) == 0, "unexpected:" + repr(a)
 
         if self.size<100e3:
             try:
