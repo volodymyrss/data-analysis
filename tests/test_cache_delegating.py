@@ -138,29 +138,3 @@ def test_selective_delegation():
     B=BAnalysis()
     B.get()
 
-def test_resource_provider():
-    pass
-
-def test_resource_delegation():
-    da.reset()
-    da.debug_output()
-    import dataanalysis.caches.resources
-
-    class TCache(dataanalysis.caches.resources.CacheDelegateToResources):
-        delegating_analysis=["Analysis"]
-
-    class Analysis(da.DataAnalysis):
-        cache=TCache()
-        cached=True
-
-        def main(self):
-            raise Exception("this should be delegated")
-
-    A=Analysis()
-
-    try:
-        A.get()
-    except dataanalysis.caches.delegating.WaitingForDependency as e:
-        print(e)
-        assert isinstance(e.resource, dataanalysis.caches.resources.Resource)
-
