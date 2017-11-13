@@ -395,11 +395,6 @@ class DataAnalysis(object):
     def interpret_item(self,item):
         return AnalysisFactory.get(item,update=False)
 
-    def import_data(self,data):
-        log("updating analysis with data")
-        for a,b in data.items():
-            setattr(self,a,b)
-
     def jsonify(self,embed_datafiles=False,verify_jsonifiable=False):
         return self.cache.adopt_datafiles(self.export_data(embed_datafiles,verify_jsonifiable))
 
@@ -460,6 +455,8 @@ class DataAnalysis(object):
 
     def import_data(self,c):
         # todo: check that the object is fresh
+        log("updating analysis with data")
+
         for k, i in c.items():
             log("restoring", k, i)
             setattr(self, k, i)
