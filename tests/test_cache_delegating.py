@@ -103,3 +103,45 @@ def test_delegating_analysis():
 
     del da.DataAnalysis.cache.parent
 
+def test_selective_delegation():
+    import dataanalysis.caches.delegating
+    da.debug_output()
+
+    class TCache(dataanalysis.caches.delegating.SelectivelyDelegatingCache):
+        delegating_analysis=['AAnalysis','BAnalysis$']
+
+    #cache=Cache()
+
+    class AAnalysis(da.DataAnalysis):
+        #read_caches = [q_cache.__class__]
+        cached = True
+
+        cache=TCache()
+
+        def main(self):
+            #self.data = "datadata1"
+            raise Exception("this should have been delegated")
+
+    class BAnalysis(da.DataAnalysis):
+        #read_caches = [q_cache.__class__]
+        cached = True
+
+        cache=TCache()
+
+        def main(self):
+            self.data = "datadata2"
+
+    A=AAnalysis()
+    with pytest.raises(da.AnalysisDelegatedException):
+        A.get()
+
+    B=BAnalysis()
+    B.get()
+
+
+def test_resource_delegation():
+    import dataanalysis.caches.delegating
+
+    class Cache(dataanalysis.caches.delegating.SelectivelyDelegatingCache):
+        pass
+

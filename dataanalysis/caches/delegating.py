@@ -1,3 +1,4 @@
+import re
 import time
 
 from persistqueue import Queue, Empty
@@ -5,9 +6,13 @@ from persistqueue import Queue, Empty
 import dataanalysis.caches
 import dataanalysis.caches.cache_core
 import dataanalysis.core as da
+from dataanalysis.printhook import log
 
 
 class DelegatedNoticeException(da.AnalysisDelegatedException):
+    pass
+
+class WaitingForDependency(da.AnalysisDelegatedException):
     pass
 
 class DelegatingCache(dataanalysis.caches.cache_core.Cache):
@@ -18,9 +23,22 @@ class DelegatingCache(dataanalysis.caches.cache_core.Cache):
         self.delegate(hashe, obj)
         raise da.AnalysisDelegatedException(hashe)
 
-class SelectivelyDelegatingCache(dataanalysis.caches.cache_core.Cache):
+class SelectivelyDelegatingCache(DelegatingCache):
+    delegating_analysis=None
+
     def will_delegate(self,hashe,obj=None):
-        return True
+        log("trying for delegation",hashe)
+
+        if self.delegating_analysis is None:
+            log("this cache has no delegations allowed")
+            return False
+
+        if any([hashe[-1] == option or re.match(option,hashe[-1]) for option in self.delegating_analysis]):
+            log("delegation IS allowed")
+            return True
+        else:
+            log("failed to find:",hashe[-1],self.delegating_analysis)
+            return False
 
     def restore(self,hashe,obj,restore_config=None):
         if self.will_delegate(hashe, obj):
@@ -30,10 +48,20 @@ class SelectivelyDelegatingCache(dataanalysis.caches.cache_core.Cache):
 
 # execution is also from cache?..
 
-class LivingDelegationCache(SelectivelyDelegatingCache):
-    def will_delegate(self,hashe,obj=None):
-        return True
+# no traces required in the network ( traces are kept for information )
+# callbacks
 
+class ResourceProvider(object):
+    def find_resource(self,hashe,modules,assumptions):
+        pass
+
+
+class CacheDelegateToResources(SelectivelyDelegatingCache):
+    def delegate(self, hashe, obj):
+        # here we attempt to find the resource provider
+
+
+        raise WaitingForDependency(hashe)
 
 class QueueCache(DelegatingCache):
 
