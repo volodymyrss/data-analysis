@@ -1412,15 +1412,6 @@ class DataAnalysis(object):
         #return "[%s: %s]"%(self.__class__.__name__,self.version)
         #return "[%s: %s %s]"%(self.__class__.__name__,self.version,("%.12x"%id(self))[-6:]) # note that instances are different; take same instance by name from a dict
 
-class Data(DataAnalysis):
-    """
-    data runs trivilarily: only returns hash of its content
-    """
-
-    def get(self,path):
-        pass
-
-
 
 class FileHashed(DataAnalysis):
     input_filename=None
