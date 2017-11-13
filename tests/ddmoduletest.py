@@ -1,8 +1,8 @@
-from dataanalysis import cache_core as cache_core
 from dataanalysis import core as da
+from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
 
-class TestCache(cache_core.Cache):
+class TestCache(SelectivelyDelegatingCache):
     pass
 
 class AAnalysis(da.DataAnalysis):

@@ -28,6 +28,12 @@ class SelectivelyDelegatingCache(dataanalysis.caches.cache_core.Cache):
         else:
             return self.restore_from_parent(hashe, obj, restore_config)
 
+# execution is also from cache?..
+
+class LivingDelegationCache(SelectivelyDelegatingCache):
+    def will_delegate(self,hashe,obj=None):
+        return True
+
 
 class QueueCache(DelegatingCache):
 
