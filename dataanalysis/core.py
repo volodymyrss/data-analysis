@@ -1470,11 +1470,6 @@ class DataHandle(DataAnalysis):
         return '[%s]'%self.handle
 
 
-
-class DataAnalysisGroup(DataAnalysis): # make it
-    def process(self):
-        pass
-
 # imported
 
 # abstract
@@ -1536,7 +1531,13 @@ class DataFile(DataAnalysis):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
                         
 
-    def jsonify(self):
+    def jsonify(self,*a,**aa):
+        if len(a)>0:
+            raise Exception("unexpected:" + repr(a))
+
+        if len(aa) > 0:
+            raise Exception("unexpected:" + repr(aa))
+
         if self.size<100e3:
             try:
                 return json.load(self.open())
@@ -1659,8 +1660,6 @@ def get_schema(self,graph=None,write_png_fn=None):
 
         edge = pydot.Edge(repr(i2), repr(i1))
         graph.add_edge(edge)
-
-    #self.process_input(obj=None,process_function=make_schema,explicit_input_required=False)
 
     # do it all from hash, no need to construct again
 

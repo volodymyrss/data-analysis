@@ -202,7 +202,9 @@ class CacheMySQL(CacheSqlite):
         return len(rows)
 
     def retry_execute(self, cur, *a, **aa):
-        timeout = a['timeout'] if 'timeout' in aa else 10
+        timeout = aa['timeout'] if 'timeout' in aa else 10
+
+        e=Exception("while retry_execute")
         for x in range(timeout):
             try:
                 log(a)
