@@ -72,10 +72,8 @@ TransientCacheInstance = cache_core.TransientCache()
 string_types = (str, unicode) if str is bytes else (str, bytes)
 iteritems = lambda mapping: getattr(mapping, 'iteritems', mapping.items)()
 
-class DataHandle:
-    trivial = True
-    pass
-
+#class DataHandle:
+#    trivial = True
 
 class NoAnalysis():
     pass
