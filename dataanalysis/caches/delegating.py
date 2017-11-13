@@ -11,21 +11,33 @@ class DelegatedNoticeException(da.AnalysisDelegatedException):
     pass
 
 class DelegatingCache(dataanalysis.caches.cache_core.Cache):
+    def delegate(self, hashe, obj):
+        pass
 
     def restore(self,hashe,obj,restore_config=None):
+        self.delegate(hashe, obj)
         raise da.AnalysisDelegatedException(hashe)
 
+class SelectivelyDelegatingCache(dataanalysis.caches.cache_core.Cache):
+    def will_delegate(self,hashe,obj=None):
+        return True
 
-class QueueCache(dataanalysis.caches.cache_core.Cache):
+    def restore(self,hashe,obj,restore_config=None):
+        if self.will_delegate(hashe, obj):
+            super(SelectivelyDelegatingCache, self).restore(hashe, obj, restore_config)
+        else:
+            return self.restore_from_parent(hashe, obj, restore_config)
+
+
+class QueueCache(DelegatingCache):
 
     def __init__(self,queue_file="/tmp/queue"):
+        super(QueueCache, self).__init__()
         self.queue_file=queue_file
         self.queue = Queue(self.queue_file)
 
-    def restore(self,hashe,obj,restore_config=None):
+    def delegate(self, hashe, obj):
         self.queue.put([obj.get_factory_name(),dataanalysis.core.AnalysisFactory.get_module_description(),hashe])
-
-        raise DelegatedNoticeException(hashe)
 
     def wipe_queue(self):
         while True:

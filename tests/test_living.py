@@ -20,3 +20,9 @@ def test_app_produce(client):
 
     print(factory_list)
     assert len(factory_list)>0
+
+def test_app_delegation(client):
+    factory_list=client.get(url_for('produce',target="BAnalysis")).json
+
+    print(factory_list)
+    assert len(factory_list)>0

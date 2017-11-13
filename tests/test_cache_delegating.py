@@ -28,10 +28,8 @@ def test_queue_cache():
     A.cache = q_cache
     A.cached = True
 
-    with pytest.raises(caches.delegating.DelegatedNoticeException):
+    with pytest.raises(da.AnalysisDelegatedException):
         A.get()
-
-    q_cache
 
     # worker part
 
