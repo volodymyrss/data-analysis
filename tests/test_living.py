@@ -11,7 +11,7 @@ def test_api_ping(client):
     assert res.json == {'ping': 'pong'}
 
 def test_app_list(client):
-    factory_list=client.get(url_for('list',modules=",".join(["ddmoduletest","ddosa"]))).json
+    factory_list=client.get(url_for('list',modules=",".join(["ddmoduletest"]))).json
 
     print(factory_list)
     assert len(factory_list)>0
