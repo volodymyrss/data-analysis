@@ -19,6 +19,7 @@ setup(
 		"dataanalysis.jsonify",
 		"dataanalysis.context",
 		"dataanalysis.ddservice",
+		"dataanalysis.resources",
 		],
     scripts=['tools/rundda.py'],
     license='Creative Commons Attribution-Noncommercial-Share Alike license',
