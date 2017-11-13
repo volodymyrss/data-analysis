@@ -3,16 +3,12 @@ data-analysis
 [![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png)](https://travis-ci.org/volodymyrss/data-analysis)[![codebeat badge](https://codebeat.co/badges/be1fafc7-ebdc-4fdd-8f60-18b1630c85bc)](https://codebeat.co/projects/github-com-volodymyrss-data-analysis-master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=volodymyrss/data-analysis&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&utm_medium=referral&utm_content=volodymyrss/data-analysis&utm_campaign=Badge_Coverage)
-
-The ideas described below are related to those of the
-lambda-architecture.  It is intended for ingesting and processing new
-data that are appended to existing data rather than overwriting
-them. State is determined from the natural ordering of the data.
-
 Framework to facilitate development of the (scientific) data analysis
 pipelines.  Originally designed to handle organized processing and
-storing results of different stages of analysis for moderate-scale
-(tens of Tb) archive of very diverse data.
+storing results of different stages of analysis for moderate-scale 
+(tens of Tb) archive of very diverse data.  It is intended for ingesting and processing new
+data that are appended to existing data rather than overwriting
+them. State is determined from the natural ordering of the data.
 
 The principal idea is to organize the pipeline in analysis units
 (classes, inheriting from DataAnalysis) without side effects. Result
@@ -38,7 +34,7 @@ provided with the neccessary inputs by the means of dependecy injection.
 
 weak points are:
 
-* special effort is needed to design the pipeline in the form of the pure funtions. however, there are not restrictions on the design within a single DataAnalysis. One can argue that this effort is equivalnet to design any analysis pipeline in a way that allows easy and controlled reuse of diverse data.
+* special effort is needed to design the pipeline in the form of the pure funtions. however, there are not restrictions on the design within a single DataAnalysis. One can consider that this effort is equivalnet to design any analysis pipeline in a way that allows easy and controlled reuse of diverse data.
 * analysis graph can be changed as a result of the analysis. This process may be confusing for those not familiar with higher order functions and functional programming. The framework implements perhaps a good way to make this process easy to intuitively understand.  
 * very large analysis may be eventually described by a very large graph. Natural shortcuts and aliases for parts of the graph are designed and can be used to avoid this.
 
