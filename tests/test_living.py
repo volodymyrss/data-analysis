@@ -19,13 +19,13 @@ def test_app_list(client):
 
 
 def test_live_delegation(client):
-    factory_list=client.get(url_for('produce',target="BAnalysis",modules="ddmoduletest")).json
+    factory_r=client.get(url_for('produce',target="BAnalysis",modules="ddmoduletest")).json
 
-    print(factory_list)
+    print(factory_r)
 
-    assert factory_list['data']=='dataBdataA'
+    assert factory_r['data']=='dataBdataA'
 
-    assert len(factory_list)>0
+    assert len(factory_r)>0
 
 
 def test_resource_delegation(client):
@@ -100,7 +100,10 @@ def test_live_resource_delegation(client):
 
     assert len(excinfo.value.resources)==1
 
-    r = client.get(excinfo.value.resources[0].url)
+    print(client)
+
+    #r = client.get(excinfo.value.resources[0].url)
+    r=excinfo.value.resources[0].get()
     #r = client.get(excinfo.value.resources[0].url)
     print(r)
 

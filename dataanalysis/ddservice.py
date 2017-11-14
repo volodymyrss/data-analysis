@@ -3,6 +3,8 @@ import importlib
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
 
+from dataanalysis.printhook import log
+
 dd_modules=[]
 
 def import_ddmodules(modules=None):
@@ -35,21 +37,37 @@ class List(Resource):
 class Produce(Resource):
     def get(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('target', type=str, help='')
-        parser.add_argument('modules', type=str, help='')
+        parser.add_argument('target', type=str, help='', required=True)
+        parser.add_argument('modules', type=str, help='', required=True)
         parser.add_argument('assumptions', type=str, help='')
+        parser.add_argument('produce', type=bool, help='',default=True)
         args = parser.parse_args()
 
-        print("args",args)
+        print("produce args",args)
 
         import dataanalysis.core as da
         da.reset()
-        import_ddmodules(args['modules'].split(","))
+        import_ddmodules(args.get('modules').split(","))
 
-        A=da.AnalysisFactory.byname(args['target'])
-        A.get()
+        A=da.AnalysisFactory.byname(args.get('target'))
 
-        return A.export_data(include_class_attributes=True)
+        if args.get('produce',True):
+            A.get()
+            return A.export_data(include_class_attributes=True)
+        else:
+            A.produce_disabled=True
+
+            try:
+                A.get()
+            except da.ProduceDisabledException as e:
+                log("produce disabled for",A)
+                fih, o = A.process(output_required=False)
+                return A.guess_main_resources()
+
+
+            #return fih
+
+
 
 def create_app():
     app = Flask(__name__)

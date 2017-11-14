@@ -140,6 +140,8 @@ class UnhandledAnalysisException(Exception):
     def __str__(self):
         return repr(self)
 
+class ProduceDisabledException(Exception):
+    pass
 
 def flatten_nested_structure(structure, mapping, path=[]):
     if isinstance(structure, list):
@@ -1078,7 +1080,7 @@ class DataAnalysis(object):
 
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
                     if restore_rules['force_complete']:
-                        raise Exception("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
+                        raise ProduceDisabledException("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
                     else:
                         self.incomplete=True
                         return fih,self
@@ -1271,6 +1273,9 @@ class DataAnalysis(object):
             inputs_dda = [inputs_dda]
 
         return inputs_dda
+
+    def guess_main_resources(self):
+        return dict(guess_source='mock')
 
     def process_input(self,obj=None, restore_rules=None,restore_config=None,requested_by=None, **extra):
         """
@@ -1604,6 +1609,7 @@ class DataFile(DataAnalysis):
         import numpy as np
         if isinstance(obj,np.ndarray):
             if len(obj)>50:
+                log("adoption as numpy:", len(obj), obj)
                 fn=name+"_numpy_array.txt"
                 np.savetxt(fn,obj)
                 r=cls(fn)
@@ -1616,6 +1622,7 @@ class DataFile(DataAnalysis):
         import pandas as pd
         if isinstance(obj,pd.DataFrame):
             if len(obj)>50:
+                log("adoption as pandas:", len(obj), obj)
                 fn = name + "_pandas_dataframe.csv"
                 obj.to_csv(fn)
                 r=cls(fn)
@@ -1624,6 +1631,8 @@ class DataFile(DataAnalysis):
                 return r
             else:
                 log("too small for adoption:",len(obj),obj)
+
+        log("not good for adoption:", obj)
 
         return obj
 
