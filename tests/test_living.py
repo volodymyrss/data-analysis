@@ -124,4 +124,4 @@ def test_live_resource_delegation(client):
     assert os.getpid() == R['resource_stats']['main_executed_on']['pid']
     assert threading.current_thread().ident == R['resource_stats']['main_executed_on']['thread_id']
 
-    assert False
+   # assert False
