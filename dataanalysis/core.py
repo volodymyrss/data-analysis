@@ -1610,6 +1610,8 @@ class DataFile(DataAnalysis):
                 r.adopted_format="numpy"
                 r.pre_adoption_key = key
                 return r
+            else:
+                log("too small for adoption:", len(obj), obj)
 
         import pandas as pd
         if isinstance(obj,pd.DataFrame):
@@ -1620,6 +1622,8 @@ class DataFile(DataAnalysis):
                 r.adopted_format = "pandas"
                 r.pre_adoption_key = key
                 return r
+            else:
+                log("too small for adoption:",len(obj),obj)
 
         return obj
 

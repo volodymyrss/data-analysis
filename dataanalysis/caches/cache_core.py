@@ -496,7 +496,7 @@ class Cache(object):
 
             adopted_b=DataFile.from_object(k,b,optional=True)
             if adopted_b is not b:
-                log("storing adopted DataFile",a,adopted_b)
+                log("storing adopted DataFile",a,adopted_b,level="main")
                 extra_content["_datafile_"+a]=adopted_b
                 return None # datafile is put elsewhere
 
