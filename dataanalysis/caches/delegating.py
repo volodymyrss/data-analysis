@@ -9,9 +9,9 @@ class DelegatedNoticeException(da.AnalysisDelegatedException):
     pass
 
 class WaitingForDependency(da.AnalysisDelegatedException):
-    def __init__(self, hashe, resource):
+    def __init__(self, hashe, resources):
         self.hashe=hashe
-        self.resource=resource
+        self.resources=resources
 
 
 class DelegatingCache(dataanalysis.caches.cache_core.Cache):

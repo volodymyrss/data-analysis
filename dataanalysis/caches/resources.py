@@ -1,5 +1,7 @@
 import urllib
 
+import requests
+
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache, WaitingForDependency
 from dataanalysis.printhook import log
 
@@ -37,12 +39,19 @@ class WebResource(Resource):
 
     @property
     def url(self):
+        return self.get_url()
+
+    def get_url(self,**extra_parameters):
         params=dict(
             target=self.identity.factory_name,
             modules=",".join(self.identity.get_modules_loadable()),
             requested_by=self.requested_by,
+            produce=False,
             #assumptions=self.identity.assumptions,
         )
+
+        if extra_parameters is not None:
+            params.update(extra_parameters)
 
         log("params",params)
 
@@ -56,6 +65,13 @@ class WebResource(Resource):
 
     def __repr__(self):
         return "[WebResource: %s for %s]"%(self.url,repr(self.identity))
+
+    def get(self):
+        return requests.get(self.get_url(produce=True)).json()
+
+    def enquire(self):
+        return requests.get(self.get_url(produce=False)).json()
+
 
 class WebResourceFactory(object):
     host=None
@@ -73,5 +89,5 @@ class CacheDelegateToResources(SelectivelyDelegatingCache):
 
         resource = self.resource_factory().find_resource(hashe,obj.get_identity(),requested_by=obj._da_requested_by)
 
-        raise WaitingForDependency(hashe, resource)
+        raise WaitingForDependency(hashe, resources=[resource])
 

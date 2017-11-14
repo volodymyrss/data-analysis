@@ -180,6 +180,10 @@ class AnalysisDelegatedException(Exception):
 
         obj.expectations=exceptions
 
+        obj.resources=[]
+        for ex in exceptions:
+            obj.resources+=ex.resources
+
         return obj
 
     def __repr__(self):

@@ -40,21 +40,22 @@ def test_resource_delegation(client):
 
     A=ddmoduletest.AAnalysis()
 
-    with pytest.raises(dataanalysis.caches.delegating.WaitingForDependency) as excinfo:
+    with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
         A.get()
 
-    assert isinstance(excinfo.value.resource, dataanalysis.caches.resources.WebResource)
+    assert len(excinfo.value.resources)==1
 
-    print(excinfo.value.resource.identity.get_modules_loadable())
+    assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
 
-    print(excinfo.value.resource)
+    print(excinfo.value.resources[0].identity.get_modules_loadable())
+
+    print(excinfo.value.resources[0])
+
+
 
     #assert False
 
-
-def test_live_resource_delegation(client):
-    import os
-    import threading
+def test_multiple_resource_delegation(client):
     import dataanalysis.core as da
     import dataanalysis
 
@@ -62,35 +63,22 @@ def test_live_resource_delegation(client):
     da.debug_output()
 
     import ddmoduletest
-    ddmoduletest.cache.delegating_analysis="AAnalysis"
+    reload(ddmoduletest)
+    ddmoduletest.cache.delegating_analysis.append("ClientDelegatableAnalysis.*")
 
-    A=ddmoduletest.AAnalysis()
+    A=ddmoduletest.TwoCDInputAnalysis()
 
-    with pytest.raises(dataanalysis.caches.delegating.WaitingForDependency) as excinfo:
+    with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
         A.get()
 
-    assert isinstance(excinfo.value.resource, dataanalysis.caches.resources.WebResource)
+    assert len(excinfo.value.resources)==2
 
-    print(excinfo.value.resource.identity.get_modules_loadable())
+    assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
+    assert isinstance(excinfo.value.resources[1], dataanalysis.caches.resources.WebResource)
 
-    print(excinfo.value.resource)
+    print(excinfo.value.resources[0].identity.get_modules_loadable())
 
-    r=client.get(excinfo.value.resource.url)
-    print(r)
-
-    R=r.json
-    print(R)
-
-    assert R['data']=='dataA'
-
-    print(R.keys())
-    print(R['resource_stats']['main_executed_on'])
-
-
-    assert os.getpid() == R['resource_stats']['main_executed_on']['pid']
-    assert threading.current_thread().ident == R['resource_stats']['main_executed_on']['thread_id']
-
-    assert False
+    print(excinfo.value.resources)
 
 
 def test_live_resource_delegation(client):
@@ -103,14 +91,17 @@ def test_live_resource_delegation(client):
     da.debug_output()
 
     import ddmoduletest
-    ddmoduletest.cache.delegating_analysis = "AAnalysis"
+    ddmoduletest.cache.delegating_analysis = "ClientDelegatableAnalysisA"
 
-    A = ddmoduletest.AAnalysis()
+    A = ddmoduletest.ClientDelegatableAnalysisA()
 
-    with pytest.raises(dataanalysis.caches.delegating.WaitingForDependency) as excinfo:
+    with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
         A.get()
 
-    r = client.get(excinfo.value.resource.url)
+    assert len(excinfo.value.resources)==1
+
+    r = client.get(excinfo.value.resources[0].url)
+    #r = client.get(excinfo.value.resources[0].url)
     print(r)
 
     R = r.json
@@ -124,4 +115,28 @@ def test_live_resource_delegation(client):
     assert os.getpid() == R['resource_stats']['main_executed_on']['pid']
     assert threading.current_thread().ident == R['resource_stats']['main_executed_on']['thread_id']
 
-   # assert False
+
+def test_live_multiple_resource_delegation(client):
+    import dataanalysis.core as da
+    import dataanalysis
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    ddmoduletest.cache.delegating_analysis.append("ClientDelegatableAnalysis.*")
+
+    A=ddmoduletest.TwoCDInputAnalysis()
+
+    with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
+        A.get()
+
+    assert len(excinfo.value.resources)==2
+
+    assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
+    assert isinstance(excinfo.value.resources[1], dataanalysis.caches.resources.WebResource)
+
+    print(excinfo.value.resources[0].identity.get_modules_loadable())
+
+    print(excinfo.value.resources)
