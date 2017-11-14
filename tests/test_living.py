@@ -23,7 +23,7 @@ def test_live_delegation(client):
 
     print(factory_r)
 
-    assert factory_r['data']=='dataBdataA'
+    assert factory_r['data']['data']=='dataBdataA'
 
     assert len(factory_r)>0
 
@@ -91,32 +91,66 @@ def test_live_resource_delegation(client):
     da.debug_output()
 
     import ddmoduletest
-    ddmoduletest.cache.delegating_analysis = "ClientDelegatableAnalysisA"
+    ddmoduletest.cache.delegating_analysis = ["ClientDelegatableAnalysisA"]
 
-    A = ddmoduletest.ClientDelegatableAnalysisA()
+    A = ddmoduletest.ClientDelegatableAnalysisA1()
 
     with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
         A.get()
 
     assert len(excinfo.value.resources)==1
 
-    print(client)
+    getter=lambda x:client.get(x).json
 
-    #r = client.get(excinfo.value.resources[0].url)
-    r=excinfo.value.resources[0].get()
-    #r = client.get(excinfo.value.resources[0].url)
-    print(r)
+    fr=excinfo.value.resources[0].fetch(getter=getter)
+    assert fr.status == 'not allowed to produce'
 
-    R = r.json
+    R=excinfo.value.resources[0].get(getter=getter)
+
     print(R)
 
-    assert R['data'] == 'dataA'
+    assert R.data['data'] == 'dataA1'
 
-    print(R.keys())
-    print(R['resource_stats']['main_executed_on'])
+    print(R.data.keys())
+    print(R.data['resource_stats']['main_executed_on'])
 
-    assert os.getpid() == R['resource_stats']['main_executed_on']['pid']
-    assert threading.current_thread().ident == R['resource_stats']['main_executed_on']['thread_id']
+    assert os.getpid() == R.data['resource_stats']['main_executed_on']['pid']
+    assert threading.current_thread().ident == R.data['resource_stats']['main_executed_on']['thread_id']
+
+def test_live_resource_server_cachable(client):
+    import dataanalysis.core as da
+    import dataanalysis
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    ddmoduletest.cache.delegating_analysis = ["ServerCachableAnalysis"]
+
+    A = ddmoduletest.ServerCachableAnalysis()
+    A.cache=ddmoduletest.cache
+
+    with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
+        A.get()
+
+    assert len(excinfo.value.resources)==1
+
+    getter=lambda x:client.get(x).json
+
+    fr = excinfo.value.resources[0].get(getter=getter)
+
+    assert fr.status == "result"
+    print fr.data
+    assert fr.data['data'] == 'dataAdataB'
+
+    fr = excinfo.value.resources[0].fetch(getter=getter)
+
+    assert fr.status == "result"
+
+    print fr.data
+
+    assert fr.data['data'] == 'dataAdataB'
 
 
 def test_live_multiple_resource_delegation(client):

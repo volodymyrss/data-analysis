@@ -1432,6 +1432,7 @@ class DataAnalysis(object):
             fqhname=socket.getfqdn(),
             pid=os.getpid(),
             thread_id=threading.current_thread().ident,
+            requested_by=self._da_requested_by,
         )
 
         self.resource_stats={

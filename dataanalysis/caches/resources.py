@@ -11,6 +11,26 @@ from dataanalysis.printhook import log
 # no traces required in the network ( traces are kept for information )
 # callbacks
 
+class Response(object):
+    def __init__(self,status,data):
+        self.status=status
+        self.data=data
+
+    @classmethod
+    def from_response_json(cls,response_json):
+        return cls(response_json['status'],response_json['data'])
+
+    def jsonify(self):
+        return dict(
+            status=self.status,
+            data=self.data,
+        )
+
+    def __repr__(self):
+        return "[Response: %s]"%self.status
+
+
+
 class Resource(object):
     def __init__(self, hashe, identity, requested_by):
         self.hashe=hashe
@@ -45,8 +65,8 @@ class WebResource(Resource):
         params=dict(
             target=self.identity.factory_name,
             modules=",".join(self.identity.get_modules_loadable()),
-            requested_by=self.requested_by,
-            produce=False,
+            requested_by=",".join(self.requested_by),
+            mode="interactive",
             #assumptions=self.identity.assumptions,
         )
 
@@ -61,16 +81,24 @@ class WebResource(Resource):
             api_version=self.api_version
         )
 
-        return url_root+"?"+urllib.urlencode(params)
+        url=url_root + "?" + urllib.urlencode(params)
+
+        log("url:",url)
+        return url
 
     def __repr__(self):
         return "[WebResource: %s for %s]"%(self.url,repr(self.identity))
 
-    def get(self):
-        return requests.get(self.get_url(produce=True)).json()
+    def get(self,getter=None,mode="interactive"):
+        if getter is None:
+            getter=lambda x:requests.get(x).json
+        return Response.from_response_json(getter(self.get_url(mode=mode)))
 
-    def enquire(self):
-        return requests.get(self.get_url(produce=False)).json()
+    def delayed(self,getter=None):
+        return self.get(mode="interactive", getter=getter)
+
+    def fetch(self,getter=None):
+        return self.get(mode="fetch", getter=getter)
 
 
 class WebResourceFactory(object):

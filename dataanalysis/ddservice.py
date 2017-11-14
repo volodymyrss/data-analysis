@@ -7,6 +7,10 @@ from dataanalysis.printhook import log
 
 dd_modules=[]
 
+from dataanalysis.caches.resources import Response
+
+# exception
+
 def import_ddmodules(modules=None):
     if modules is None:
         modules=dd_modules
@@ -40,10 +44,14 @@ class Produce(Resource):
         parser.add_argument('target', type=str, help='', required=True)
         parser.add_argument('modules', type=str, help='', required=True)
         parser.add_argument('assumptions', type=str, help='')
-        parser.add_argument('produce', type=bool, help='',default=True)
+        parser.add_argument('mode', type=str, help='',default="interactive")
+        parser.add_argument('requested_by', type=str, help='',default="")
+        parser.add_argument('request_id', type=str, help='')
+        parser.add_argument('request_comment', type=str, help='')
         args = parser.parse_args()
 
-        print("produce args",args)
+        print("ddservice request:",args['request_comment'],args['request_id'])
+        print("ddservice produce args",args)
 
         import dataanalysis.core as da
         da.reset()
@@ -51,18 +59,37 @@ class Produce(Resource):
 
         A=da.AnalysisFactory.byname(args.get('target'))
 
-        if args.get('produce',True):
+        requested_by=["service","->",]+args['requested_by'].split(",")
+
+        if args['mode'] == "interactive":
+            log("interactive produce requested for",A)
             A.get()
-            return A.export_data(include_class_attributes=True)
-        else:
+            return Response(
+                status="result",
+                data=A.export_data(include_class_attributes=True),
+            ).jsonify()
+        elif args['mode'] == "fetch":
+            log("No interactive produce requested for", A)
             A.produce_disabled=True
 
             try:
-                A.get()
+                A.get(requested_by=requested_by)
+                log("no produce extracted", A)
+                return Response(
+                    status='result',
+                    data=A.export_data(include_class_attributes=True),
+                ).jsonify()
             except da.ProduceDisabledException as e:
-                log("produce disabled for",A)
+                log("no result while produce disabled for",A)
                 fih, o = A.process(output_required=False)
-                return A.guess_main_resources()
+                return Response(
+                    status="not allowed to produce",
+                    data=dict(resources=A.guess_main_resources()),
+                ).jsonify()
+        #elif args['mode'] == "delayed":
+        #    pass
+        else:
+            raise Exception("unknown produce mode:"+args['mode'])
 
 
             #return fih
