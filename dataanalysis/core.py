@@ -172,9 +172,9 @@ class AnalysisException(Exception):
     pass
 
 class AnalysisDelegatedException(Exception):
-    def __init__(self,hashe):
+    def __init__(self,hashe,resources=None):
         self.hashe=hashe
-        self.resources=[]
+        self.resources=[] if resources is None else resources
         self.source_exceptions=None
 
     @classmethod

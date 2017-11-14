@@ -1,3 +1,6 @@
+import os
+import threading
+
 import pytest
 from flask import url_for
 
@@ -7,8 +10,22 @@ from flask import url_for
 #    assert not app.debug, 'Ensure the app not in debug mode'
 
 def test_api_ping(client):
-    res = client.get(url_for('status'))
-    assert res.json == {'ping': 'pong'}
+    url=url_for('status',_external=True)
+    print("full url",url)
+    res = client.get(url)
+    assert res.json['ping']== 'pong'
+
+
+def test_api_ping_separate(ddservice,app):
+    url=url_for('status')
+    import requests
+    print("full url",ddservice+url)
+    res = requests.get(ddservice+url)
+    assert res.json()['ping']== 'pong'
+    assert res.json()['pid'] != os.getpid()
+    print(res.json()['thread'], threading.current_thread().ident)
+    assert res.json()['thread'] != threading.current_thread().ident
+
 
 def test_app_list(client):
     factory_list=client.get(url_for('list',modules=",".join(["ddmoduletest"]))).json
@@ -16,6 +33,7 @@ def test_app_list(client):
     print(factory_list)
     assert len(factory_list)>0
     assert 'AAnalysis' in factory_list
+
 
 
 def test_live_delegation(client):
@@ -177,3 +195,60 @@ def test_live_multiple_resource_delegation(client):
     print(excinfo.value.resources[0].identity.get_modules_loadable())
 
     print(excinfo.value.resources)
+
+
+def test_live_chained_delegation(ddservice, app):
+    import dataanalysis.core as da
+    import dataanalysis
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    ddmoduletest.cache.delegating_analysis.append("ChainedDelegator.*")
+
+    A=ddmoduletest.ChainedDelegator()
+
+    with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
+        A.get()
+
+    assert len(excinfo.value.resources)==1
+
+    assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
+
+def test_delegation_modes(ddservice, app):
+    return # issable
+
+    import requests
+    import dataanalysis.core as da
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    ddmoduletest.cache.delegating_analysis.append("ChainedDelegator.*")
+    ddmoduletest.cache.delegation_mode="interactive"
+
+    def getter(*x):
+        print(x)
+        assert len(x)==1
+        return requests.get(x[0]).json()
+
+    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    ddmoduletest.cache.resource_factory.getter=getter
+
+    A=ddmoduletest.ChainedDelegator()
+
+    a=A.get()
+
+    assert a == None
+
+    #with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
+    #    A.get()
+
+    #assert len(excinfo.value.resources)==1
+
+    #assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
+

@@ -8,9 +8,11 @@ class LocalResourceFactory(WebResourceFactory):
     port=6767
     api_version = "v0"
 
+local_resource_factory = LocalResourceFactory()
+
 class TestCache(CacheDelegateToResources):
     delegating_analysis = ["ServerDelegatableAnalysis.*"]
-    resource_factory = LocalResourceFactory
+    resource_factory = local_resource_factory
 
 cache=TestCache()
 server_local_cache=CacheNoIndex()
@@ -92,3 +94,13 @@ class ServerCachableAnalysis(da.DataAnalysis):
     def main(self):
         self.data=self.input_a.data+self.input_b.data
 
+
+
+class ChainedDelegator(da.DataAnalysis):
+    cached = True
+    cache = cache
+
+    input_a = ServerDelegatableAnalysisA
+
+    def main(self):
+        pass

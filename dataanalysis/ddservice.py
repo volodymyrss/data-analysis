@@ -1,4 +1,6 @@
 import importlib
+import os
+import threading
 
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
@@ -23,7 +25,7 @@ def import_ddmodules(modules=None):
 
 class Status(Resource):
     def get(self):
-        return {'ping': 'pong'}
+        return {'ping': 'pong','pid':os.getpid(),'thread':threading.current_thread().ident }
 
 class List(Resource):
     def get(self):
@@ -61,39 +63,41 @@ class Produce(Resource):
 
         requested_by=["service","->",]+args['requested_by'].split(",")
 
-        if args['mode'] == "interactive":
-            log("interactive produce requested for",A)
-            A.get()
-            return Response(
-                status="result",
-                data=A.export_data(include_class_attributes=True),
-            ).jsonify()
-        elif args['mode'] == "fetch":
+        if args['mode'] == "fetch":
             log("No interactive produce requested for", A)
-            A.produce_disabled=True
-
-            try:
-                A.get(requested_by=requested_by)
-                log("no produce extracted", A)
-                return Response(
-                    status='result',
-                    data=A.export_data(include_class_attributes=True),
-                ).jsonify()
-            except da.ProduceDisabledException as e:
-                log("no result while produce disabled for",A)
-                fih, o = A.process(output_required=False)
-                return Response(
-                    status="not allowed to produce",
-                    data=dict(resources=A.guess_main_resources()),
-                ).jsonify()
-        #elif args['mode'] == "delayed":
-        #    pass
+            A.produce_disabled = True
+        elif args['mode'] == "interactive":
+            log("interactive produce requested for",A)
+        elif args['mode'] == "delayed":
+            pass
         else:
             raise Exception("unknown produce mode:"+args['mode'])
 
+        try:
+            A.get(requested_by=requested_by)
+            log("no produce extracted", A)
+            return Response(
+                status='result',
+                data=A.export_data(include_class_attributes=True),
+            ).jsonify()
 
-            #return fih
+        except da.ProduceDisabledException as e:
+            log("no result while produce disabled for",A)
+            fih, o = A.process(output_required=False)
+            return Response(
+                status="not allowed to produce",
+                data=dict(resources=A.guess_main_resources()),
+            ).jsonify()
 
+        except da.AnalysisDelegatedException as e:
+            log("service is waiting for dependencies:",e)
+            return Response(
+                status="waiting for dependencies",
+                data=dict(
+                    resources=A.guess_main_resources(),
+                    dependencies=[r.jsonify() for r in e.resources],
+                ),
+            ).jsonify()
 
 
 def create_app():
@@ -106,5 +110,7 @@ def create_app():
     return app
 
 if __name__ == '__main__':
+    import dataanalysis as da
+    da.debug_output()
     create_app().run(debug=True,port=6767)
 

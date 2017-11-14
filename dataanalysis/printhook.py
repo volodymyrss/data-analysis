@@ -16,17 +16,25 @@ global_all_output=True
 global_log_enabled=True
 global_debug_enabled=False
 
+import os
+import threading
+
+
 def log(*args,**kwargs):
     if global_suppress_output:
         return
     else:
+        my_pid = os.getpid()
+        my_thread=threading.current_thread().ident
+
         level = kwargs['level'] if 'level' in kwargs else None
 
+
         if global_permissive_output:
-            print("DEBUG",level, *args)
+            print("DEBUG",my_pid,"/",my_thread,level, *args)
 
         if level in global_output_levels:
-            print(level, *args)
+            print(level,my_pid,"/",my_thread, *args)
 
 def debug_print(text):
     if global_debug_enabled:
