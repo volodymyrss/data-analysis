@@ -172,13 +172,14 @@ class AnalysisException(Exception):
 class AnalysisDelegatedException(Exception):
     def __init__(self,hashe):
         self.hashe=hashe
-        self.expectations=[self] # oh?
+        self.resources=[]
+        self.source_exceptions=None
 
     @classmethod
     def from_list(cls,exceptions):
         obj=cls(None)
 
-        obj.expectations=exceptions
+        obj.source_exceptions=exceptions
 
         obj.resources=[]
         for ex in exceptions:

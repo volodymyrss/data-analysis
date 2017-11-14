@@ -99,7 +99,7 @@ def test_delegating_analysis():
     try:
         A.get()
     except da.AnalysisDelegatedException as e:
-        print("expectations:",e.expectations)
+        print("resources:",e.resources)
 
     del da.DataAnalysis.cache.parent
 
