@@ -513,32 +513,6 @@ class Cache(object):
 
         return content
 
-    def _NOT_recover_adopted_datafiles(self, content):
-        from dataanalysis.core import DataFile  # very delayed import
-        if isinstance(content, dict):
-            extra_content = {}
-            remove_keys = []
-
-            for a, b in content.items():
-                adopted_b = DataFile.from_object(a, b, optional=True)
-                if adopted_b is not b:
-                    log("storing adopted DataFile", a, adopted_b)
-                    extra_content["_datafile_" + a] = adopted_b
-                    remove_keys.append(a)
-
-            if len(extra_content) > 0:
-                log("extra content:", extra_content)
-
-            if len(extra_content) > 0:
-                log("keys to remove:", remove_keys)
-
-            content = dict(content.items() + extra_content.items())
-            for key in remove_keys:
-                del content[key]
-
-        log("after adoption, keys", content.keys())
-
-        return content
 
     def store_to_directory(self, hashe, obj, cached_path):
         if not cached_path.endswith("/"):

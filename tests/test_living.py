@@ -53,6 +53,8 @@ def test_resource_delegation(client):
 
 
 def test_live_resource_delegation(client):
+    import os
+    import threading
     import dataanalysis.core as da
     import dataanalysis
 
@@ -81,5 +83,45 @@ def test_live_resource_delegation(client):
 
     assert R['data']=='dataA'
 
-    #assert False
+    print(R.keys())
+    print(R['resource_stats']['main_executed_on'])
 
+
+    assert os.getpid() == R['resource_stats']['main_executed_on']['pid']
+    assert threading.current_thread().ident == R['resource_stats']['main_executed_on']['thread_id']
+
+    assert False
+
+
+def test_live_resource_delegation(client):
+    import os
+    import threading
+    import dataanalysis.core as da
+    import dataanalysis
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    ddmoduletest.cache.delegating_analysis = "AAnalysis"
+
+    A = ddmoduletest.AAnalysis()
+
+    with pytest.raises(dataanalysis.caches.delegating.WaitingForDependency) as excinfo:
+        A.get()
+
+    r = client.get(excinfo.value.resource.url)
+    print(r)
+
+    R = r.json
+    print(R)
+
+    assert R['data'] == 'dataA'
+
+    print(R.keys())
+    print(R['resource_stats']['main_executed_on'])
+
+    assert os.getpid() == R['resource_stats']['main_executed_on']['pid']
+    assert threading.current_thread().ident == R['resource_stats']['main_executed_on']['thread_id']
+
+    assert False

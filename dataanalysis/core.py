@@ -6,6 +6,7 @@ except ImportError:
     from io import StringIO
 
 import collections
+import threading
 import gzip
 import json
 import os
@@ -1416,10 +1417,18 @@ class DataAnalysis(object):
         total_cachetime=sum([a['stats']['copytime'] for a in self._da_resource_stats if a['resource_type']=='cache'])
         log(render("collected resource stats, total {MAGENTA}cache copy time{/}"),total_cachetime,'{log:resources}')
 
+        main_exectured_on=dict(
+            hostname=socket.gethostname(),
+            fqhname=socket.getfqdn(),
+            pid=os.getpid(),
+            thread_id=threading.current_thread().ident,
+        )
+
         self.resource_stats={
                                 'total_usertime':total_usertime,
                                 'total_runtime':total_runtime,
-                                'total_cachetime':total_cachetime
+                                'total_cachetime':total_cachetime,
+                                'main_executed_on':main_exectured_on,
                             }
 
 
