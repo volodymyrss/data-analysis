@@ -7,3 +7,4 @@ pyyaml
 flask
 flask-restful
 pytest-flask
+psutil
