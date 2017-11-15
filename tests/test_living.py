@@ -54,6 +54,23 @@ def test_live_delegation(ddservice,app):
 
     assert len(factory_r)>0
 
+def test_live_delegation_assumptions(ddservice,app):
+    import requests
+    import dataanalysis.core as da
+    da.reset()
+    da.debug_output()
+
+    r=requests.get(ddservice+url_for('produce', target="BAnalysis", modules="ddmoduletest", assume="AAnalysis.assumed_data=\"clients\""))
+
+    print(r.content)
+
+    factory_r=r.json()
+
+    print(factory_r)
+
+    assert factory_r['data']['data']=='dataBdataAclients'
+
+    assert len(factory_r)>0
 
 def test_resource_delegation(client):
     import dataanalysis.core as da

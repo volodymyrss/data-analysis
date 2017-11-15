@@ -41,12 +41,30 @@ class List(Resource):
 
         return da.AnalysisFactory.cache.keys()
 
+def interpret_simple_assume(assume_strings):
+    r={}
+    for assume_string in assume_strings.split(","):
+        setting,value=assume_string.split("=")
+        objname,attr=setting.split(".")
+
+        if objname not in r:
+            r[objname]={}
+
+        try:
+            r[objname][attr]=json.loads(value)
+        except Exception as e:
+            raise Exception("unable to decode: "+value)
+
+    return r.items()
+
+
 class Produce(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('target', type=str, help='', required=True)
         parser.add_argument('modules', type=str, help='', required=True)
         parser.add_argument('assumptions', type=str, help='',default="[]")
+        parser.add_argument('assume', type=str, help='', default="")
         parser.add_argument('expected_hashe', type=str, help='')
         parser.add_argument('mode', type=str, help='',default="interactive")
         parser.add_argument('requested_by', type=str, help='',default="")
@@ -65,6 +83,8 @@ class Produce(Resource):
         print("ddservice got assumptions:")
 
         A=da.AnalysisFactory.byname(args.get('target'))
+
+        assumptions+=interpret_simple_assume(args['assume'])
 
         for assumption in assumptions:
             a=da.AnalysisFactory.byname(assumption[0])
