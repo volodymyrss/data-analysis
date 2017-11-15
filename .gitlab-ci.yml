@@ -10,5 +10,5 @@ test:
   - pip install -r requirements.txt
   - py.test --cov=./
   - PYTHONPATH=./ py.test . --cov=./
-  tags:
-  - integral-test
+  #tags:
+  #- integral-test
