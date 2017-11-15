@@ -43,7 +43,7 @@ class List(Resource):
 
 def interpret_simple_assume(assume_strings):
     r={}
-    for assume_string in assume_strings.split(","):
+    for assume_string in assume_strings.split(";"):
         setting,value=assume_string.split("=")
         objname,attr=setting.split(".")
 
