@@ -18,6 +18,24 @@ global_debug_enabled=False
 
 import os
 import threading
+import time
+
+def setup_graylog():
+    try:
+        import graypy
+    except ImportError:
+        return
+
+    import logging
+
+    my_logger = logging.getLogger('dda_logger')
+    my_logger.setLevel(logging.DEBUG)
+
+    handler = graypy.GELFHandler('localhost', 12201)
+    my_logger.addHandler(handler)
+    return my_logger
+
+graylog_logger=setup_graylog()
 
 
 def log(*args,**kwargs):
@@ -31,10 +49,14 @@ def log(*args,**kwargs):
 
 
         if global_permissive_output:
-            print("DEBUG",my_pid,"/",my_thread,level, *args)
+            print(time.time(),"DEBUG",my_pid,"/",my_thread,level, *args)
+            if graylog_logger is not None:
+                graylog_logger.debug(args)
 
         if level in global_output_levels:
-            print(level,my_pid,"/",my_thread, *args)
+            print(time.time(),level,my_pid,"/",my_thread, *args)
+            if graylog_logger is not None:
+                graylog_logger.debug(args)
 
 def debug_print(text):
     if global_debug_enabled:

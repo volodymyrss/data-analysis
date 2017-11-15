@@ -15,7 +15,7 @@ def test_queue_cache():
     from dataanalysis import caches
     import dataanalysis.caches.queue
 
-    #da.debug_output()
+    da.debug_output()
     da.reset()
 
     q_cache=caches.queue.QueueCache()

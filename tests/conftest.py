@@ -48,7 +48,8 @@ def ddservice(pytestconfig):
     def follow_output():
         url_store[0] = None
         for line in iter(p.stdout.readline, ''):
-            print("following server:", line.rstrip())
+            timestamp=line.split()[0]
+            print(timestamp,"following server:", line.rstrip())
             m = re.search("Running on (.*?) \(Press CTRL\+C to quit\)", line)
             if m:
                 url_store[0] = m.group(1)[:-1]  # alaternatively get from configenv

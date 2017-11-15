@@ -104,10 +104,10 @@ class Cache(object):
     def __repr__(self):
         return "["+self.__class__.__name__+" of size %i at %s]"%(len(self.cache.keys()),self.filecacheroot)
 
-    def find(self,hashe):
-        #for c in self.cache.keys():
-            #log("cache:",c)
+    def find_content_hash_obj(self,hashe, obj):
+        return
 
+    def find(self,hashe):
         self.load()
 
         if hashe in self.cache:
@@ -377,6 +377,17 @@ class Cache(object):
             else:
                 log("NOT restoring adoption")
 
+    def get_restore_config(self,obj,extra_restore_config=None):
+        restore_config = dict(datafile_restore_mode="copy", datafile_target_dir=None)  # no string
+
+        if extra_restore_config is not None:
+            restore_config = dict(list(restore_config.items()) + list(extra_restore_config.items()))
+
+        if obj.datafile_restore_mode is not None:
+            restore_config['datafile_restore_mode']=obj.datafile_restore_mode
+
+        return restore_config
+
     def restore(self,hashe,obj,restore_config=None):
         # check if updated
         if obj.run_for_hashe or obj.mutating:
@@ -387,19 +398,16 @@ class Cache(object):
             from_parent=self.restore_from_parent(hashe,obj,restore_config)
             return from_parent
 
-        if restore_config is None:
-            restore_config={}
-        restore_config_default=dict(datafile_restore_mode="copy",datafile_target_dir=None) # no string
-        restore_config=dict(list(restore_config_default.items())+list(restore_config.items()) if restore_config is not None else [])
-
+        restore_config=self.get_restore_config(obj, extra_restore_config=restore_config)
         log("will restore",self,obj,"restore_config",restore_config)
 
-        if obj.datafile_restore_mode is not None:
-            restore_config['datafile_restore_mode']=obj.datafile_restore_mode
-
-        c=self.find(hashe)
+        c=self.find_content_hash_obj(hashe,obj)
         if c is None:
-            log("normal restore failed.")
+            log("cache",self,"found no hashe-obj record")
+            c=self.find(hashe)
+
+        if c is None:
+            log("restore failed: passing to parent",self.parent)
             return self.restore_from_parent(hashe,obj,restore_config)
 
         log("requested to restore cache")

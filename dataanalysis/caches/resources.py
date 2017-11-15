@@ -1,5 +1,7 @@
 import urllib
 
+import requests
+
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 from dataanalysis.core import AnalysisDelegatedException
 from dataanalysis.printhook import log
@@ -104,8 +106,10 @@ class WebResource(Resource):
 
     def get(self,getter=None,mode="interactive"):
         if getter is None:
-            #getter=lambda x:requests.get(x).json
             getter=self.getter
+            if getter is None:
+                getter = lambda x: requests.get(x).json()
+
         return Response.from_response_json(getter(self.get_url(mode=mode)))
 
     def delayed(self,getter=None):
@@ -130,24 +134,20 @@ class WebResourceFactory(object):
 
 class CacheDelegateToResources(SelectivelyDelegatingCache):
     resource_factory=None
-    delegation_mode="return"
+    delegation_mode="raise"
 
 
-    def restore(self,hashe,obj,restore_config=None):
+    def find_content_hash_obj(self,hashe,obj):
         if self.will_delegate(hashe, obj):
-
             resource = self.resource_factory.find_resource(hashe, obj.get_identity(), requested_by=obj._da_requested_by)
 
-            if self.delegation_mode == "return":
+            if self.delegation_mode == "raise":
                 raise AnalysisDelegatedException(hashe=hashe, resources=[resource])
             elif self.delegation_mode == "interactive":
-                return resource.get()
+                return resource.get().data
             else:
                 raise Exception("undefined delegation mode in the cache:" + self.delegation_mode)
 
-            #super(SelectivelyDelegatingCache, self).restore(hashe, obj, restore_config)
-        else:
-            return self.restore_from_parent(hashe, obj, restore_config)
 
     def delegate(self, hashe, obj):
         pass

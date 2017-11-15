@@ -218,9 +218,6 @@ def test_live_chained_delegation(ddservice, app):
     assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
 
 def test_delegation_modes(ddservice, app):
-    return # issable
-
-    import requests
     import dataanalysis.core as da
 
     da.reset()
@@ -228,20 +225,18 @@ def test_delegation_modes(ddservice, app):
 
     import ddmoduletest
     reload(ddmoduletest)
+
     ddmoduletest.cache.delegating_analysis.append("ChainedDelegator.*")
     ddmoduletest.cache.delegation_mode="interactive"
 
-    def getter(*x):
-        print(x)
-        assert len(x)==1
-        return requests.get(x[0]).json()
-
     ddmoduletest.cache.resource_factory.endpoint = ddservice
-    ddmoduletest.cache.resource_factory.getter=getter
+    #ddmoduletest.cache.resource_factory.getter=getter
 
     A=ddmoduletest.ChainedDelegator()
 
     a=A.get()
+
+    assert a.input_a==a
 
     assert a == None
 

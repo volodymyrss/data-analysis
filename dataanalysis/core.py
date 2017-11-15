@@ -613,6 +613,7 @@ class DataAnalysis(object):
         # discover through different caches
         #c=MemCacheLocal.find(fih)
 
+        log("searching for cache starting from",self.cache)
         r=self.cache.restore(fih,self,rc)
 
         if r and r is not None:

@@ -103,4 +103,4 @@ class ChainedDelegator(da.DataAnalysis):
     input_a = ServerDelegatableAnalysisA
 
     def main(self):
-        pass
+        self.data=self.input_a.data+".x"
