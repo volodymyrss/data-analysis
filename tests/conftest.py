@@ -33,7 +33,7 @@ def ddservice(pytestconfig):
 
     env=copy.deepcopy(dict(os.environ))
     print("rootdir",str(pytestconfig.rootdir))
-    env['PYTHONPATH']=str(pytestconfig.rootdir)+":"+str(pytestconfig.rootdir)+"/tests:"+env['PYTHONPATH']
+    env['PYTHONPATH']=str(pytestconfig.rootdir)+":"+str(pytestconfig.rootdir)+"/tests:"+env.get('PYTHONPATH',"")
     print("pythonpath",env['PYTHONPATH'])
 
     p=subprocess.Popen(
