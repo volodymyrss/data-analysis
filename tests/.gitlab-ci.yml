@@ -1,0 +1,14 @@
+test:
+  script:
+  - apt-get update -qy
+  - apt-get install -y python-dev
+  - wget https://bootstrap.pypa.io/ez_setup.py -O - | python
+  - easy_install pip
+  - pip install codecov
+  - pip install pytest-cov
+  - pip install .
+  - pip install -r requirements.txt
+  - py.test --cov=./
+  - PYTHONPATH=./ py.test . --cov=./
+  tags:
+  - integral-test
