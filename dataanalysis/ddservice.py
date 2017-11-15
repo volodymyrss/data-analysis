@@ -43,8 +43,15 @@ class List(Resource):
 
 def interpret_simple_assume(assume_strings):
     r={}
+    log("assume strings",assume_strings)
+    if assume_strings.strip()=="":
+        return r
     for assume_string in assume_strings.split(";"):
+        log("simple asssume:",assume_string)
+        if assume_string.strip()=="":
+            continue
         setting,value=assume_string.split("=")
+        log("simple asssume obj:",setting)
         objname,attr=setting.split(".")
 
         if objname not in r:

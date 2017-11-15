@@ -135,6 +135,7 @@ def test_live_resource_delegation(client):
     da.debug_output()
 
     import ddmoduletest
+    reload(ddmoduletest)
     ddmoduletest.cache.delegating_analysis = ["ClientDelegatableAnalysisA"]
 
     A = ddmoduletest.ClientDelegatableAnalysisA1()
