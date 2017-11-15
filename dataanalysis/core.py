@@ -328,7 +328,7 @@ class DataAnalysis(object):
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
-            extra_objects=[a[0].serialize() for a in (self.factory.cache_assumptions + self.assumptions)],
+            extra_objects=[a.serialize() for a in ([x[0] for x in self.factory.cache_assumptions] + self.assumptions)],
             assumptions=[],
         )
 

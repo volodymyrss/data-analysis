@@ -50,8 +50,12 @@ class AAnalysis(da.DataAnalysis):
     cached=True
     cache=cache
 
+    assumed_data=None
+
     def main(self):
         self.data="dataA"
+        if self.assumed_data is not None:
+            self.data += self.assumed_data
 
 class BAnalysis(da.DataAnalysis):
     cached=True

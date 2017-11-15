@@ -1,4 +1,5 @@
 import importlib
+import json
 import os
 import threading
 
@@ -31,7 +32,7 @@ class List(Resource):
     def get(self):
         parser = reqparse.RequestParser()
         parser.add_argument('modules', type=str, help='')
-        parser.add_argument('assumptions', type=str, help='')
+        parser.add_argument('assume', type=str, help='')
         args = parser.parse_args()
 
         import dataanalysis.core as da
@@ -45,7 +46,7 @@ class Produce(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('target', type=str, help='', required=True)
         parser.add_argument('modules', type=str, help='', required=True)
-        parser.add_argument('assumptions', type=str, help='')
+        parser.add_argument('assume', type=str, help='')
         parser.add_argument('mode', type=str, help='',default="interactive")
         parser.add_argument('requested_by', type=str, help='',default="")
         parser.add_argument('request_id', type=str, help='')
@@ -59,7 +60,16 @@ class Produce(Resource):
         da.reset()
         import_ddmodules(args.get('modules').split(","))
 
+        assumptions = json.loads(args.get('assume'))
+        print("ddservice got assumptions:")
+
         A=da.AnalysisFactory.byname(args.get('target'))
+
+        for assumption in assumptions:
+            a=da.AnalysisFactory.byname(assumption[0])
+            a.import_data(assumption[1])
+            print(a,"from",assumption)
+
 
         requested_by=["service","->",]+args['requested_by'].split(",")
 

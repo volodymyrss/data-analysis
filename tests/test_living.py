@@ -264,7 +264,7 @@ def test_chained(ddservice, app):
     assert a.data=={'a': 'dataA', 'b': 'dataBdataA'}
     assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
-
+    assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
 
 def test_passing_assumptions(ddservice, app):
     import dataanalysis.core as da
@@ -281,15 +281,17 @@ def test_passing_assumptions(ddservice, app):
     ddmoduletest.cache.resource_factory.endpoint = ddservice
     #ddmoduletest.cache.resource_factory.getter=getter
 
-    A=ddmoduletest.ChainedServerProducer()
+    A=ddmoduletest.ChainedServerProducer(assume=[ddmoduletest.AAnalysis(use_assumed_data="fromclient")])
     A.produce_disabled=True
 
     a=A.get()
 
+
     print a.data
 
-    assert a.data=={'a': 'dataA', 'b': 'dataBdataA'}
+    assert a.data=={'a': 'dataAfromclient', 'b': 'dataBdataAfromclient'}
     assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
+    assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
 
 

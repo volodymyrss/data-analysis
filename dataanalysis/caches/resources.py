@@ -1,3 +1,4 @@
+import json
 import urllib
 
 import requests
@@ -82,6 +83,7 @@ class WebResource(Resource):
         params=dict(
             target=self.identity.factory_name,
             modules=",".join(self.identity.get_modules_loadable()),
+            assume=json.dumps(self.identity.extra_objects),
             requested_by=",".join(self.requested_by),
             mode="interactive",
             #assumptions=self.identity.assumptions,
