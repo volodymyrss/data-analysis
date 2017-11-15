@@ -36,8 +36,17 @@ def test_app_list(client):
 
 
 
-def test_live_delegation(client):
-    factory_r=client.get(url_for('produce',target="BAnalysis",modules="ddmoduletest")).json
+def test_live_delegation(ddservice,app):
+    import requests
+    import dataanalysis.core as da
+    da.reset()
+    da.debug_output()
+
+    r=requests.get(ddservice+url_for('produce', target="BAnalysis", modules="ddmoduletest"))
+
+    print(r.content)
+
+    factory_r=r.json()
 
     print(factory_r)
 
@@ -121,6 +130,10 @@ def test_live_resource_delegation(client):
     getter=lambda x:client.get(x).json
 
     fr=excinfo.value.resources[0].fetch(getter=getter)
+
+    print fr
+    print fr.data
+
     assert fr.status == 'not allowed to produce'
 
     R=excinfo.value.resources[0].get(getter=getter)
@@ -293,5 +306,30 @@ def test_passing_assumptions(ddservice, app):
     assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
+
+
+def test_passing_unmanagable_assumptions(ddservice, app):
+    import dataanalysis.core as da
+    import dataanalysis.caches.resources
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+
+    ddmoduletest.cache.delegating_analysis.append("ChainedServerProducer.*")
+    ddmoduletest.cache.delegation_mode="interactive"
+
+    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    #ddmoduletest.cache.resource_factory.getter=getter
+
+    A=ddmoduletest.ChainedServerProducer(assume=[ddmoduletest.AAnalysis(input_x="somexinput")])
+    A.produce_disabled=True
+
+    with pytest.raises(dataanalysis.caches.resources.GenericResourceException) as excinfo:
+        a=A.get()
+
+    assert 'mismatch' in excinfo.value.args[2]['comment']
 
 

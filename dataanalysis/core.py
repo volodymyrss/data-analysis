@@ -140,6 +140,9 @@ class UnhandledAnalysisException(Exception):
     def __str__(self):
         return repr(self)
 
+class ConsistencyException(Exception):
+    pass
+
 class ProduceDisabledException(Exception):
     pass
 
@@ -181,7 +184,13 @@ class AnalysisDelegatedException(Exception):
         self.hashe=hashe
         self.resources=[] if resources is None else resources
         self.source_exceptions=None
-        self.comment=comment
+        self._comment=comment
+
+    @property
+    def comment(self):
+        if self._comment is not None:
+            return self._comment
+        return ""
 
     @classmethod
     def from_list(cls,exceptions):
@@ -196,7 +205,8 @@ class AnalysisDelegatedException(Exception):
         return obj
 
     def __repr__(self):
-        return "[{}: {}]".format(self.__class__.__name__,self.signature)
+        return "[{}: {}; {}]".format(self.__class__.__name__,self.signature, self.comment)
+
 
 class decorate_all_methods(type):
     def __new__(cls, name, bases, local):
@@ -229,13 +239,15 @@ class DataAnalysisIdentity(object):
                  full_name,
                  modules,
                  extra_objects,
-                 assumptions):
+                 assumptions,
+                 expected_hashe):
 
         self.factory_name=factory_name
         self.full_name=full_name
         self.modules=modules
         self.extra_objects=extra_objects
         self.assumptions=assumptions
+        self.expected_hashe=expected_hashe
 
     def get_modules_loadable(self):
         return [m[1] for m in self.modules]
@@ -330,6 +342,7 @@ class DataAnalysis(object):
             modules = self.factory.get_module_description(),
             extra_objects=[a.serialize() for a in ([x[0] for x in self.factory.cache_assumptions] + self.assumptions)],
             assumptions=[],
+            expected_hashe=self.expected_hashe,
         )
 
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
@@ -1026,6 +1039,10 @@ class DataAnalysis(object):
             print("failed:",e)
 
     _da_output_origin=None
+
+    @property
+    def expected_hashe(self):
+        return self.process(output_required=False)[0]
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         log(render("{BLUE}PROCESS{/} "+repr(self)))

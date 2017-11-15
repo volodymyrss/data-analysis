@@ -10,7 +10,7 @@ from dataanalysis.printhook import log
 
 dd_modules=[]
 
-from dataanalysis.caches.resources import Response
+from dataanalysis.caches.resources import Response, jsonify
 
 # exception
 
@@ -46,7 +46,8 @@ class Produce(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('target', type=str, help='', required=True)
         parser.add_argument('modules', type=str, help='', required=True)
-        parser.add_argument('assume', type=str, help='')
+        parser.add_argument('assumptions', type=str, help='',default="[]")
+        parser.add_argument('expected_hashe', type=str, help='')
         parser.add_argument('mode', type=str, help='',default="interactive")
         parser.add_argument('requested_by', type=str, help='',default="")
         parser.add_argument('request_id', type=str, help='')
@@ -60,7 +61,7 @@ class Produce(Resource):
         da.reset()
         import_ddmodules(args.get('modules').split(","))
 
-        assumptions = json.loads(args.get('assume'))
+        assumptions = json.loads(args.get('assumptions'))
         print("ddservice got assumptions:")
 
         A=da.AnalysisFactory.byname(args.get('target'))
@@ -70,8 +71,36 @@ class Produce(Resource):
             a.import_data(assumption[1])
             print(a,"from",assumption)
 
+        expected_hashe_str=args['expected_hashe']
 
-        requested_by=["service","->",]+args['requested_by'].split(",")
+        if expected_hashe_str is None:
+            expected_hashe=None
+        else:
+            try:
+                expected_hashe=json.loads(expected_hashe_str)
+            except Exception as e:
+                log("failed to interpret expected hashe:",expected_hashe_str)
+                return Response(
+                    status='error decoding expected hashe',
+                    data=dict(
+                        expected_hashe_str=expected_hashe_str,
+                        decoding_exception=repr(e),
+                    )
+                ).jsonify()
+
+
+        requested_by=["service",]+args['requested_by'].split(",")
+
+        hashe,obj=A.process(output_required=False)
+
+        if expected_hashe_str is not None and expected_hashe != jsonify(hashe):
+            return Response(
+                status='error',
+                data=dict(comment="mismatch between expected hashe and producable",
+                          expected_hashe=args['expected_hashe'],
+                          producable_hashe=hashe,
+                          ),
+            ).jsonify()
 
         if args['mode'] == "fetch":
             log("No interactive produce requested for", A)
@@ -81,10 +110,22 @@ class Produce(Resource):
         elif args['mode'] == "delayed":
             pass
         else:
-            raise Exception("unknown produce mode:"+args['mode'])
-
+            return Response(
+                status='error',
+                data=dict(comment="unknown produce mode"),
+            ).jsonify()
         try:
-            A.get(requested_by=requested_by)
+            hashe, obj=A.process(output_required=True,requested_by=requested_by)
+
+            if expected_hashe_str is not None and expected_hashe != jsonify(hashe):
+                return Response(
+                    status='error',
+                    data=dict(comment="mismatch between expected hashe and produced",
+                              expected_hashe=args['expected_hashe'],
+                              producable_hashe=hashe,
+                              ),
+                ).jsonify()
+
             log("server succeeded to get the object", A)
             return Response(
                 status='result',

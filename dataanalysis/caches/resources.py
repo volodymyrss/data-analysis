@@ -13,14 +13,25 @@ from dataanalysis.printhook import log
 # no traces required in the network ( traces are kept for information )
 # callbacks
 
+class GenericResourceException(Exception):
+    pass
+
 class Response(object):
     def __init__(self,status,data):
         self.status=status
         self.data=data
 
+
     @classmethod
-    def from_response_json(cls,response_json):
-        return cls(response_json['status'],response_json['data'])
+    def from_response_json(cls,response_json,allow_exception=True):
+        self=cls(response_json['status'],response_json['data'])
+
+        if allow_exception and self.status == "error":
+            exception_name=self.data.get('exception_name','GenericResourceException')
+            exception_data = self.data.get('exception_data', {})
+            raise GenericResourceException(exception_name,exception_data,self.data)
+
+        return self
 
     def jsonify(self):
         return dict(
@@ -45,6 +56,9 @@ class Resource(object):
 class ResourceFactory(object):
     def find_resource(self,hashe,identity):
         return Resource(hashe,identity)
+
+def jsonify(x):
+    return json.loads(json.dumps(x))
 
 class WebResource(Resource):
     def __init__(self, hashe, identity, request_route, host, port, api_version, getter=None, endpoint=None):
@@ -83,8 +97,9 @@ class WebResource(Resource):
         params=dict(
             target=self.identity.factory_name,
             modules=",".join(self.identity.get_modules_loadable()),
-            assume=json.dumps(self.identity.extra_objects),
+            assumptions=json.dumps(self.identity.extra_objects),
             requested_by=",".join(self.requested_by),
+            expected_hashe=json.dumps(self.identity.expected_hashe),
             mode="interactive",
             #assumptions=self.identity.assumptions,
         )
@@ -152,6 +167,8 @@ class CacheDelegateToResources(SelectivelyDelegatingCache):
                 log("interactive resource response",r)
                 if r.status!="result":
                     log("interactive resource status does not allow restore:", r.status)
+                    log(r)
+                    log(r.data)
                     raise AnalysisDelegatedException(hashe,
                                                      comment="interative resource status was unable to provide result for restore:" + repr(r.status),
                                                      resources=[resource])
