@@ -110,7 +110,7 @@ class ChainedServerProducer(da.DataAnalysis):
     cached = True
     cache = cache
 
-    input_a = BAnalysis
+    input_a = AAnalysis
     input_b = BAnalysis
 
     def main(self):

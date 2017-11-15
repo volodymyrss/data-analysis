@@ -261,15 +261,35 @@ def test_chained(ddservice, app):
 
     a=A.get()
 
-    assert a.data=={'a': 'dataBdataA', 'b': 'dataBdataA'}
+    assert a.data=={'a': 'dataA', 'b': 'dataBdataA'}
     assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
 
 
-    #with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
-    #    A.get()
+def test_passing_assumptions(ddservice, app):
+    import dataanalysis.core as da
 
-    #assert len(excinfo.value.resources)==1
+    da.reset()
+    da.debug_output()
 
-    #assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
+    import ddmoduletest
+    reload(ddmoduletest)
+
+    ddmoduletest.cache.delegating_analysis.append("ChainedServerProducer.*")
+    ddmoduletest.cache.delegation_mode="interactive"
+
+    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    #ddmoduletest.cache.resource_factory.getter=getter
+
+    A=ddmoduletest.ChainedServerProducer()
+    A.produce_disabled=True
+
+    a=A.get()
+
+    print a.data
+
+    assert a.data=={'a': 'dataA', 'b': 'dataBdataA'}
+    assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()
+    assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
+
 
