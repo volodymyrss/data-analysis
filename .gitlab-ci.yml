@@ -1,4 +1,5 @@
 test:
+  stage: test
   script:
   - apt-get update -qy
   - apt-get install -y python-dev
@@ -17,3 +18,7 @@ test:
     stage: deploy
     script:
     - "curl -X POST -F token=36527eb0b1e6bca83e89ff3c6b4ace -F ref=master https://gitlab.com/api/v4/projects/4656676/trigger/pipeline"
+
+stages:
+- test
+- deploy
