@@ -75,7 +75,7 @@ class Produce(Resource):
 
         try:
             A.get(requested_by=requested_by)
-            log("no produce extracted", A)
+            log("server succeeded to get the object", A)
             return Response(
                 status='result',
                 data=A.export_data(include_class_attributes=True),

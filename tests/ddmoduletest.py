@@ -104,3 +104,16 @@ class ChainedDelegator(da.DataAnalysis):
 
     def main(self):
         self.data=self.input_a.data+".x"
+
+
+class ChainedServerProducer(da.DataAnalysis):
+    cached = True
+    cache = cache
+
+    input_a = BAnalysis
+    input_b = BAnalysis
+
+    def main(self):
+        self.data=dict(a=self.input_a.data,b=self.input_b.data)
+        self.resource_stats_a = self.input_a.resource_stats
+        self.resource_stats_b = self.input_b.resource_stats

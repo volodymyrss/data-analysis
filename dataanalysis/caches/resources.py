@@ -136,6 +136,8 @@ class CacheDelegateToResources(SelectivelyDelegatingCache):
     resource_factory=None
     delegation_mode="raise"
 
+    def load_content(self, hashe, c):
+        return c
 
     def find_content_hash_obj(self,hashe,obj):
         if self.will_delegate(hashe, obj):
@@ -144,7 +146,18 @@ class CacheDelegateToResources(SelectivelyDelegatingCache):
             if self.delegation_mode == "raise":
                 raise AnalysisDelegatedException(hashe=hashe, resources=[resource])
             elif self.delegation_mode == "interactive":
-                return resource.get().data
+                r=resource.get()
+                log("interactive resource response",r)
+                if r.status!="result":
+                    log("interactive resource status does not allow restore:", r.status)
+                    raise AnalysisDelegatedException(hashe,
+                                                     comment="interative resource status was unable to provide result for restore:" + repr(r.status),
+                                                     resources=[resource])
+                else:
+                    log("interactive resource returned result", r)
+                    data=resource.get().data
+                    log("interactive resource returned data", data)
+                    return data
             else:
                 raise Exception("undefined delegation mode in the cache:" + self.delegation_mode)
 

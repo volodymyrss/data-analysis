@@ -405,6 +405,8 @@ class Cache(object):
         if c is None:
             log("cache",self,"found no hashe-obj record")
             c=self.find(hashe)
+        else:
+            log("cache", self, "found hashe-obj record")
 
         if c is None:
             log("restore failed: passing to parent",self.parent)
@@ -419,6 +421,7 @@ class Cache(object):
 
         try:
             c=self.load_content(hashe,c)
+            log("load content returns:",c)
         except Exception as e:
             log("can not load content from cache, while cache record exists! inconsistent cache!") #???
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
@@ -464,6 +467,7 @@ class Cache(object):
             #    del c[k]
 
             for k,i in c.items():
+                print("setting",obj,k,i)
                 setattr(obj,k,i)
 
 
@@ -473,12 +477,15 @@ class Cache(object):
     
             try:
                 a=obj.verify_content()
+                log("verify_content result", a)
                 if a is None:
                     raise Exception("returned none")
+                log("verify_content result is good")
             except Exception as e:
                 log("verify_content failed",e)
                 return
 
+            log(self,"restore returning True")
             return True
         raise Exception("content from cache is not dict! "+str(c))
 

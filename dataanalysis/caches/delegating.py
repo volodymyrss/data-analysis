@@ -41,7 +41,7 @@ class SelectivelyDelegatingCache(DelegatingCache):
 
     def restore(self,hashe,obj,restore_config=None):
         if self.will_delegate(hashe, obj):
-            super(SelectivelyDelegatingCache, self).restore(hashe, obj, restore_config)
+            return super(SelectivelyDelegatingCache, self).restore(hashe, obj, restore_config)
         else:
             return self.restore_from_parent(hashe, obj, restore_config)
 

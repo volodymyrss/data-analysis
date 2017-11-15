@@ -24,6 +24,7 @@ def test_base_cache():
 def test_base_cache_object():
     from dataanalysis import core as da
     from dataanalysis import caches
+    da.reset()
 
     cache=caches.cache_core.Cache()
 

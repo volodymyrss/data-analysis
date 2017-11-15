@@ -217,7 +217,7 @@ def test_live_chained_delegation(ddservice, app):
 
     assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
 
-def test_delegation_modes(ddservice, app):
+def test_chained_waiting(ddservice, app):
     import dataanalysis.core as da
 
     da.reset()
@@ -234,11 +234,37 @@ def test_delegation_modes(ddservice, app):
 
     A=ddmoduletest.ChainedDelegator()
 
+    with pytest.raises(da.AnalysisDelegatedException) as excinfo:
+        a=A.get()
+
+    assert len(excinfo.value.resources)==1
+    assert excinfo.value.resources[0].hashe[-1] == "ChainedDelegator.v0"
+
+
+def test_chained(ddservice, app):
+    import dataanalysis.core as da
+
+    da.reset()
+    da.debug_output()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+
+    ddmoduletest.cache.delegating_analysis.append("ChainedServerProducer.*")
+    ddmoduletest.cache.delegation_mode="interactive"
+
+    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    #ddmoduletest.cache.resource_factory.getter=getter
+
+    A=ddmoduletest.ChainedServerProducer()
+    A.produce_disabled=True
+
     a=A.get()
 
-    assert a.input_a==a
+    assert a.data=={'a': 'dataBdataA', 'b': 'dataBdataA'}
+    assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()
+    assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
 
-    assert a == None
 
     #with pytest.raises(dataanalysis.core.AnalysisDelegatedException) as excinfo:
     #    A.get()

@@ -172,10 +172,16 @@ class AnalysisException(Exception):
     pass
 
 class AnalysisDelegatedException(Exception):
-    def __init__(self,hashe,resources=None):
+    @property
+    def signature(self):
+        if self.hashe is None: return "Undefined!"
+        return self.hashe[-1]
+
+    def __init__(self,hashe,resources=None,comment=None):
         self.hashe=hashe
         self.resources=[] if resources is None else resources
         self.source_exceptions=None
+        self.comment=comment
 
     @classmethod
     def from_list(cls,exceptions):
@@ -190,7 +196,7 @@ class AnalysisDelegatedException(Exception):
         return obj
 
     def __repr__(self):
-        return "[{}: {}]".format(self.__class__.__name__,self.hashe[-1])
+        return "[{}: {}]".format(self.__class__.__name__,self.signature)
 
 class decorate_all_methods(type):
     def __new__(cls, name, bases, local):
@@ -615,6 +621,7 @@ class DataAnalysis(object):
 
         log("searching for cache starting from",self.cache)
         r=self.cache.restore(fih,self,rc)
+        log("cache",self.cache,"returns",r)
 
         if r and r is not None:
             log("this object will be considered restored and complete: will not do again",self)
