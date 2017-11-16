@@ -1,3 +1,5 @@
+import os
+
 import dataanalysis.core as da
 from dataanalysis import displaygraph
 
@@ -9,8 +11,17 @@ def test_plot():
         pass
 
     class BAnalysis(da.DataAnalysis):
-        input_a=AAnalysis
+        input_a = AAnalysis
 
-    b=BAnalysis().get()
+    class CAnalysis(da.DataAnalysis):
+        input_a = AAnalysis
+        input_b = BAnalysis
 
-    displaygraph.plot_hashe(b._da_locally_complete,"test.png",show=False)
+    class FAnalysis(da.DataAnalysis):
+        input_a = AAnalysis
+        input_b = BAnalysis
+        input_c = CAnalysis
+
+    b=FAnalysis().get()
+
+    displaygraph.plot_hashe(b._da_locally_complete,"test.png",show=os.environ.get("DISPLAY","")!="")
