@@ -24,6 +24,9 @@ class Response(object):
 
     @classmethod
     def from_response_json(cls,response_json,allow_exception=True):
+        if 'status' not in response_json or 'data' not in response_json:
+            raise Exception("response json does not have required \"status\" and \"data\" fields\n\n",response_json)
+
         self=cls(response_json['status'],response_json['data'])
 
         if allow_exception and self.status == "error":
@@ -97,11 +100,10 @@ class WebResource(Resource):
         params=dict(
             target=self.identity.factory_name,
             modules=",".join(self.identity.get_modules_loadable()),
-            assumptions=json.dumps(self.identity.extra_objects),
+            assumptions=json.dumps(self.identity.assumptions),
             requested_by=",".join(self.requested_by),
             expected_hashe=json.dumps(self.identity.expected_hashe),
             mode="interactive",
-            #assumptions=self.identity.assumptions,
         )
 
         if extra_parameters is not None:

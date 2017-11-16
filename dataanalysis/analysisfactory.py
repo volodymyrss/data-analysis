@@ -40,6 +40,8 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
     def reset(self):
         self.cache = {}
+        self.cache_assumptions=[]
+        self.cache_stack=[]
 
     def inject_serialization(self, serialization):
         log("injecting", serialization)
@@ -253,7 +255,10 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
     def byname(self, name):
         if name not in self.cache:
-            raise Exception("name is not known, can not get this: " + name)
+            raise Exception("name is not known, can not get this: " + name + "\n\n" +
+                            "available names:\n" +
+                            "; ".join(self.cache.keys())
+                            )
         return self.cache[name]
 
     def get_by_name(self, name):

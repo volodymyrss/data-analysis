@@ -43,11 +43,12 @@ class List(Resource):
 
 def interpret_simple_assume(assume_strings):
     r={}
-    log("assume strings",assume_strings)
+    log("assume strings","\""+assume_strings+"\"")
     if assume_strings.strip()=="":
         return r
+
     for assume_string in assume_strings.split(";"):
-        log("simple asssume:",assume_string)
+        log("simple asssume:","\""+assume_string+"\"")
         if assume_string.strip()=="":
             continue
         setting,value=assume_string.split("=")
@@ -87,13 +88,15 @@ class Produce(Resource):
         import_ddmodules(args.get('modules').split(","))
 
         assumptions = json.loads(args.get('assumptions'))
-        print("ddservice got assumptions:")
+        log("ddservice got injected assumptions:")
+        log(assumptions)
 
         A=da.AnalysisFactory.byname(args.get('target'))
 
         assumptions+=interpret_simple_assume(args['assume'])
 
         for assumption in assumptions:
+            log("requested assumption:",assumption)
             a=da.AnalysisFactory.byname(assumption[0])
             a.import_data(assumption[1])
             print(a,"from",assumption)

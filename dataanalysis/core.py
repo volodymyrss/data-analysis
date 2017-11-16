@@ -238,14 +238,11 @@ class DataAnalysisIdentity(object):
                  factory_name,
                  full_name,
                  modules,
-                 extra_objects,
                  assumptions,
                  expected_hashe):
-
         self.factory_name=factory_name
         self.full_name=full_name
         self.modules=modules
-        self.extra_objects=extra_objects
         self.assumptions=assumptions
         self.expected_hashe=expected_hashe
 
@@ -255,7 +252,7 @@ class DataAnalysisIdentity(object):
     def __repr__(self):
         return "[%s: %s; %s]"%(self.factory_name,
                                ",".join([m for o,m,l in self.modules]),
-                               ",".join([a for a,b in self.extra_objects]))
+                               ",".join([a for a,b in self.assumptions]))
 
 class DataAnalysis(object):
     __metaclass__ = decorate_all_methods
@@ -336,12 +333,14 @@ class DataAnalysis(object):
         return name
 
     def get_identity(self):
+        log("assembling portable identity")
+        log("object assumptions:",self.assumptions)
+        log("factory assumptions:", self.factory.cache_assumptions)
         return DataAnalysisIdentity(
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
-            extra_objects=[a.serialize() for a in ([x[0] for x in self.factory.cache_assumptions] + self.assumptions)],
-            assumptions=[],
+            assumptions=[a.serialize() for a in ([x[0] for x in self.factory.cache_assumptions] + self.assumptions)],
             expected_hashe=self.expected_hashe,
         )
 
