@@ -41,3 +41,4 @@ weak points are:
 * very large analysis may be eventually described by a very large graph. Natural shortcuts and aliases for parts of the graph are designed and can be used to avoid this.
 
 The development was driven by the needs of analysing data of INTEGRAL space observatory: as of 2015 it is 20 Tb in 20Mfiles, about 1000 different kinds of data (see https://github.com/volodymyrss/dda-ddosa/).
+
