@@ -19,9 +19,15 @@ class EnergyCalibrationDB(da.DataAnalysis):
 class RawEvents(da.DataAnalysis):
     input_dataunit=DataUnit
 
+    cached=True
+
     def main(self):
         self.events=pd.DataFrame()
         self.events['channel']=np.arange(self.input_dataunit.ndata)
+
+        fn="event_file.txt"
+        self.events.to_csv(fn)
+        self.event_file=da.DataFile(fn)
 
 class CalibratedEvents(da.DataAnalysis):
     input_rawevents=RawEvents
