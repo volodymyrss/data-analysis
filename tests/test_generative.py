@@ -10,7 +10,8 @@ def debug_output():
     dataanalysis.printhook.LogStreams=[]
 
 def test_generate_list():
-    debug_output()
+    da.debug_output()
+    da.reset()
     da.AnalysisFactory.reset()
 
     class BAnalysis(da.DataAnalysis):
@@ -27,7 +28,7 @@ def test_generate_list():
 
     
     class AAnalysis(da.DataAnalysis):
-	#run_for_hashe=True
+        run_for_hashe=True
         def main(self):
             print("test",self.__class__)
             r=[BAnalysis(use_c=c) for c in range(3)]
