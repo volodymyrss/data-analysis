@@ -5,6 +5,8 @@ dist: trusty
 services:
 - docker
 before_install:
+- sudo apt-get -qq update
+- sudo apt-get install graphviz
 - pip install codecov
 - pip install pytest-cov
 - pip install codacy-coverage
