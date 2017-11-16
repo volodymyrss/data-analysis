@@ -1,0 +1,45 @@
+import numpy as np
+import pandas as pd
+
+import dataanalysis.core as da
+from dataanalysis import displaygraph
+
+
+class DataUnit(da.DataAnalysis):
+    def main(self):
+        self.unitid="unit1"
+        self.ndata = 10
+
+class EnergyCalibrationDB(da.DataAnalysis):
+    version="v1"
+
+    def main(self):
+        self.gain=2.
+
+class RawEvents(da.DataAnalysis):
+    input_dataunit=DataUnit
+
+    def main(self):
+        self.events=pd.DataFrame()
+        self.events['channel']=np.arange(self.input_dataunit.ndata)
+
+class CalibratedEvents(da.DataAnalysis):
+    input_rawevents=RawEvents
+    input_ecaldb=EnergyCalibrationDB
+
+    def main(self):
+        self.events=pd.DataFrame()
+        self.events['energy']=self.input_rawevents.events['channel']/self.input_ecaldb.gain
+
+class BinnedEvents(da.DataAnalysis):
+    input_events=CalibratedEvents
+
+    binsize=2
+
+    def main(self):
+        self.histogram=np.histogram(self.input_events.events['energy'])
+
+
+if __name__ == '__main__':
+    binned_events=BinnedEvents().get()
+    displaygraph.plot_hashe(binned_events._da_locally_complete, "test.png")
