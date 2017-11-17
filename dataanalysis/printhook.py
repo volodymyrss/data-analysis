@@ -207,7 +207,10 @@ class LogStream(object):
         LogStreams.append(self)
 
     def forget(self):
-        LogStreams.remove(self)
+        if self not in LogStreams:
+            log("unable to forget this:",self,"while available streams:",LogStreams,level="WARNING")
+        else:
+            LogStreams.remove(self)
 
     def check_levels(self,inlevels):
         if self.levels is None:
