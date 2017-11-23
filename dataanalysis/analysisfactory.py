@@ -35,6 +35,8 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
     cache = {}
     dda_modules_used = []
 
+    factorizations= []
+
     def __repr__(self):
         return "[AnalysisFactory: %i]" % len(self.cache)
 
@@ -42,6 +44,10 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.cache = {}
         self.cache_assumptions=[]
         self.cache_stack=[]
+        self.factorizations=[]
+
+    def note_factorization(self,factorization):
+        self.factorizations.append(factorization)
 
     def inject_serialization(self, serialization):
         log("injecting", serialization)
