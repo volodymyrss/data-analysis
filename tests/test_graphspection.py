@@ -3,6 +3,29 @@ from __future__ import print_function
 import os
 
 
+def test_clone():
+    import dataanalysis.core as da
+    import dataanalysis.graphtools as gt
+    da.reset()
+    reload(gt)
+
+    class AAnalysis(da.DataAnalysis):
+        def main(self):
+            self.a=1
+
+    aa=AAnalysis(use_b=2).get()
+    aa.c=3
+
+    ab=aa.clone().get()
+
+    assert 'a' in aa.export_data()
+    assert 'b' in aa.export_data()
+    assert 'c' in aa.export_data()
+
+    assert aa is not ab
+    assert aa.export_data().keys() == ab.export_data().keys()
+
+
 def test_factorize():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
