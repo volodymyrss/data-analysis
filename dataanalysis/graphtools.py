@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import dataanalysis
 import dataanalysis.core as da
 from hashtools import shhash
@@ -28,7 +30,9 @@ class Factorize(da.DataAnalysis):
 
         for leaf in self.leaves:
             aa=self.factory.get_by_name(leaf)
-            aa.abstract=True
+            aa.abstract = True
+            aa.run_for_hashe = False
+            aa.allow_alias = False
 
             for k in dir(aa):
                 if k.startswith("input_"):

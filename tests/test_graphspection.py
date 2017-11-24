@@ -33,6 +33,39 @@ def test_factorize():
     assert isinstance(fct, da.DataHandle)
     assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.1fa218f1"
 
+
+def test_factorize_run_for_hashe_analysis():
+    import dataanalysis.core as da
+    import dataanalysis.graphtools as gt
+    da.reset()
+    reload(gt)
+
+    class AAnalysis(da.DataAnalysis):
+        pass
+
+    class BAnalysis(da.DataAnalysis):
+        run_for_hashe=True
+        input_a=AAnalysis
+
+    class CAnalysis(da.DataAnalysis):
+        input_b=BAnalysis
+
+    class DAnalysis(da.DataAnalysis):
+        input_c=CAnalysis
+
+    c=DAnalysis().get()
+    print("got:",c._da_locally_complete)
+
+    fct=gt.Factorize(use_root='DAnalysis',use_leaves=['BAnalysis'])
+
+    fct=fct.get()
+
+    print(fct)
+
+    assert isinstance(fct, da.DataHandle)
+    assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.1fa218f1"
+
+
 def test_factorize_note():
 
     import dataanalysis.core as da
