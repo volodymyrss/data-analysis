@@ -1543,10 +1543,6 @@ class DataHandle(DataAnalysis):
 
 # abstract
 
-class AnyAnalysis(DataAnalysis):
-    def main(self):
-        raise Exception("requested to run abstract any analysis!")
-
 
 class DataFile(DataAnalysis):
     cached_path_valid_url=False
