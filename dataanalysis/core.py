@@ -648,7 +648,11 @@ class DataAnalysis(object):
             log("locally complete:",fih)
             self.post_restore()
             if self.rename_output_unique and rc['datafile_restore_mode']=="copy":
-                self.process_output_files(fih)
+                try:
+                    self.process_output_files(fih)
+                except Exception as e:
+                    log("unable to restore output files: broken cache record")
+                    return None
             else:
                 log("disabled self.rename_output_unique",level='cache')
             return r
