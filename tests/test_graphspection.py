@@ -4,8 +4,10 @@ import os
 
 
 def test_factorize():
-
     import dataanalysis.core as da
+    import dataanalysis.graphtools as gt
+    da.reset()
+    reload(gt)
 
     class AAnalysis(da.DataAnalysis):
         pass
@@ -16,9 +18,20 @@ def test_factorize():
     class CAnalysis(da.DataAnalysis):
         input_b=BAnalysis
 
-    c=CAnalysis().get()
-    print(c._da_locally_complete)
+    class DAnalysis(da.DataAnalysis):
+        input_c=CAnalysis
 
+    c=DAnalysis().get()
+    print("got:",c._da_locally_complete)
+
+    fct=gt.Factorize(use_root='DAnalysis',use_leaves=['BAnalysis'])
+
+    fct=fct.get()
+
+    print(fct)
+
+    assert isinstance(fct, da.DataHandle)
+    assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.1fa218f1"
 
 def test_factorize_note():
 
