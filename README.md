@@ -1,6 +1,6 @@
 data-analysis
 =============
-[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png)](https://travis-ci.org/volodymyrss/data-analysis)[![codebeat badge](https://codebeat.co/badges/be1fafc7-ebdc-4fdd-8f60-18b1630c85bc)](https://codebeat.co/projects/github-com-volodymyrss-data-analysis-master)
+[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png?branch=master)](https://travis-ci.org/volodymyrss/data-analysis)[![codebeat badge](https://codebeat.co/badges/be1fafc7-ebdc-4fdd-8f60-18b1630c85bc)](https://codebeat.co/projects/github-com-volodymyrss-data-analysis-master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=volodymyrss/data-analysis&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&utm_medium=referral&utm_content=volodymyrss/data-analysis&utm_campaign=Badge_Coverage)
 [![Requirements Status](https://requires.io/github/volodymyrss/data-analysis/requirements.svg?branch=master)](https://requires.io/github/volodymyrss/data-analysis/requirements/?branch=master)
