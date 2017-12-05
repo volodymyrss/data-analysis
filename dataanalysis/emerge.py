@@ -47,9 +47,13 @@ def emerge_from_identity(identity):
     if identity.expected_hashe is None:
         log("expected hashe verification skipped")
     elif jsonify(producable_hashe) != jsonify(identity.expected_hashe):
-        raise InconsitentEmergence("unable to produce\n"+repr(jsonify(identity.expected_hashe))+"\n while can produce"+repr(jsonify(producable_hashe)),
-                                   jsonify(producable_hashe),
-                                   jsonify(identity.expected_hashe),
-                                   )
+        raise InconsitentEmergence(
+            "unable to produce\n"+repr(jsonify(identity.expected_hashe))+"\n while can produce"+repr(jsonify(producable_hashe)),
+            jsonify(producable_hashe),
+            jsonify(identity.expected_hashe),
+        )
 
     return A
+
+def emerge_from_graph(graph):
+    pass
