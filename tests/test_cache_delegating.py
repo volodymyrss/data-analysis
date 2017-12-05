@@ -6,9 +6,8 @@ import dataanalysis.core as da
 
 
 def define_analysis():
-    class Analysis(da.DataAnalysis):
-        def main(self):
-            self.data="datadata"
+    import ddmoduletest
+    reload(ddmoduletest)
 
 
 def test_queue_cache():
@@ -23,7 +22,7 @@ def test_queue_cache():
 
     define_analysis()
 
-    A=dataanalysis.core.AnalysisFactory['Analysis']
+    A=dataanalysis.core.AnalysisFactory['AAnalysis']
     A.produce_disabled=True
     A.cache = q_cache
     A.cached = True
@@ -38,10 +37,47 @@ def test_queue_cache():
 
     define_analysis()
 
-    A = dataanalysis.core.AnalysisFactory['Analysis']
+    A = dataanalysis.core.AnalysisFactory['AAnalysis']
     A.produce_disabled = False
     A.cache = f_cache
     A.cached = True
+
+    worker=caches.queue.QueueCacheWorker()
+
+    print(worker.run_once())
+
+
+def test_queue_reconstruct_env():
+    from dataanalysis import caches
+    import dataanalysis.caches.queue
+
+    da.debug_output()
+    da.reset()
+
+    q_cache=caches.queue.QueueCache()
+    q_cache.wipe_queue()
+
+    define_analysis()
+
+    A=dataanalysis.core.AnalysisFactory['AAnalysis']
+    A.produce_disabled=True
+    A.cache = q_cache
+    A.cached = True
+
+    with pytest.raises(da.AnalysisDelegatedException):
+        A.get()
+
+    # worker part
+
+    f_cache=caches.cache_core.CacheNoIndex()
+    #f_cache.parent=q_cache
+
+    da.reset()
+
+    #A = dataanalysis.core.AnalysisFactory['Analysis']
+    #A.produce_disabled = False
+    #A.cache = f_cache
+    #A.cached = True
 
     worker=caches.queue.QueueCacheWorker()
 

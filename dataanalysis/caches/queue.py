@@ -3,7 +3,10 @@ import time
 from persistqueue import Queue, Empty
 
 import dataanalysis
+import dataanalysis.core as da
+import dataanalysis.importing as da_importing
 from dataanalysis.caches.delegating import DelegatingCache
+from dataanalysis.printhook import log
 
 
 class QueueCache(DelegatingCache):
@@ -14,7 +17,12 @@ class QueueCache(DelegatingCache):
         self.queue = Queue(self.queue_file)
 
     def delegate(self, hashe, obj):
-        self.queue.put([obj.get_factory_name(),dataanalysis.core.AnalysisFactory.get_module_description(),hashe])
+
+
+        self.queue.put(dict(
+            object_identity=obj.get_identity(),
+            request_origin="undefined",
+        ))
 
     def wipe_queue(self):
         while True:
@@ -30,15 +38,36 @@ class QueueCacheWorker(object):
         self.queue_file = queue_file
         self.queue = Queue(self.queue_file)
 
-    def run_once(self):
-        object_name,hashe,modules=self.queue.get(block=False)
-        print("object name",object_name)
-        print("modules",modules)
-        print("hashe",hashe)
+    def run_task(self,object_identity):
+        da.reset()
 
-        A=dataanalysis.core.AnalysisFactory[object_name]
+        print(object_identity)
+
+        for module in object_identity.modules:
+            log("importing",module)
+            da_importing.load_by_name(module)
+
+        A=dataanalysis.core.AnalysisFactory[object_identity.factory_name]
+
+        expectable_hashe=A.get_hashe()
+
+        if len(object_identity.assumptions) > 0:
+            assumptions = ",".join([a[0] for a in object_identity.assumptions])
+            log(assumptions)
+            da.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+
+        if expectable_hashe != object_identity.expected_hashe:
+            raise Exception("unable to produce\n"+repr(object_identity.expected_hashe)+"\n while can produce"+repr(expectable_hashe))
 
         return A.get()
+
+
+    def run_once(self):
+        object_identity=self.queue.get(block=False)['object_identity']
+
+        print("object identity",object_identity)
+
+        self.run_task(object_identity)
 
     def run_all(self,burst=True):
         while True:

@@ -85,7 +85,20 @@ def import_git_module(name,version):
     print name,os.getcwd()+"/dda-"+name+"/"+name+".py"
     return imp.load_source(name,os.getcwd()+"/dda-"+name+"/"+name+".py")
 
+
+
+def import_analysis_module(name,version):
+    return load_module(input_module_path=find_module_cached(input_module_name=name,input_module_version=version)).get().module
+
+
+
 def load_by_name(m):
+    if isinstance(m,list):
+        if m[0]=="filesystem":
+            name=m[1]
+            fullpath=m[2].replace(".pyc",".py")
+            return imp.load_source(name, fullpath)
+
     if m.startswith("/"):
         log("will import modul from cache")
         ms=m[1:].split("/",1)
@@ -119,8 +132,3 @@ def load_by_name(m):
         return imp.load_module(m,fp,pathname,description), m
 
     return load_module(input_module_path=find_module_standard(input_module_name=name)).get().module
-
-def import_analysis_module(name,version):
-    return load_module(input_module_path=find_module_cached(input_module_name=name,input_module_version=version)).get().module
-
-
