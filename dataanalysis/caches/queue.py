@@ -91,9 +91,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("queue",default="./queue")
 
-    parser.parse_args()
+    args=parser.parse_args()
 
-    qcworker=QueueCacheWorker(parser.queue)
+    qcworker=QueueCacheWorker(args.queue)
     qcworker.run_all()
 
 
