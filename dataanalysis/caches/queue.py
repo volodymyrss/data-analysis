@@ -33,6 +33,10 @@ class QueueCache(DelegatingCache):
 class QueueCacheWorker(object):
     def __init__(self,queue_file="/tmp/queue"):
         self.queue_file = queue_file
+
+        self.load_queue()
+
+    def load_queue(self):
         self.queue = Queue(self.queue_file)
 
     def run_task(self,object_identity):
