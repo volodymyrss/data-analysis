@@ -42,7 +42,7 @@ def emerge_from_identity(identity):
         a.import_data(assumption[1])
         print(a, "from", assumption)
 
-        producable_hashe=A.get_hashe()
+    producable_hashe=A.get_hashe()
 
     if identity.expected_hashe is None:
         log("expected hashe verification skipped")
