@@ -177,8 +177,14 @@ class AnalysisException(Exception):
 class AnalysisDelegatedException(Exception):
     @property
     def signature(self):
-        if self.hashe is None: return "Undefined!"
-        return self.hashe[-1]
+        if self.hashe is None:
+            return "Undefined!"
+
+        if self.hashe[0]=="analysis":
+            return self.hashe[-1]
+
+        if self.hashe[0] == "list":
+            return "; ".join([repr(k) for k in self.hashe[1:]])
 
     def __init__(self,hashe,resources=None,comment=None):
         self.hashe=hashe
@@ -194,6 +200,9 @@ class AnalysisDelegatedException(Exception):
 
     @classmethod
     def from_list(cls,exceptions):
+        if len(exceptions)==1:
+            return exceptions[0]
+
         obj=cls(None)
 
         obj.source_exceptions=exceptions
@@ -201,6 +210,8 @@ class AnalysisDelegatedException(Exception):
         obj.resources=[]
         for ex in exceptions:
             obj.resources+=ex.resources
+
+        obj.hashe=tuple(['list']+[ex.hashe for ex in exceptions])
 
         return obj
 
@@ -508,7 +519,7 @@ class DataAnalysis(object):
         for k in dir(self):
             if k.startswith("input"):
                 v=getattr(self,k)
-                print("trying to preserve linked input", k, v)
+                log("trying to preserve linked input", k, v)
 
                 if isinstance(v, str):
                     r['_da_stored_string_' + k] = v
