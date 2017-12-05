@@ -44,17 +44,20 @@ class QueueCacheWorker(object):
         print(object_identity)
 
         for module in object_identity.modules:
-            log("importing",module)
+            log("task importing",module)
             da_importing.load_by_name(module)
 
         A=dataanalysis.core.AnalysisFactory[object_identity.factory_name]
 
-        expectable_hashe=A.get_hashe()
+
+        log("task assumptions:",object_identity.assumptions)
 
         if len(object_identity.assumptions) > 0:
             assumptions = ",".join([a[0] for a in object_identity.assumptions])
-            log(assumptions)
+            log("task had assumptions:",assumptions)
             da.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+        
+        expectable_hashe=A.get_hashe()
 
         if expectable_hashe != object_identity.expected_hashe:
             raise Exception("unable to produce\n"+repr(object_identity.expected_hashe)+"\n while can produce"+repr(expectable_hashe))
@@ -75,13 +78,12 @@ class QueueCacheWorker(object):
             print("now",time.time(), self.queue.info)
 
             try:
-                item=self.queue.get(block=False)
+                task=self.queue.get(block=False)
             except Empty:
                 break
 
-            hashe, modules = item
-            print(hashe)
-            print(modules)
+            self.run_task(task['object_identity'])
+
             self.queue.task_done()
 
 
@@ -90,8 +92,13 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("queue",default="./queue")
+    parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
 
     args=parser.parse_args()
+
+    if args.very_verbose:
+        dataanalysis.printhook.global_permissive_output=True
+
 
     qcworker=QueueCacheWorker(args.queue)
     qcworker.run_all()
