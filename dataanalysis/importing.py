@@ -97,7 +97,7 @@ def load_by_name(m):
         if m[0]=="filesystem":
             name=m[1]
             fullpath=m[2].replace(".pyc",".py")
-            return imp.load_source(name, fullpath)
+            return imp.load_source(name, fullpath), name
 
     if m.startswith("/"):
         log("will import modul from cache")
@@ -110,7 +110,8 @@ def load_by_name(m):
 
         log("as",m0,m1)
         result=import_analysis_module(m0,m1),m0
-        result[0].__dda_module_global_name__=(m0,m1)
+        result[0].__dda_module_global_name__= m#(m0,m1)
+        result[0].__dda_module_origin__="global_cache"
         return result
     elif m.startswith("git://"):
         log("will import modul from cache")
@@ -124,7 +125,8 @@ def load_by_name(m):
 
         log("as",m0,m1)
         result=import_git_module(m0,m1),m0
-        result[0].__dda_module_global_name__=(m0,m1)
+        result[0].__dda_module_global_name__= m
+        result[0].__dda_module_origin__ = "git"
         return result
     else:
         fp, pathname, description=imp.find_module(m,["."]+sys.path)
