@@ -2,7 +2,9 @@ import time
 
 from persistqueue import Queue, Empty
 
+import dataanalysis
 import dataanalysis.emerge as emerge
+import dataanalysis.printhook
 from dataanalysis.caches.delegating import DelegatingCache
 
 
@@ -50,14 +52,18 @@ class QueueCacheWorker(object):
         self.run_task(object_identity)
         self.queue.task_done()
 
-    def run_all(self,burst=True):
+    def run_all(self,burst=True,wait=1):
         while True:
             print("now",time.time(), self.queue.info)
 
             try:
                 task=self.queue.get(block=False)
             except Empty:
-                break
+                if burst:
+                    break
+                else:
+                    time.sleep(wait)
+                    continue
 
             self.run_task(task['object_identity'])
 
@@ -70,6 +76,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("queue",default="./queue")
     parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
+    parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
 
     args=parser.parse_args()
 
@@ -78,7 +85,7 @@ if __name__ == "__main__":
 
 
     qcworker=QueueCacheWorker(args.queue)
-    qcworker.run_all()
+    qcworker.run_all(burst=args.burst_mode)
 
 
 
