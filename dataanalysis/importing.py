@@ -76,14 +76,21 @@ class load_module(DataAnalysis):
         self.module=imp.load_source(self.input_module_path.input_module_name.handle,self.input_module_path.module_path)
         #self.module=imp.load_module(,*self.input_module_path.found)
 
-def import_git_module(name,version):
+def import_git_module(name,version,local_gitroot=None):
+    if local_gitroot is None:
+        local_gitroot=os.getcwd()
+
     gitroot=os.environ["GIT_ROOT"] if "GIT_ROOT" in os.environ else "git@github.com:volodymyrss"
     netgit=os.environ["GIT_COMMAND"] if "GIT_COMMAND" in os.environ else "git"
-    
-    os.system(netgit+" clone "+gitroot+"/dda-"+name+".git")
-    os.system("cd dda-"+name+"; "+netgit+" pull; git checkout "+version)
-    print name,os.getcwd()+"/dda-"+name+"/"+name+".py"
-    return imp.load_source(name,os.getcwd()+"/dda-"+name+"/"+name+".py")
+
+    local_module_dir=local_gitroot+"dda-"+name
+
+    print("local git clone:",local_module_dir)
+
+    os.system(netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir)
+    os.system("cd "+local_module_dir+"; "+netgit+" pull; git checkout "+version)
+    print name,local_module_dir+"/"+name+".py"
+    return imp.load_source(name,local_module_dir+"/"+name+".py")
 
 
 
@@ -92,7 +99,7 @@ def import_analysis_module(name,version):
 
 
 
-def load_by_name(m):
+def load_by_name(m, local_gitroot=None):
     if isinstance(m,list):
         if m[0]=="filesystem":
             name=m[1]
@@ -124,7 +131,7 @@ def load_by_name(m):
             m1="master"
 
         log("as",m0,m1)
-        result=import_git_module(m0,m1),m0
+        result=import_git_module(m0,m1,local_gitroot=local_gitroot),m0
         result[0].__dda_module_global_name__= m
         result[0].__dda_module_origin__ = "git"
         return result

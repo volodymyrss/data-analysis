@@ -1,3 +1,4 @@
+
 def test_basic():
     import dataanalysis.core as da
     import dataanalysis.importing as importing
@@ -17,7 +18,9 @@ def test_git():
 
     da.reset()
 
-    m=importing.load_by_name("git://ddosa")
+    m=importing.load_by_name("git://ddosa",local_gitroot="/tmp/git")
 
     assert hasattr(m[0], '__dda_module_global_name__')
     assert hasattr(m[0], '__dda_module_origin__')
+
+    assert m[0], '__dda_module_origin__'=="git://ddosa"
