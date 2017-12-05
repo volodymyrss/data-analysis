@@ -508,7 +508,7 @@ class DataAnalysis(object):
         for k in dir(self):
             if k.startswith("input"):
                 v=getattr(self,k)
-                print("trying to preserve linked input", k, v)
+                log("trying to preserve linked input", k, v)
 
                 if isinstance(v, str):
                     r['_da_stored_string_' + k] = v
