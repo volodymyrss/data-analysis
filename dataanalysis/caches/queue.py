@@ -2,11 +2,8 @@ import time
 
 from persistqueue import Queue, Empty
 
-import dataanalysis
-import dataanalysis.core as da
-import dataanalysis.importing as da_importing
+import dataanalysis.emerge as emerge
 from dataanalysis.caches.delegating import DelegatingCache
-from dataanalysis.printhook import log
 
 
 class QueueCache(DelegatingCache):
@@ -39,28 +36,8 @@ class QueueCacheWorker(object):
         self.queue = Queue(self.queue_file)
 
     def run_task(self,object_identity):
-        da.reset()
-
         print(object_identity)
-
-        for module in object_identity.modules:
-            log("task importing",module)
-            da_importing.load_by_name(module)
-
-        A=dataanalysis.core.AnalysisFactory[object_identity.factory_name]
-
-
-        log("task assumptions:",object_identity.assumptions)
-
-        if len(object_identity.assumptions) > 0:
-            assumptions = ",".join([a[0] for a in object_identity.assumptions])
-            log("task had assumptions:",assumptions)
-            da.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
-        
-        expectable_hashe=A.get_hashe()
-
-        if expectable_hashe != object_identity.expected_hashe:
-            raise Exception("unable to produce\n"+repr(object_identity.expected_hashe)+"\n while can produce"+repr(expectable_hashe))
+        A=emerge.emerge_from_identity(object_identity)
 
         return A.get()
 
