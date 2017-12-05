@@ -81,7 +81,7 @@ def test_queue_reconstruct_env():
 
     worker=caches.queue.QueueCacheWorker()
 
-    print(worker.run_once())
+    print(worker.run_all())
 
 
 #    worker.run_all()

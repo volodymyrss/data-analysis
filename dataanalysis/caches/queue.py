@@ -68,10 +68,11 @@ class QueueCacheWorker(object):
         print("object identity",object_identity)
 
         self.run_task(object_identity)
+        self.queue.task_done()
 
     def run_all(self,burst=True):
         while True:
-            print(time.time())
+            print("now",time.time(), self.queue.info)
 
             try:
                 item=self.queue.get(block=False)
@@ -85,7 +86,14 @@ class QueueCacheWorker(object):
 
 
 if __name__ == "__main__":
-    qcworker=QueueCacheWorker()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("queue",default="./queue")
+
+    parser.parse_args()
+
+    qcworker=QueueCacheWorker(parser.queue)
     qcworker.run_all()
 
 
