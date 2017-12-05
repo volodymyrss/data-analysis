@@ -84,5 +84,10 @@ class QueueCacheWorker(object):
             self.queue.task_done()
 
 
+if __name__ == "__main__":
+    qcworker=QueueCacheWorker()
+    qcworker.run_all()
+
+
 
 
