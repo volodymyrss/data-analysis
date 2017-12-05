@@ -1,6 +1,10 @@
 import time
 
-from persistqueue import Queue, Empty
+from persistqueue import Empty
+#from persistqueue import Queue, Empty
+from persistqueue import FIFOSQLiteQueue as Queue
+#(path="./test", multithreading=True)
+
 
 import dataanalysis
 import dataanalysis.emerge as emerge
@@ -13,7 +17,7 @@ class QueueCache(DelegatingCache):
     def __init__(self,queue_file="/tmp/queue"):
         super(QueueCache, self).__init__()
         self.queue_file=queue_file
-        self.queue = Queue(self.queue_file)
+        self.queue = Queue(self.queue_file, multithreading=True)
 
     def delegate(self, hashe, obj):
 
@@ -35,7 +39,7 @@ class QueueCache(DelegatingCache):
 class QueueCacheWorker(object):
     def __init__(self,queue_file="/tmp/queue"):
         self.queue_file = queue_file
-        self.queue = Queue(self.queue_file)
+        self.queue = Queue(self.queue_file, multithreading=True)
 
     def run_task(self,object_identity):
         print(object_identity)
