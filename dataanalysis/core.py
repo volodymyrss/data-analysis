@@ -505,6 +505,17 @@ class DataAnalysis(object):
                 res.append([a,jsonify.jsonify(b)])
             r=dict(res)
 
+        for k in dir(self):
+            if k.startswith("input"):
+                v=getattr(self,k)
+                print("trying to preserve linked input", k, v)
+
+                if isinstance(v, str):
+                    r['_da_stored_string_' + k] = v
+
+                if isinstance(v, DataHandle):
+                    r['_da_stored_string_' + k] = v.str()
+
         log("resulting output:",r)
         return r
 
@@ -515,6 +526,10 @@ class DataAnalysis(object):
         for k, i in c.items():
             log("restoring", k, i)
             setattr(self, k, i)
+
+            if k.startswith("_da_stored_string_input"):
+                nk=k.replace("_da_stored_string_input","input")
+                setattr(self,nk,i)
 
     def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
         log("serialize as",embed_datafiles,verify_jsonifiable,include_class_attributes)

@@ -45,6 +45,23 @@ class ServerDelegatableAnalysisA(da.DataAnalysis):
     def main(self):
         pass
 
+class SAnalysis(da.DataAnalysis):
+    input_s=None
+
+    cached=False
+
+    def main(self):
+        self.data="dataS_"+self.input_s.str()
+
+
+class SAAnalysis(da.DataAnalysis):
+    input_sa = SAnalysis
+
+    cached = False
+
+    def main(self):
+        self.data = "dataSA_" + self.input_sa.data
+
 
 class AAnalysis(da.DataAnalysis):
     cached=True
