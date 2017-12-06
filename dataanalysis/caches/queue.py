@@ -1,12 +1,7 @@
 import time
 
-from persistqueue import Empty
-#from persistqueue import Queue, Empty
-from persistqueue import FIFOSQLiteQueue as Queue
-#(path="./test", multithreading=True)
+import fsqueue
 
-
-import dataanalysis
 import dataanalysis.emerge as emerge
 import dataanalysis.printhook
 from dataanalysis.caches.delegating import DelegatingCache
@@ -14,10 +9,10 @@ from dataanalysis.caches.delegating import DelegatingCache
 
 class QueueCache(DelegatingCache):
 
-    def __init__(self,queue_file="/tmp/queue"):
+    def __init__(self,queue_directory="/tmp/queue"):
         super(QueueCache, self).__init__()
-        self.queue_file=queue_file
-        self.queue = Queue(self.queue_file, multithreading=True)
+        self.queue_directory=queue_directory
+        self.queue = fsqueue.Queue(self.queue_directory)
 
     def delegate(self, hashe, obj):
 
@@ -28,21 +23,17 @@ class QueueCache(DelegatingCache):
         ))
 
     def wipe_queue(self):
-        while True:
-            try:
-                item=self.queue.get(block=False)
-            except Empty:
-                break
-            self.queue.task_done()
+        self.queue.wipe()
 
 
 class QueueCacheWorker(object):
-    def __init__(self,queue_file="/tmp/queue"):
-        self.queue_file = queue_file
+    def __init__(self,queue_directory="/tmp/queue"):
+        self.queue_directory = queue_directory
+
         self.load_queue()
 
     def load_queue(self):
-        self.queue = Queue(self.queue_file)
+        self.queue = fsqueue.Queue(self.queue_directory)
 
     def run_task(self,object_identity):
         print(object_identity)
@@ -52,7 +43,7 @@ class QueueCacheWorker(object):
 
 
     def run_once(self):
-        object_identity=self.queue.get(block=False)['object_identity']
+        object_identity=self.queue.get()['object_identity']
 
         print("object identity",object_identity)
 
@@ -64,8 +55,8 @@ class QueueCacheWorker(object):
             print("now",time.time(), self.queue.info)
 
             try:
-                task=self.queue.get(block=False)
-            except Empty:
+                task=self.queue.get()
+            except fsqueue.Empty:
                 if burst:
                     break
                 else:
