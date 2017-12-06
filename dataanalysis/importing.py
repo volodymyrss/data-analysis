@@ -97,7 +97,7 @@ def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
     gitroot=os.environ["GIT_ROOT"] if "GIT_ROOT" in os.environ else "git@github.com:volodymyrss"
     if remote_git_root is not None:
         if remote_git_root=="volodymyrss-public":
-            gitroot="https://github.com/volodymyrss/dda-ddosa.git"
+            gitroot="https://github.com/volodymyrss"
         elif remote_git_root == "volodymyrss-private":
             gitroot="git@github.com:volodymyrss"
 
@@ -108,10 +108,10 @@ def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
     print("local git clone:",local_module_dir)
 
     cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
-    print("cmd")
+    print(cmd)
     os.system(cmd)
     cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
-    print("cmd")
+    print(cmd)
     os.system(cmd)
     print name,local_module_dir+"/"+name+".py"
     return imp.load_source(name,local_module_dir+"/"+name+".py")
