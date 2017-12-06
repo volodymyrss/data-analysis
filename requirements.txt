@@ -10,4 +10,3 @@ flask
 flask-restful
 pytest-flask
 psutil
--e git+git@github.com/volodymyrss/fsqueue.git#egg=fsqueue
