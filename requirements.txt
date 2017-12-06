@@ -10,4 +10,4 @@ flask
 flask-restful
 pytest-flask
 psutil
--e git@github.com/volodymyrss/fsqueue.git
+-e git+git@github.com/volodymyrss/fsqueue.git
