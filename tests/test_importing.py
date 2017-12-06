@@ -19,9 +19,10 @@ def test_git_list():
 
     da.reset()
 
-    m=importing.load_by_name("git://ddosa",local_gitroot=os.environ.get("TMPDIR","/tmp")+"/git/",remote_git_root='volodymyrss-public')
+    m=importing.load_by_name("git://test",local_gitroot=os.environ.get("TMPDIR","/tmp")+"/git/",remote_git_root='volodymyrss-public')
 
     assert hasattr(m[0], '__dda_module_global_name__')
     assert hasattr(m[0], '__dda_module_origin__')
 
-    assert m[0], '__dda_module_origin__'=="git://ddosa"
+    assert m[0].__dda_module_origin__=="git"
+    assert m[0].__dda_module_global_name__ == "git://test"
