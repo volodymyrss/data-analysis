@@ -15,8 +15,6 @@ class QueueCache(DelegatingCache):
         self.queue = fsqueue.Queue(self.queue_directory)
 
     def delegate(self, hashe, obj):
-
-
         self.queue.put(dict(
             object_identity=obj.get_identity(),
             request_origin="undefined",

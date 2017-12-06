@@ -20,7 +20,7 @@ class DelegatingCache(dataanalysis.caches.cache_core.Cache):
 
     def find_content_hash_obj(self,hashe,obj):
         self.delegate(hashe, obj)
-        raise da.AnalysisDelegatedException(hashe)
+        raise da.AnalysisDelegatedException(hashe,origin=repr(self))
 
 class SelectivelyDelegatingCache(DelegatingCache):
     delegating_analysis=None

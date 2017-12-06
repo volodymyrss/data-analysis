@@ -186,11 +186,12 @@ class AnalysisDelegatedException(Exception):
         if self.hashe[0] == "list":
             return "; ".join([repr(k) for k in self.hashe[1:]])
 
-    def __init__(self,hashe,resources=None,comment=None):
+    def __init__(self,hashe,resources=None,comment=None,origin=None):
         self.hashe=hashe
         self.resources=[] if resources is None else resources
         self.source_exceptions=None
         self._comment=comment
+        self.origin=origin
 
     @property
     def comment(self):
@@ -203,7 +204,7 @@ class AnalysisDelegatedException(Exception):
         if len(exceptions)==1:
             return exceptions[0]
 
-        obj=cls(None)
+        obj=cls(None,origin="list")
 
         obj.source_exceptions=exceptions
 
@@ -1227,8 +1228,6 @@ class DataAnalysis(object):
                     log(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
 
-
-                #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
                 self.force_complete_input=restore_rules['force_complete'] # ?.. !!!!
                 log(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
@@ -1426,7 +1425,9 @@ class DataAnalysis(object):
 
                 if delegated!=[]:
                     log("delegated:", len(delegated), delegated)
-                    AnalysisDelegatedException.from_list(delegated)
+                    raise AnalysisDelegatedException.from_list(delegated)
+                else:
+                    log("no delegated analysis found")
 
                 if all([i is None for i in nitems]):
                     return tuple(['list']+hashes),None
