@@ -1234,7 +1234,21 @@ class DataAnalysis(object):
 
                 rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute,requested_by=['output_of']+requested_by)
                 log(render("substitute the object with dynamic input. rh:"),rh)
-                log(render("substitute the object with dynamic input. ro:"),ro)
+                log(render("substitute the object with dynamic input. ro:"),ro,ro.__class__)
+                log("output object was",da,da.__class__)
+
+                if not isinstance(ro,list) and not isinstance(ro,tuple):
+                    ros=[ro]
+                else:
+                    ros=ro
+                
+                if not isinstance(da,list) and not isinstance(da,tuple):
+                    das=[da]
+                else:
+                    das=da
+
+                for _output_object,_substitute_object in zip(das,ros):
+                    print("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache)
 
 
                 log("--- old input hash:",fih)
