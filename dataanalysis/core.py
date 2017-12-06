@@ -1250,9 +1250,6 @@ class DataAnalysis(object):
                 for _output_object,_substitute_object in zip(das,ros):
                     print("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache)
 
-                for output_object,substitute_object in zip(da,ro):
-                    print("output object",output_object,"cache",output_object.cache,"substitute object",substitute_object,"cache",substitute_object.cache)
-
 
                 log("--- old input hash:",fih)
                 if self.allow_alias:
