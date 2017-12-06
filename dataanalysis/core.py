@@ -1236,6 +1236,9 @@ class DataAnalysis(object):
                 log(render("substitute the object with dynamic input. rh:"),rh)
                 log(render("substitute the object with dynamic input. ro:"),ro)
 
+                for output_object,substitute_object in zip(da,ro):
+                    print("output object",output_object,"cache",output_object.cache,"substitute object",substitute_object,"cache",substitute_object.cache)
+
 
                 log("--- old input hash:",fih)
                 if self.allow_alias:
