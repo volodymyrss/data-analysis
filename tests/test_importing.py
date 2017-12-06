@@ -13,12 +13,13 @@ def test_basic():
     assert not hasattr(m[0], '__dda_module_origin__')
 
 def test_git():
+    import os
     import dataanalysis.core as da
     import dataanalysis.importing as importing
 
     da.reset()
 
-    m=importing.load_by_name("git://ddosa",local_gitroot="/tmp/git")
+    m=importing.load_by_name("git://ddosa",local_gitroot=os.environ.get("TMPDIR","/tmp")+"/git/")
 
     assert hasattr(m[0], '__dda_module_global_name__')
     assert hasattr(m[0], '__dda_module_origin__')
