@@ -45,6 +45,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.cache_assumptions=[]
         self.cache_stack=[]
         self.factorizations=[]
+        self.dda_modules_used=[]
 
     def note_factorization(self,factorization):
         self.factorizations.append(factorization)

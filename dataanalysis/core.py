@@ -948,17 +948,17 @@ class DataAnalysis(object):
 
             #for key in newobj.export_data().keys(): # or all??
             obj._da_locally_complete = newobj._da_locally_complete
-            for key in newobj.export_data(include_class_attributes=True, deep_export=True).keys():  # or all??
+            exported_data=newobj.export_data(include_class_attributes=True, deep_export=True)
+            for key in exported_data.keys():  # or all??
                 log("key to",obj,"from newobj",newobj,key)
-                setattr(obj,key,getattr(newobj,key))
+                if hasattr(newobj,key):
+                    v=getattr(newobj,key)
+                else:
+                    v=exported_data[key]
+                setattr(obj,key,v)
 
 
     def get_delegation(self):
-    #def list_delegated(self):
-        #if self._da_delegated_input is not None:
-        #   if self._da_main_delegated is not None:
-        #       raise Exception("core design error! main is delegated as well as input! ")
-        #   return self._da_delagated_input
         if self._da_main_delegated is not None:
             return self._da_main_delegated
 

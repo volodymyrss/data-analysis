@@ -1,11 +1,11 @@
 import json
-import json
 import os
 import threading
 
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
 
+import dataanalysis.core as da
 from dataanalysis import emerge
 from dataanalysis.caches.resources import Response, jsonify
 from dataanalysis.printhook import log
@@ -24,7 +24,6 @@ class List(Resource):
         parser.add_argument('assume', type=str, help='')
         args = parser.parse_args()
 
-        import dataanalysis.core as da
         da.reset()
         emerge.import_ddmodules(args['modules'].split(","))
 

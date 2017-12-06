@@ -10,6 +10,9 @@ def import_ddmodules(module_names=None):
 
     modules=[]
     for dd_module_name in module_names:
+        if isinstance(dd_module_name,str) and dd_module_name.startswith("dataanalysis."):
+            continue
+
         log("importing", dd_module_name)
         dd_module=importing.load_by_name(dd_module_name)
         reload(dd_module[0])
