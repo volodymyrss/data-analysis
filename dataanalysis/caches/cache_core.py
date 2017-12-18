@@ -595,6 +595,16 @@ class Cache(object):
                 filtered_modules.append(m)
         self.filebackend.open(cached_path + "modules.txt", "w").write(pprint.pformat(filtered_modules) + "\n")
 
+        ftext=""
+        for factorization in obj.factory.factorizations:
+            ftext+=("=" * 80)+"\n"
+            for k,v in factorization.items():
+                ftext += "|" + k + "\n"
+                ftext += ("-" * 80) + "\n"
+                ftext += pprint.pformat(v)+"\n\n"
+
+        self.filebackend.open(cached_path + "factorizations.txt", "w").write(ftext)
+
         self.filebackend.flush()
 
         if hasattr(obj, 'alias'):

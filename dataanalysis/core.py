@@ -324,6 +324,13 @@ class DataAnalysis(object):
         if hasattr(self,'handle'): return self.handle
         return repr(self)
 
+    def clone(self):
+        obj=self.__class__(dynamic=False)
+
+        obj.import_data(self.export_data())
+
+        return obj
+
     def get_factory_name(self):
         if hasattr(self, 'name'):
             name = self.name
@@ -1562,10 +1569,6 @@ class DataHandle(DataAnalysis):
 # imported
 
 # abstract
-
-class AnyAnalysis(DataAnalysis):
-    def main(self):
-        raise Exception("requested to run abstract any analysis!")
 
 
 class DataFile(DataAnalysis):

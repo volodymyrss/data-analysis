@@ -1,6 +1,6 @@
 data-analysis
 =============
-[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png)](https://travis-ci.org/volodymyrss/data-analysis)[![codebeat badge](https://codebeat.co/badges/be1fafc7-ebdc-4fdd-8f60-18b1630c85bc)](https://codebeat.co/projects/github-com-volodymyrss-data-analysis-master)
+[![Build Status](https://travis-ci.org/volodymyrss/data-analysis.png?branch=master)](https://travis-ci.org/volodymyrss/data-analysis)[![codebeat badge](https://codebeat.co/badges/be1fafc7-ebdc-4fdd-8f60-18b1630c85bc)](https://codebeat.co/projects/github-com-volodymyrss-data-analysis-master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=volodymyrss/data-analysis&amp;utm_campaign=Badge_Grade)
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&utm_medium=referral&utm_content=volodymyrss/data-analysis&utm_campaign=Badge_Coverage)
 [![Requirements Status](https://requires.io/github/volodymyrss/data-analysis/requirements.svg?branch=master)](https://requires.io/github/volodymyrss/data-analysis/requirements/?branch=master)
@@ -40,5 +40,5 @@ weak points are:
 * analysis graph can be changed as a result of the analysis. This process may be confusing for those not familiar with higher order functions and functional programming. The framework implements perhaps a good way to make this process easy to intuitively understand.  
 * very large analysis may be eventually described by a very large graph. Natural shortcuts and aliases for parts of the graph are designed and can be used to avoid this.
 
-
 The development was driven by the needs of analysing data of INTEGRAL space observatory: as of 2015 it is 20 Tb in 20Mfiles, about 1000 different kinds of data (see https://github.com/volodymyrss/dda-ddosa/).
+
