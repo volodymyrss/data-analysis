@@ -342,7 +342,7 @@ def test_passing_unmanagable_assumptions(ddservice, app):
     ddmoduletest.cache.resource_factory.endpoint = ddservice
     #ddmoduletest.cache.resource_factory.getter=getter
 
-    A=ddmoduletest.ChainedServerProducer(assume=[ddmoduletest.AAnalysis(input_x="somexinput")])
+    A=ddmoduletest.ChainedServerProducer(assume=[ddmoduletest.AAnalysis(input_x=ddmoduletest.TwoCDInputAnalysis())])
     A.produce_disabled=True
 
     with pytest.raises(dataanalysis.caches.resources.GenericResourceException) as excinfo:

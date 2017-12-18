@@ -76,16 +76,60 @@ class load_module(DataAnalysis):
         self.module=imp.load_source(self.input_module_path.input_module_name.handle,self.input_module_path.module_path)
         #self.module=imp.load_module(,*self.input_module_path.found)
 
-def import_git_module(name,version):
-    gitroot=os.environ["GIT_ROOT"] if "GIT_ROOT" in os.environ else "git@github.com:volodymyrss"
-    netgit=os.environ["GIT_COMMAND"] if "GIT_COMMAND" in os.environ else "git"
-    
-    os.system(netgit+" clone "+gitroot+"/dda-"+name+".git")
-    os.system("cd dda-"+name+"; "+netgit+" pull; git checkout "+version)
-    print name,os.getcwd()+"/dda-"+name+"/"+name+".py"
-    return imp.load_source(name,os.getcwd()+"/dda-"+name+"/"+name+".py")
 
-def load_by_name(m):
+def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
+    if isinstance(remote_git_root,list):
+        exceptions=[]
+        for try_remote_git_root in remote_git_root:
+            try:
+                log("try to import with",remote_git_root)
+                return import_git_module(name, version, local_gitroot, try_remote_git_root)
+            except Exception as e:
+                log("failed to import",e)
+                exceptions.append(e)
+
+        raise Exception("failed to import from git",exceptions)
+
+
+    if local_gitroot is None:
+        local_gitroot=os.getcwd()
+
+    gitroot=os.environ["GIT_ROOT"] if "GIT_ROOT" in os.environ else "git@github.com:volodymyrss"
+    if remote_git_root is not None:
+        if remote_git_root=="volodymyrss-public":
+            gitroot="https://github.com/volodymyrss"
+        elif remote_git_root == "volodymyrss-private":
+            gitroot="git@github.com:volodymyrss"
+
+    netgit=os.environ["GIT_COMMAND"] if "GIT_COMMAND" in os.environ else "git"
+
+    local_module_dir=local_gitroot+"dda-"+name
+
+    print("local git clone:",local_module_dir)
+
+    cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
+    print(cmd)
+    os.system(cmd)
+    cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
+    print(cmd)
+    os.system(cmd)
+    print name,local_module_dir+"/"+name+".py"
+    return imp.load_source(name,local_module_dir+"/"+name+".py")
+
+
+
+def import_analysis_module(name,version):
+    return load_module(input_module_path=find_module_cached(input_module_name=name,input_module_version=version)).get().module
+
+
+
+def load_by_name(m, local_gitroot=None,remote_git_root=None):
+    if isinstance(m,list):
+        if m[0]=="filesystem":
+            name=m[1]
+            fullpath=m[2].replace(".pyc",".py")
+            return imp.load_source(name, fullpath), name
+
     if m.startswith("/"):
         log("will import modul from cache")
         ms=m[1:].split("/",1)
@@ -97,7 +141,8 @@ def load_by_name(m):
 
         log("as",m0,m1)
         result=import_analysis_module(m0,m1),m0
-        result[0].__dda_module_global_name__=(m0,m1)
+        result[0].__dda_module_global_name__= m#(m0,m1)
+        result[0].__dda_module_origin__="global_cache"
         return result
     elif m.startswith("git://"):
         log("will import modul from cache")
@@ -110,8 +155,9 @@ def load_by_name(m):
             m1="master"
 
         log("as",m0,m1)
-        result=import_git_module(m0,m1),m0
-        result[0].__dda_module_global_name__=(m0,m1)
+        result=import_git_module(m0,m1,local_gitroot=local_gitroot,remote_git_root=remote_git_root),m0
+        result[0].__dda_module_global_name__= m
+        result[0].__dda_module_origin__ = "git"
         return result
     else:
         fp, pathname, description=imp.find_module(m,["."]+sys.path)
@@ -119,8 +165,3 @@ def load_by_name(m):
         return imp.load_module(m,fp,pathname,description), m
 
     return load_module(input_module_path=find_module_standard(input_module_name=name)).get().module
-
-def import_analysis_module(name,version):
-    return load_module(input_module_path=find_module_cached(input_module_name=name,input_module_version=version)).get().module
-
-

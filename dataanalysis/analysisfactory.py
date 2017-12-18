@@ -45,6 +45,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.cache_assumptions=[]
         self.cache_stack=[]
         self.factorizations=[]
+        self.dda_modules_used=[]
 
     def note_factorization(self,factorization):
         self.factorizations.append(factorization)
@@ -314,7 +315,10 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             log("module", m)
             if hasattr(m, "__dda_module_global_name__"):
                 log("dda module global name", m.__dda_module_global_name__)
-                module_description.append(['cache', m.__name__, m.__dda_module_global_name__])
+                module_origin='cache'
+                if hasattr(m, "__dda_module_origin__"):
+                   module_origin=m.__dda_module_origin__
+                module_description.append([module_origin, m.__name__, m.__dda_module_global_name__])
             else:
                 if hasattr(m,'__file__'):
                     module_description.append(['filesystem', m.__name__, m.__file__])

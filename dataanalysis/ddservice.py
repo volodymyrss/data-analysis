@@ -1,4 +1,3 @@
-import importlib
 import json
 import os
 import threading
@@ -6,23 +5,13 @@ import threading
 from flask import Flask
 from flask_restful import Resource, Api, reqparse
 
+import dataanalysis.core as da
+from dataanalysis import emerge
+from dataanalysis.caches.resources import Response, jsonify
 from dataanalysis.printhook import log
 
-dd_modules=[]
-
-from dataanalysis.caches.resources import Response, jsonify
 
 # exception
-
-def import_ddmodules(modules=None):
-    if modules is None:
-        modules=dd_modules
-
-    modules=[importlib.import_module(dd_module) for dd_module in modules]
-    for m in modules:
-        reload(m)
-
-    return modules
 
 class Status(Resource):
     def get(self):
@@ -35,9 +24,8 @@ class List(Resource):
         parser.add_argument('assume', type=str, help='')
         args = parser.parse_args()
 
-        import dataanalysis.core as da
         da.reset()
-        import_ddmodules(args['modules'].split(","))
+        emerge.import_ddmodules(args['modules'].split(","))
 
         return da.AnalysisFactory.cache.keys()
 
@@ -83,33 +71,16 @@ class Produce(Resource):
         print("ddservice request:",args['request_comment'],args['request_id'])
         print("ddservice produce args",args)
 
-        import dataanalysis.core as da
-        da.reset()
-        import_ddmodules(args.get('modules').split(","))
-
-        assumptions = json.loads(args.get('assumptions'))
-        log("ddservice got injected assumptions:")
-        log(assumptions)
-
-        A=da.AnalysisFactory.byname(args.get('target'))
-
-        assumptions+=interpret_simple_assume(args['assume'])
-
-        for assumption in assumptions:
-            log("requested assumption:",assumption)
-            a=da.AnalysisFactory.byname(assumption[0])
-            a.import_data(assumption[1])
-            print(a,"from",assumption)
-
-        expected_hashe_str=args['expected_hashe']
+        expected_hashe_str = args['expected_hashe']
 
         if expected_hashe_str is None:
-            expected_hashe=None
+            print("no expected hashe!")
+            expected_hashe = None
         else:
             try:
-                expected_hashe=json.loads(expected_hashe_str)
+                expected_hashe = json.loads(expected_hashe_str)
             except Exception as e:
-                log("failed to interpret expected hashe:",expected_hashe_str)
+                log("failed to interpret expected hashe:", expected_hashe_str)
                 return Response(
                     status='error decoding expected hashe',
                     data=dict(
@@ -118,25 +89,38 @@ class Produce(Resource):
                     )
                 ).jsonify()
 
+        modules=args['modules'].split(",")
 
-        requested_by=["service",]+args['requested_by'].split(",")
+        assumptions=json.loads(args.get('assumptions'))
 
-        hashe,obj=A.process(output_required=False)
+        log("injected assumptions",assumptions)
 
-        if expected_hashe_str is not None and expected_hashe != jsonify(hashe):
+        assumptions += interpret_simple_assume(args['assume'])
+
+        requested_by = ["service", ] + args['requested_by'].split(",")
+
+        try:
+            emerged_object=emerge.emerge_from_identity(da.DataAnalysisIdentity(
+                factory_name=args['target'],
+                full_name=None,
+                modules=modules,
+                assumptions=assumptions,
+                expected_hashe=expected_hashe,
+            ))
+        except emerge.InconsitentEmergence as e:
             return Response(
                 status='error',
                 data=dict(comment="mismatch between expected hashe and producable",
                           expected_hashe=args['expected_hashe'],
-                          producable_hashe=hashe,
+                          producable_hashe=e.cando,
                           ),
             ).jsonify()
 
         if args['mode'] == "fetch":
-            log("No interactive produce requested for", A)
-            A.produce_disabled = True
+            log("No interactive produce requested for", emerged_object)
+            emerged_object.produce_disabled = True
         elif args['mode'] == "interactive":
-            log("interactive produce requested for",A)
+            log("interactive produce requested for",emerged_object)
         elif args['mode'] == "delayed":
             pass
         else:
@@ -145,7 +129,7 @@ class Produce(Resource):
                 data=dict(comment="unknown produce mode"),
             ).jsonify()
         try:
-            hashe, obj=A.process(output_required=True,requested_by=requested_by)
+            hashe, obj=emerged_object.process(output_required=True,requested_by=requested_by)
 
             if expected_hashe_str is not None and expected_hashe != jsonify(hashe):
                 return Response(
@@ -156,18 +140,18 @@ class Produce(Resource):
                               ),
                 ).jsonify()
 
-            log("server succeeded to get the object", A)
+            log("server succeeded to get the object", emerged_object)
             return Response(
                 status='result',
-                data=A.export_data(include_class_attributes=True),
+                data=emerged_object.export_data(include_class_attributes=True),
             ).jsonify()
 
         except da.ProduceDisabledException as e:
-            log("no result while produce disabled for",A)
-            fih, o = A.process(output_required=False)
+            log("no result while produce disabled for",emerged_object)
+            fih, o = emerged_object.process(output_required=False)
             return Response(
                 status="not allowed to produce",
-                data=dict(resources=A.guess_main_resources()),
+                data=dict(resources=emerged_object.guess_main_resources()),
             ).jsonify()
 
         except da.AnalysisDelegatedException as e:
@@ -175,7 +159,7 @@ class Produce(Resource):
             return Response(
                 status="waiting for dependencies",
                 data=dict(
-                    resources=A.guess_main_resources(),
+                    resources=emerged_object.guess_main_resources(),
                     dependencies=[r.jsonify() for r in e.resources],
                 ),
             ).jsonify()

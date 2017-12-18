@@ -177,14 +177,21 @@ class AnalysisException(Exception):
 class AnalysisDelegatedException(Exception):
     @property
     def signature(self):
-        if self.hashe is None: return "Undefined!"
-        return self.hashe[-1]
+        if self.hashe is None:
+            return "Undefined!"
 
-    def __init__(self,hashe,resources=None,comment=None):
+        if self.hashe[0]=="analysis":
+            return self.hashe[-1]
+
+        if self.hashe[0] == "list":
+            return "; ".join([repr(k) for k in self.hashe[1:]])
+
+    def __init__(self,hashe,resources=None,comment=None,origin=None):
         self.hashe=hashe
         self.resources=[] if resources is None else resources
         self.source_exceptions=None
         self._comment=comment
+        self.origin=origin
 
     @property
     def comment(self):
@@ -194,13 +201,18 @@ class AnalysisDelegatedException(Exception):
 
     @classmethod
     def from_list(cls,exceptions):
-        obj=cls(None)
+        if len(exceptions)==1:
+            return exceptions[0]
+
+        obj=cls(None,origin="list")
 
         obj.source_exceptions=exceptions
 
         obj.resources=[]
         for ex in exceptions:
             obj.resources+=ex.resources
+
+        obj.hashe=tuple(['list']+[ex.hashe for ex in exceptions])
 
         return obj
 
@@ -505,6 +517,17 @@ class DataAnalysis(object):
                 res.append([a,jsonify.jsonify(b)])
             r=dict(res)
 
+        for k in dir(self):
+            if k.startswith("input"):
+                v=getattr(self,k)
+                log("trying to preserve linked input", k, v)
+
+                if isinstance(v, str):
+                    r['_da_stored_string_' + k] = v
+
+                if isinstance(v, DataHandle):
+                    r['_da_stored_string_' + k] = v.str()
+
         log("resulting output:",r)
         return r
 
@@ -515,6 +538,10 @@ class DataAnalysis(object):
         for k, i in c.items():
             log("restoring", k, i)
             setattr(self, k, i)
+
+            if k.startswith("_da_stored_string_input"):
+                nk=k.replace("_da_stored_string_input","input")
+                setattr(self,nk,i)
 
     def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
         log("serialize as",embed_datafiles,verify_jsonifiable,include_class_attributes)
@@ -648,7 +675,11 @@ class DataAnalysis(object):
             log("locally complete:",fih)
             self.post_restore()
             if self.rename_output_unique and rc['datafile_restore_mode']=="copy":
-                self.process_output_files(fih)
+                try:
+                    self.process_output_files(fih)
+                except Exception as e:
+                    log("unable to restore output files: broken cache record")
+                    return None
             else:
                 log("disabled self.rename_output_unique",level='cache')
             return r
@@ -918,17 +949,17 @@ class DataAnalysis(object):
 
             #for key in newobj.export_data().keys(): # or all??
             obj._da_locally_complete = newobj._da_locally_complete
-            for key in newobj.export_data(include_class_attributes=True, deep_export=True).keys():  # or all??
+            exported_data=newobj.export_data(include_class_attributes=True, deep_export=True)
+            for key in exported_data.keys():  # or all??
                 log("key to",obj,"from newobj",newobj,key)
-                setattr(obj,key,getattr(newobj,key))
+                if hasattr(newobj,key):
+                    v=getattr(newobj,key)
+                else:
+                    v=exported_data[key]
+                setattr(obj,key,v)
 
 
     def get_delegation(self):
-    #def list_delegated(self):
-        #if self._da_delegated_input is not None:
-        #   if self._da_main_delegated is not None:
-        #       raise Exception("core design error! main is delegated as well as input! ")
-        #   return self._da_delagated_input
         if self._da_main_delegated is not None:
             return self._da_main_delegated
 
@@ -1197,15 +1228,27 @@ class DataAnalysis(object):
                     log(render("{RED}can not be cached - can not save non-virtual objects! (at the moment){/}"),da)
                     self.cached=False
 
-
-                #restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=False))
                 restore_rules_for_substitute=update_dict(restore_rules,dict(explicit_input_required=restore_rules['substitute_output_required']))
                 self.force_complete_input=restore_rules['force_complete'] # ?.. !!!!
                 log(render("{RED}will process substitute object as input with the following rules:{/}"),restore_rules_for_substitute)
 
                 rh,ro=self.process_input(da,restore_rules=restore_rules_for_substitute,requested_by=['output_of']+requested_by)
                 log(render("substitute the object with dynamic input. rh:"),rh)
-                log(render("substitute the object with dynamic input. ro:"),ro)
+                log(render("substitute the object with dynamic input. ro:"),ro,ro.__class__)
+                log("output object was",da,da.__class__)
+
+                if not isinstance(ro,list) and not isinstance(ro,tuple):
+                    ros=[ro]
+                else:
+                    ros=ro
+                
+                if not isinstance(da,list) and not isinstance(da,tuple):
+                    das=[da]
+                else:
+                    das=da
+
+                for _output_object,_substitute_object in zip(das,ros):
+                    print("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache)
 
 
                 log("--- old input hash:",fih)
@@ -1396,7 +1439,9 @@ class DataAnalysis(object):
 
                 if delegated!=[]:
                     log("delegated:", len(delegated), delegated)
-                    AnalysisDelegatedException.from_list(delegated)
+                    raise AnalysisDelegatedException.from_list(delegated)
+                else:
+                    log("no delegated analysis found")
 
                 if all([i is None for i in nitems]):
                     return tuple(['list']+hashes),None

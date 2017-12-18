@@ -22,6 +22,13 @@ def plot_hashe(hashe,pngfn,dotfn=None,show=True):
 
             process_hashe(hashe[1],graph,hashe[-1])
 
+        if isinstance(hashe,str):
+            graph.add_node(pydot.Node(repr(hashe).replace(":",""), style="filled", fillcolor="green", shape="box"))
+
+            if root is not None:
+                graph.add_edge(pydot.Edge(repr(hashe).replace(":",""), repr(root)))
+
+
     process_hashe(hashe,graph,None)
     graph.write_png(pngfn)
 

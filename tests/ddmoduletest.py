@@ -45,6 +45,23 @@ class ServerDelegatableAnalysisA(da.DataAnalysis):
     def main(self):
         pass
 
+class SAnalysis(da.DataAnalysis):
+    input_s=None
+
+    cached=False
+
+    def main(self):
+        self.data="dataS_"+self.input_s.str()
+
+
+class SAAnalysis(da.DataAnalysis):
+    input_sa = SAnalysis
+
+    cached = False
+
+    def main(self):
+        self.data = "dataSA_" + self.input_sa.data
+
 
 class AAnalysis(da.DataAnalysis):
     cached=True
@@ -121,3 +138,9 @@ class ChainedServerProducer(da.DataAnalysis):
         self.data=dict(a=self.input_a.data,b=self.input_b.data)
         self.resource_stats_a = self.input_a.resource_stats
         self.resource_stats_b = self.input_b.resource_stats
+
+
+class GenerativeAnalysis(da.DataAnalysis):
+    def main(self):
+        self.data=AAnalysis(use_assumed_data="data1"), AAnalysis(use_assumed_data="data2")
+        print("cache of generated:",self.data[0].cache)

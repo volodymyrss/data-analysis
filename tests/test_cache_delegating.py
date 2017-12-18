@@ -6,9 +6,8 @@ import dataanalysis.core as da
 
 
 def define_analysis():
-    class Analysis(da.DataAnalysis):
-        def main(self):
-            self.data="datadata"
+    import ddmoduletest
+    reload(ddmoduletest)
 
 
 def test_queue_cache():
@@ -23,7 +22,7 @@ def test_queue_cache():
 
     define_analysis()
 
-    A=dataanalysis.core.AnalysisFactory['Analysis']
+    A=dataanalysis.core.AnalysisFactory['AAnalysis']
     A.produce_disabled=True
     A.cache = q_cache
     A.cached = True
@@ -38,7 +37,7 @@ def test_queue_cache():
 
     define_analysis()
 
-    A = dataanalysis.core.AnalysisFactory['Analysis']
+    A = dataanalysis.core.AnalysisFactory['AAnalysis']
     A.produce_disabled = False
     A.cache = f_cache
     A.cached = True
@@ -46,6 +45,93 @@ def test_queue_cache():
     worker=caches.queue.QueueCacheWorker()
 
     print(worker.run_once())
+
+def test_queue_cache_generative():
+    from dataanalysis import caches
+    import dataanalysis.caches.queue
+
+    da.debug_output()
+    da.reset()
+
+    q_cache=caches.queue.QueueCache("./queue_test")
+    q_cache.wipe_queue()
+
+    assert len(q_cache.queue.list())==0
+
+    define_analysis()
+
+    A=dataanalysis.core.AnalysisFactory['GenerativeAnalysis']
+
+    for name in 'AAnalysis',:
+        aA=dataanalysis.core.AnalysisFactory[name].__class__
+        aA.cache = q_cache
+        aA.produce_disabled=True
+        aA.cached = True
+
+    with pytest.raises(da.AnalysisDelegatedException) as e:
+        A.get()
+
+    print('AnalysisDelegatedException',e.value,e.value.origin,e.value.hashe)
+    assert len(e.value.hashe[1:])==2
+
+    assert len(e.value.source_exceptions)==2
+    for se in e.value.source_exceptions:
+        print('AnalysisDelegatedException',se,se.origin)
+
+
+    assert len(q_cache.queue.list())==2
+
+    # worker part
+
+    f_cache=caches.cache_core.CacheNoIndex()
+    #f_cache.parent=q_cache
+
+    define_analysis()
+
+    A = dataanalysis.core.AnalysisFactory['AAnalysis']
+    A.produce_disabled = False
+    A.cache = f_cache
+    A.cached = True
+
+    worker=caches.queue.QueueCacheWorker("./queue_test")
+
+    print(worker.run_once())
+
+def test_queue_reconstruct_env():
+    from dataanalysis import caches
+    import dataanalysis.caches.queue
+
+    da.debug_output()
+    da.reset()
+
+    q_cache=caches.queue.QueueCache()
+    q_cache.wipe_queue()
+
+    define_analysis()
+
+    A=dataanalysis.core.AnalysisFactory['AAnalysis']
+    A.produce_disabled=True
+    A.cache = q_cache
+    A.cached = True
+
+    with pytest.raises(da.AnalysisDelegatedException):
+        A.get()
+
+    # worker part
+
+    f_cache=caches.cache_core.CacheNoIndex()
+    #f_cache.parent=q_cache
+
+    da.reset()
+
+    #A = dataanalysis.core.AnalysisFactory['Analysis']
+    #A.produce_disabled = False
+    #A.cache = f_cache
+    #A.cached = True
+
+    worker=caches.queue.QueueCacheWorker()
+
+    print(worker.run_all())
 
 
 #    worker.run_all()
@@ -99,6 +185,51 @@ def test_delegating_analysis():
     try:
         A.get()
     except da.AnalysisDelegatedException as e:
+        print("resources:",e.resources)
+
+    del da.DataAnalysis.cache.parent
+
+def test_delegating_generative():
+    #import dataanalysis
+    from dataanalysis import caches
+    import dataanalysis.caches.delegating
+
+   # da.debug_output()
+    da.reset()
+
+    q_cache=caches.delegating.DelegatingCache()
+
+    da.DataAnalysis.cache.tail_parent(q_cache)
+
+    class A1Analysis(da.DataAnalysis):
+        read_caches = [q_cache.__class__]
+        cached = True
+
+        def main(self):
+            self.data="datadata1"
+
+    class A2Analysis(da.DataAnalysis):
+        read_caches = [q_cache.__class__]
+        cached = True
+
+        def main(self):
+            self.data="datadata2"
+
+    class BAnalysis(da.DataAnalysis):
+        input_a1 = A1Analysis
+        input_a2 = A2Analysis
+
+        def main(self):
+            self.data=[A1Analysis(),A2Analysis()]
+
+    A=BAnalysis()
+
+    print(A.cache.list_parent_stack())
+
+    try:
+        A.get()
+    except da.AnalysisDelegatedException as e:
+        print("delegating exception:",e.__class__,e,e.hashe)
         print("resources:",e.resources)
 
     del da.DataAnalysis.cache.parent
