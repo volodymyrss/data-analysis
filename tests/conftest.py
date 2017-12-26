@@ -17,11 +17,11 @@ import signal, psutil
 def kill_child_processes(parent_pid, sig=signal.SIGTERM):
     try:
         parent = psutil.Process(parent_pid)
+        children = parent.children(recursive=True)
+        for process in children:
+            process.send_signal(sig)
     except psutil.NoSuchProcess:
         return
-    children = parent.children(recursive=True)
-    for process in children:
-        process.send_signal(sig)
 
 @pytest.yield_fixture
 def ddservice(pytestconfig):
