@@ -29,6 +29,8 @@ from dataanalysis import printhook
 from dataanalysis.printhook import decorate_method_log,log,debug_print
 
 
+dda_hooks=[]
+
 Cache = cache_core.CacheNoIndex()
 TransientCacheInstance = cache_core.TransientCache()
 
@@ -847,6 +849,10 @@ class DataAnalysis(object):
         self.cache.report_analysis_state(self,"done")
 
     def process_run_main(self):
+        for dda_hook in dda_hooks:
+            log("running hook",dda_hook,self,message="main starting")
+            dda_hook("top",self,action="main starting")
+
         #self.runtime_update('running')
         if self.abstract:
             raise Exception("attempting to run abstract! :"+repr(self)+" requested by "+(" ".join(self._da_requested_by)))
@@ -916,6 +922,10 @@ class DataAnalysis(object):
                 if isinstance(r,DataAnalysis):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
+        
+        for dda_hook in dda_hooks:
+            log("running hook",dda_hook,"top",self,message="main done")
+            dda_hook("top",self,action="main done",resource_stats=dict(enumerate(self._da_resource_stats)))
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1283,6 +1293,10 @@ class DataAnalysis(object):
         log(render("{MAGENTA}process took in total{/}"),process_tspent)
         self.note_resource_stats({'resource_type':'usertime','seconds':process_tspent})
         self.summarize_resource_stats()
+        
+        for dda_hook in dda_hooks:
+            log("running hook",dda_hook,self)
+            dda_hook("top",self,action="processing over",resource_stats=self.resource_stats)
 
         return_object=self
         if substitute_object is not None:
