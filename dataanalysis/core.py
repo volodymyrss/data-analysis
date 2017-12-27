@@ -1529,6 +1529,29 @@ class DataAnalysis(object):
     def __repr__(self):
         return "[%s%s]"%(self.get_version(),";NoneInTheInput" if self.virtual else "")
 
+    @classmethod
+    def from_data(cls,name,data,**kwargs):
+        c = type(cls)
+        newcls = c(name, (cls,), dict(cls.__dict__))()
+
+        for k,v in data.items():
+            setattr(newcls,k,v)
+
+        extradata={}
+        for arg_k,arg_v in kwargs.items():
+            if arg_k.startswith("input_"):
+                setattr(newcls,arg_k,arg_v)
+            elif arg_k.startswith("use_"):
+                setattr(newcls, arg_k[len("use_"):], arg_v)
+                extradata[arg_k]=arg_v
+            else:
+                raise RuntimeError("unrecognized arguement: "+arg_k)
+
+        newcls.version=hashtools.shhash(tuple(map(tuple,sorted(data.items()+extradata.items()))))[:8]
+
+        obj=newcls()
+
+        return obj
 
     @classmethod
     def from_data(cls,name,data,**kwargs):
