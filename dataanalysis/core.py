@@ -1113,22 +1113,26 @@ class DataAnalysis(object):
 
         self._da_requested_by=requested_by
 
-        self.process_checkin_assumptions()
+        if hasattr(self,'_da_obscure_origin_hashe') and self._da_obscure_origin_hashe is not None:
+            input_hash = self._da_obscure_origin_hashe[1]
+            input = []
+        else:
+            self.process_checkin_assumptions()
 
-        rr= list(dict(restore_rules.items())) + list(dict(output_required=False).items()) # no need to request input results unless see below
+            rr= list(dict(restore_rules.items())) + list(dict(output_required=False).items()) # no need to request input results unless see below
 
-        #### process input
+            #### process input
 
-        input_hash,input=self.process_input(obj=None,
-                                            process_function=process_function,
-                                            restore_rules=update_dict(restore_rules,dict(
-                                                                                            output_required=False,
-                                                                                            can_delegate=restore_rules['can_delegate_input'])),
-                                            requested_by=["input_of"]+requested_by)
-        # TODO: defaults, alternatives
+            input_hash,input=self.process_input(obj=None,
+                                                process_function=process_function,
+                                                restore_rules=update_dict(restore_rules,dict(
+                                                                                                output_required=False,
+                                                                                                can_delegate=restore_rules['can_delegate_input'])),
+                                                requested_by=["input_of"]+requested_by)
+
         #### /process input
 
-        process_t0=time.time()
+        self.process_t0=time.time()
 
         log("input hash:",input_hash)
         log("input objects:",input)
@@ -1293,9 +1297,9 @@ class DataAnalysis(object):
 
         self.process_checkout_assumptions()
 
-        process_tspent=time.time()-process_t0
-        log(render("{MAGENTA}process took in total{/}"),process_tspent)
-        self.note_resource_stats({'resource_type':'usertime','seconds':process_tspent})
+        self.process_tspent=time.time()-self.process_t0
+        log(render("{MAGENTA}process took in total{/}"),self.process_tspent)
+        self.note_resource_stats({'resource_type':'usertime','seconds':self.process_tspent})
         self.summarize_resource_stats()
         
         for dda_hook in dda_hooks:
@@ -1543,6 +1547,29 @@ class DataAnalysis(object):
     def __repr__(self):
         return "[%s%s]"%(self.get_version(),";NoneInTheInput" if self.virtual else "")
 
+    @classmethod
+    def from_data(cls,name,data,**kwargs):
+        c = type(cls)
+        newcls = c(name, (cls,), dict(cls.__dict__))()
+
+        for k,v in data.items():
+            setattr(newcls,k,v)
+
+        extradata={}
+        for arg_k,arg_v in kwargs.items():
+            if arg_k.startswith("input_"):
+                setattr(newcls,arg_k,arg_v)
+            elif arg_k.startswith("use_"):
+                setattr(newcls, arg_k[len("use_"):], arg_v)
+                extradata[arg_k]=arg_v
+            else:
+                raise RuntimeError("unrecognized arguement: "+arg_k)
+
+        newcls.version=hashtools.shhash(tuple(map(tuple,sorted(data.items()+extradata.items()))))[:8]
+
+        obj=newcls()
+
+        return obj
 
     @classmethod
     def from_data(cls,name,data,**kwargs):
@@ -1568,6 +1595,38 @@ class DataAnalysis(object):
 
         return obj
 
+
+    @classmethod
+    def from_hashe_and_data(cls, hashe, data=None, cached=False):
+        name,version=hashe[-1].split(".",1)
+        log("object name:",name)
+        log("object version:", version)
+
+
+        c = type(cls)
+        newcls = c(name, (cls,), dict(cls.__dict__))()
+
+        if data is not None:
+            for k,v in data.items():
+                setattr(newcls,k,v)
+
+        newcls.version=version
+
+        obj=newcls()
+        obj._da_obscure_origin_hashe = hashe
+        obj.produce_disabled = True
+        obj.cached=cached
+
+        if data is not None:
+            #obj._da_locally_complete = hashe
+            print("storing obscure to the TransientCache:")
+            TransientCacheInstance.store(hashe, obj)
+
+        return obj
+
+    @classmethod
+    def from_hashe(cls, hashe, cached=True):
+        return cls.from_hashe_and_data(hashe, data=None, cached=cached)
 
 class FileHashed(DataAnalysis):
     input_filename=None
