@@ -889,7 +889,8 @@ class DataAnalysis(object):
             except Exception:
                 print("unable to report exception!")
             
-            dda_hook("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue())
+            for dda_hook in dda_hooks:
+                dda_hook("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue())
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
