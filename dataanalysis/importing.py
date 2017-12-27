@@ -103,7 +103,7 @@ def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
 
     netgit=os.environ["GIT_COMMAND"] if "GIT_COMMAND" in os.environ else "git"
 
-    local_module_dir=local_gitroot+"dda-"+name
+    local_module_dir=local_gitroot+"/dda-"+name
 
     print("local git clone:",local_module_dir)
 

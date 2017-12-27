@@ -69,7 +69,6 @@ def test_obscure_node_cached():
     assert nA.export_data()['data'] == data['data']
     assert nA._da_locally_complete == hashe
 
-
 def test_obscure_assumptions():
     from dataanalysis import core as da
     da.reset()
