@@ -851,7 +851,7 @@ class DataAnalysis(object):
     def process_run_main(self):
         for dda_hook in dda_hooks:
             log("running hook",dda_hook,self,message="main starting")
-            dda_hook("top",self,action="main starting")
+            dda_hook("top",self,message="main starting",hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
         #self.runtime_update('running')
         if self.abstract:
@@ -876,6 +876,7 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
+            dda_hook("top",self,message="analysis exception",exception=repr(ae))
         except Exception as ex:
             #os.system("ls -ltor")
             self.stop_main_watchdog()
@@ -887,6 +888,8 @@ class DataAnalysis(object):
                 self.report_runtime("failed "+repr(ex))
             except Exception:
                 print("unable to report exception!")
+            
+            dda_hook("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue())
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
@@ -925,7 +928,7 @@ class DataAnalysis(object):
         
         for dda_hook in dda_hooks:
             log("running hook",dda_hook,"top",self,message="main done")
-            dda_hook("top",self,action="main done",resource_stats=dict(enumerate(self._da_resource_stats)))
+            dda_hook("top",self,message="main done",resource_stats=dict(enumerate(self._da_resource_stats)),hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1296,7 +1299,7 @@ class DataAnalysis(object):
         
         for dda_hook in dda_hooks:
             log("running hook",dda_hook,self)
-            dda_hook("top",self,action="processing over",resource_stats=self.resource_stats)
+            dda_hook("top",self,message="processing over",resource_stats=self.resource_stats,hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
         return_object=self
         if substitute_object is not None:
