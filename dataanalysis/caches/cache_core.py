@@ -133,7 +133,8 @@ class Cache(object):
         from_parent=self.parent.restore(hashe,obj,rc)
             
         if from_parent is not None:
-            log("storing what restored from parent")
+            log("storing what restored from parent") 
+# TODO: special case when object was cached and not available in tcurrent dir
             self.store(hashe,obj)
 
         return from_parent
