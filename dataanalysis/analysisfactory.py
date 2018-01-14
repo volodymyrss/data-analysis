@@ -228,6 +228,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             # if o.is_virtual():
             #    log("virtual object, constructing empty copy")
             serialization=o.serialize(verify_jsonifiable=False)
+            if hasattr(o, '_da_obscure_origin_hashe'):
+                serialization[1]['_da_obscure_origin_hashe']=o._da_obscure_origin_hashe
+
             o.__class__(dynamic=False).promote()  # assume??
             self.inject_serialization(serialization) # conditional reality contains pale copies of the fundamentals
 
