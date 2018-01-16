@@ -9,6 +9,7 @@ import yaml
 package_root=os.path.dirname(os.path.dirname(__file__))
 
 sys.path.insert(0,package_root)
+sys.path.insert(0,package_root+"/tests")
 
 import dataanalysis.core as da
 
