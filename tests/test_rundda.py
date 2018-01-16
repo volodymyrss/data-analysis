@@ -15,7 +15,11 @@ import dataanalysis.core as da
 
 rundda_path=package_root+"/tools/rundda.py"
 
+env = os.environ
+env['PYTHONPATH'] = package_root + "/tests:" + env['PYTHONPATH']
+
 def test_simple():
+
     cmd=[
         'python',rundda_path,
         'ClientDelegatableAnalysisA',
@@ -23,11 +27,11 @@ def test_simple():
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache)',
         '-f','ClientDelegatableAnalysisA',
     ]
-    p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
 
-    p = subprocess.Popen(cmd[:-2], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd[:-2], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
 
@@ -52,7 +56,7 @@ def test_prompt_delegation():
         os.remove(exception_report)
 
     # run it
-    p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
 
@@ -84,7 +88,7 @@ def test_prompt_delegation():
     if os.path.exists(exception_report):
         os.remove(exception_report)
 
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
 
