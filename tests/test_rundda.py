@@ -16,7 +16,7 @@ import dataanalysis.core as da
 rundda_path=package_root+"/tools/rundda.py"
 
 env = os.environ
-env['PYTHONPATH'] = package_root + "/tests:" + env['PYTHONPATH']
+env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 def test_simple():
 
