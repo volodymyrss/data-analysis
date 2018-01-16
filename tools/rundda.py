@@ -23,6 +23,7 @@ parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, he
 parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 #parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
+parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
 args = parser.parse_args()
 
@@ -106,8 +107,12 @@ for inj_fn, in args.inject:
 
     core.AnalysisFactory.inject_serialization(inj_content)
 
+if args.delegate_to_queue is not None:
+    from dataanalysis.caches.queue import QueueCache
+    A.cache.tail_parent(QueueCache(args.delegate_to_queue))
+
 try:
-    A.process(output_required=True)
+    A.process(output_required=True,requested_by=["command_line"])
 except dataanalysis.UnhandledAnalysisException as e:
     yaml.dump(
               dict(
@@ -120,6 +125,22 @@ except dataanalysis.UnhandledAnalysisException as e:
               open("exception.yaml","w"),
               default_flow_style=False,
         )
+    raise
+except dataanalysis.AnalysisDelegatedException as e:
+    print("delegation exception",e)
+    yaml.dump(
+        dict(
+            exception_type="delegation",
+            exception=repr(e),
+            hashe=e.hashe,
+            resources=e.resources,
+            source_exceptions=e.source_exceptions,
+            comment=e.comment ,
+            origin=e.origin,
+        ),
+        open("exception.yaml", "w"),
+        default_flow_style=False,
+    )
     raise
 except Exception as e:
     print("graph exception",e)
@@ -153,5 +174,7 @@ if args.cachelink:
     if hasattr(A,'_da_cached_pathes'):
         print "will note cache link"
         open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
+
+
 
 

@@ -1,3 +1,5 @@
+import time
+
 from dataanalysis import core as da
 from dataanalysis.caches.cache_core import CacheNoIndex
 from dataanalysis.caches.resources import CacheDelegateToResources, WebResourceFactory
@@ -21,8 +23,18 @@ class ClientDelegatableAnalysisA(da.DataAnalysis):
     cached=True
     cache=cache
 
+    sleep=None
+
+    def get_version(self):
+        v=super(ClientDelegatableAnalysisA,self).get_version()
+        if self.sleep is not None:
+            v+="sleep.%i"%self.sleep
+        return v
+
     def main(self):
         self.data = "dataA"
+        if self.sleep is not None:
+            time.sleep(self.sleep)
 
 class ClientDelegatableAnalysisA1(da.DataAnalysis):
     cached=True

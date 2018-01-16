@@ -675,6 +675,8 @@ class DataAnalysis(object):
             log("this object will be considered restored and complete: will not do again",self)
             self._da_locally_complete=fih # info save
             log("locally complete:",fih)
+            log("marking restored mode")
+            self._da_restored=True
             self.post_restore()
             if self.rename_output_unique and rc['datafile_restore_mode']=="copy":
                 try:

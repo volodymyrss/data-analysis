@@ -25,6 +25,9 @@ class QueueCache(DelegatingCache):
 
 
 class QueueCacheWorker(object):
+    def __repr__(self):
+        return "[%s: %i]"%(self.__class__.__name__,id(self))
+
     def __init__(self,queue_directory="/tmp/queue"):
         self.queue_directory = queue_directory
 
@@ -37,7 +40,7 @@ class QueueCacheWorker(object):
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
 
-        return A.get()
+        return A.get(requested_by=[repr(self)])
 
 
     def run_once(self):
@@ -66,7 +69,7 @@ class QueueCacheWorker(object):
             except Exception as e:
                 self.queue.task_failed() # history and current status
             else:
-                nself.queue.task_done()
+                self.queue.task_done()
 
 
 if __name__ == "__main__":
