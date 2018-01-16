@@ -26,7 +26,7 @@ class ClientDelegatableAnalysisA(da.DataAnalysis):
     sleep=None
 
     def get_version(self):
-        v=super(ClientDelegatableAnalysisA,self).get_version()
+        v=da.DataAnalysis.get_version(self)
         if self.sleep is not None:
             v+="sleep.%i"%self.sleep
         return v

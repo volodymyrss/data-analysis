@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import sys
 
 import yaml
 
@@ -24,16 +25,17 @@ parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str
 #parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
+parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
 args = parser.parse_args()
 
-print args.module
+print(args.module)
 
 from dataanalysis import core, importing
 import dataanalysis.printhook
 
 if args.verbose:
-    print "will be chatty"
+    print("will be chatty")
     dataanalysis.printhook.global_log_enabled=True
     dataanalysis.printhook.global_fancy_output=True
     dataanalysis.printhook.global_permissive_output=True
@@ -42,7 +44,7 @@ else:
     dataanalysis.printhook.global_fancy_output=False
 
 if args.failsafe:
-    print "will be chatty"
+    print("will be chatty and safe")
     dataanalysis.printhook.global_log_enabled=True
     dataanalysis.printhook.global_fancy_output=False
     dataanalysis.printhook.global_permissive_output=True
@@ -60,7 +62,14 @@ if args.very_verbose:
 
 modules=[m[0] for m in args.module]
 
-import sys
+if args.prompt_delegate_to_queue:
+    dataanalysis.DataAnalysisIdentity(
+        factory_name=args.object_name,
+        full_name=args.object_name,
+        modules=dataanalysis.analysisfactory.factory.format_module_description(modules),
+        assumptions=[],
+        expected_hashe=None,
+    )
 
 for m in modules:
     print "importing",m
