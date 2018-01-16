@@ -878,7 +878,8 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
-            dda_hook("top",self,message="analysis exception",exception=repr(ae))
+            for dda_hook in dda_hooks:
+                dda_hook("top",self,message="analysis exception",exception=repr(ae))
         except Exception as ex:
             #os.system("ls -ltor")
             self.stop_main_watchdog()
