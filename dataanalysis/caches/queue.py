@@ -23,6 +23,9 @@ class QueueCache(DelegatingCache):
     def wipe_queue(self):
         self.queue.wipe()
 
+    def __repr__(self):
+        return "["+self.__class__.__name__+": queue in \""+self.queue_directory+"\"]"
+
 
 class QueueCacheWorker(object):
     def __repr__(self):
@@ -39,6 +42,8 @@ class QueueCacheWorker(object):
     def run_task(self,object_identity):
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
+
+        print("emerged object:",A)
 
         return A.get(requested_by=[repr(self)])
 

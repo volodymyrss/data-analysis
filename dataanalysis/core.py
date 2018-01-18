@@ -266,7 +266,7 @@ class DataAnalysisIdentity(object):
     def __repr__(self):
         return "[%s: %s; %s]"%(self.factory_name,
                                ",".join([m for o,m,l in self.modules]),
-                               ",".join([a for a,b in self.assumptions]))
+                               ",".join([a if a is not None else "custom eval" for a,b in self.assumptions]))
 
 class DataAnalysis(object):
     __metaclass__ = decorate_all_methods

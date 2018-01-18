@@ -6,6 +6,8 @@ import sys
 
 import yaml
 
+from dataanalysis.caches.queue import QueueCache
+
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
 parser.add_argument('-m', dest='module', metavar='MODULE_NAME', type=str, help='module to load', nargs='+', action='append', default=[])
@@ -51,10 +53,10 @@ if args.failsafe:
 
 
 if args.quiet:
-    print "will be quiet"
+    print("will be quiet")
     dataanalysis.printhook.LogStream(None, lambda x: set(x) & set(['top', 'main']))
 else:
-    print "will not be quiet"
+    print("will not be quiet")
     dataanalysis.printhook.LogStream(None, lambda x:True)
 
 if args.very_verbose:
@@ -63,13 +65,48 @@ if args.very_verbose:
 modules=[m[0] for m in args.module]
 
 if args.prompt_delegate_to_queue:
-    dataanalysis.DataAnalysisIdentity(
+    identity=dataanalysis.DataAnalysisIdentity(
         factory_name=args.object_name,
         full_name=args.object_name,
-        modules=dataanalysis.analysisfactory.factory.format_module_description(modules),
-        assumptions=[],
+        modules=dataanalysis.AnalysisFactory.format_module_description(modules),
+        assumptions=[('',a[0]) for a in args.assume],
         expected_hashe=None,
     )
+
+    print("generated identity",identity)
+
+    cache=QueueCache(args.prompt_delegate_to_queue)
+    cache.queue.wipe()
+
+    print("cache:",cache,"from",args.prompt_delegate_to_queue)
+    print("queue status before", cache.queue.info)
+
+    cache.queue.put(dict(
+        object_identity=identity,
+        request_origin="command_line",
+    ))
+
+    print("queue status now",cache.queue.info)
+    print("put in cache, exiting")
+
+    e=dataanalysis.AnalysisDelegatedException(None)
+
+    print("delegation exception", e)
+    yaml.dump(
+        dict(
+            exception_type="delegation",
+            exception=repr(e),
+            hashe=e.hashe,
+            resources=[],
+            source_exceptions=None,
+            comment=None,
+            origin=None,
+        ),
+        open("exception.yaml", "w"),
+        default_flow_style=False,
+    )
+
+    raise e
 
 for m in modules:
     print "importing",m
@@ -82,7 +119,7 @@ for m in modules:
 
 if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
-    print assumptions
+    print("assumptions:",assumptions)
     core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
 
 A= core.AnalysisFactory[args.object_name]()

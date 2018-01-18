@@ -312,6 +312,17 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
         #   return [[a,b] for a,b in self.aliases if contains(h0,a)]
 
+    def format_module_description(self,modules):
+        module_description = []
+        for m in modules:
+            if m.startswith("git://"):
+                name=m[len("git://"):]
+                module_description.append(["git", name, None])
+            else:
+                module_description.append(['filesystem', m, None])
+
+        return module_description
+
     def get_module_description(self):
         module_description = []
         for m in AnalysisFactory.dda_modules_used:
