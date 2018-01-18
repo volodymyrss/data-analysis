@@ -81,6 +81,7 @@ class QueueCacheWorker(object):
             try:
                 self.run_task(task['object_identity'])
             except Exception as e:
+                print("task failed:",e)
                 self.queue.task_failed() # history and current status
             else:
                 self.queue.task_done()
