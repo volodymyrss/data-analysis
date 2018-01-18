@@ -125,15 +125,16 @@ def import_analysis_module(name,version):
 
 def load_by_name(m, local_gitroot=None,remote_git_root=None):
     if isinstance(m,list):
-        if m[0]=="filesystem" and m[2] is not None:
-            name=m[1]
+        if m[0]=="filesystem":
+            if m[2] is not None:
+                name=m[1]
 
-            fullpath=m[2].replace(".pyc",".py")
+                fullpath=m[2].replace(".pyc",".py")
 
-            return imp.load_source(name, fullpath), name
-
-        if m[0] == "filesystem" and m[2] is None:
-            m=m[1]
+                return imp.load_source(name, fullpath), name
+            else:
+                m=m[1]
+                log("using generic load from filesystem:",m[1])
 
     if m.startswith("/"):
         log("will import modul from cache")
