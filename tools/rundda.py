@@ -77,7 +77,6 @@ if args.prompt_delegate_to_queue:
     print("generated identity",identity)
 
     cache=QueueCache(args.prompt_delegate_to_queue)
-    cache.queue.wipe()
 
     print("cache:",cache,"from",args.prompt_delegate_to_queue)
     print("queue status before", cache.queue.info)
