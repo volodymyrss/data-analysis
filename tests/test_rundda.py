@@ -21,8 +21,6 @@ env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 
 def test_simple():
-    return
-
     cmd=[
         'python',rundda_path,
         'ClientDelegatableAnalysisA',
@@ -117,7 +115,6 @@ def test_prompt_delegation():
     print(A.resource_stats)
 
 def test_delegation():
-    return
     queue_dir="tmp.queue"
 
     randomized_version="v%i"%random.randint(1,10000)
