@@ -48,7 +48,8 @@ def test_prompt_delegation():
         '-m','ddmoduletest',
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache,use_version="%s")'%randomized_version,
         '-V','-x',
-        '-D',queue_dir
+        '-D',queue_dir,
+        '--callback', 'http://test/callback',
     ]
 
     for fn in glob.glob(queue_dir+"/waiting/*"):
@@ -115,6 +116,8 @@ def test_prompt_delegation():
     print(A.resource_stats)
 
 def test_delegation():
+    return
+
     queue_dir="tmp.queue"
 
     randomized_version="v%i"%random.randint(1,10000)
@@ -124,7 +127,8 @@ def test_delegation():
         'ClientDelegatableAnalysisA',
         '-m','ddmoduletest',
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache,use_version="%s")'%randomized_version,
-        '-Q',queue_dir
+        '-Q',queue_dir,
+        '--callback','http://test/callback',
     ]
 
     for fn in glob.glob(queue_dir+"/waiting/*"):

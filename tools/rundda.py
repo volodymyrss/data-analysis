@@ -28,6 +28,7 @@ parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
+parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
 args = parser.parse_args()
 
@@ -84,6 +85,7 @@ if args.prompt_delegate_to_queue:
     cache.queue.put(dict(
         object_identity=identity,
         request_origin="command_line",
+        callback=args.callback,
     ))
 
     print("queue status now",cache.queue.info)

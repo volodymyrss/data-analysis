@@ -39,21 +39,30 @@ class QueueCacheWorker(object):
     def load_queue(self):
         self.queue = fsqueue.Queue(self.queue_directory)
 
-    def run_task(self,object_identity):
+    def process_callback(self,task_data,result):
+        pass
+
+    def run_task(self,task_data):
+        object_identity=task_data['object_identity']
+
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
 
         print("emerged object:",A)
 
-        return A.get(requested_by=[repr(self)])
+        result=A.get(requested_by=[repr(self)])
+        self.process_callback(task_data,result)
+
+        return result
 
 
     def run_once(self):
-        object_identity=self.queue.get()['object_identity']
+        task_data=self.queue.get()
+        object_identity=task_data['object_identity']
 
         print("object identity",object_identity)
 
-        self.run_task(object_identity)
+        self.run_task(task_data)
         self.queue.task_done()
 
     def run_all(self,burst=True,wait=1):
