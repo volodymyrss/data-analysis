@@ -28,8 +28,9 @@ from dataanalysis.analysisfactory import AnalysisFactory
 from dataanalysis import printhook
 from dataanalysis.printhook import decorate_method_log,log,debug_print
 
+from dataanalysis.callback import CallbackHook
 
-dda_hooks=[]
+dda_hooks=[CallbackHook()]
 
 Cache = cache_core.CacheNoIndex()
 TransientCacheInstance = cache_core.TransientCache()
@@ -704,6 +705,10 @@ class DataAnalysis(object):
                     return None
             else:
                 log("disabled self.rename_output_unique",level='cache')
+
+            self.process_hooks("top", self, message="restored from cache", resource_stats=dict(enumerate(self._da_resource_stats)),
+                         hashe=getattr(self, '_da_expected_full_hashe', "unknown"))
+
             return r
         return r # twice
 
@@ -869,9 +874,7 @@ class DataAnalysis(object):
         self.cache.report_analysis_state(self,"done")
 
     def process_run_main(self):
-        for dda_hook in dda_hooks:
-            log("running hook",dda_hook,self,message="main starting")
-            dda_hook("top",self,message="main starting",hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
+        self.process_hooks("top",self,message="main starting",hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
         #self.runtime_update('running')
         if self.abstract:
@@ -896,8 +899,7 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
-            for dda_hook in dda_hooks:
-                dda_hook("top",self,message="analysis exception",exception=repr(ae))
+            self.process_hooks("top",self,message="analysis exception",exception=repr(ae))
         except Exception as ex:
             #os.system("ls -ltor")
             self.stop_main_watchdog()
@@ -909,9 +911,8 @@ class DataAnalysis(object):
                 self.report_runtime("failed "+repr(ex))
             except Exception:
                 print("unable to report exception!")
-            
-            for dda_hook in dda_hooks:
-                dda_hook("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue())
+
+            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue())
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
@@ -947,10 +948,8 @@ class DataAnalysis(object):
                 if isinstance(r,DataAnalysis):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
-        
-        for dda_hook in dda_hooks:
-            log("running hook",dda_hook,"top",self,message="main done")
-            dda_hook("top",self,message="main done",resource_stats=dict(enumerate(self._da_resource_stats)),hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
+
+        self.process_hooks("top",self,message="main done",resource_stats=dict(enumerate(self._da_resource_stats)),hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1000,22 +999,6 @@ class DataAnalysis(object):
 
     def process_list_delegated_inputs(self,input):
         return [] # disabled
-
-        # walk input recursively
-        if isinstance(input,list) or isinstance(input,tuple):
-            delegated_inputs=[]
-            for input_item in input:
-                delegated_inputs+=self.process_list_delegated_inputs(input_item)
-            return delegated_inputs
-
-        if isinstance(input,DataAnalysis):
-            d=input.get_delegation()
-            if d is not None:
-                log("input delegated:",input,d)
-                return [d]
-            return []
-
-        raise Exception("can not understand input: "+repr(input))
 
     def process_list_analysis_exceptions(self,input):
         # walk input recursively
@@ -1120,6 +1103,23 @@ class DataAnalysis(object):
     def resource_stats(self):
         return self._da_resource_summary
 
+    def set_callback(self,callback_url):
+        if self._da_callbacks is None:
+            self._da_callbacks=[]
+
+        if isinstance(callback_url,list):
+            for u in callback_url:
+                self.set_callback(u)
+        else:
+            if callback_url not in self._da_callbacks:
+                self._da_callbacks.append(callback_url)
+
+    def process_hooks(self,*args,**kwargs):
+        for dda_hook in dda_hooks:
+            log("running hook", dda_hook, self)
+            dda_hook(*args,**kwargs)
+
+
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         log(render("{BLUE}PROCESS{/} "+repr(self)))
 
@@ -1129,9 +1129,15 @@ class DataAnalysis(object):
         log('cache assumptions:',AnalysisFactory.cache_assumptions,'{log:top}')
         log('object assumptions:',self.assumptions,'{log:top}')
 
+        if 'callback_url' in extra:
+            log("setting callback from process:",extra['callback_url'])
+            self.set_callback(extra['callback_url'])
 
         restore_config=self.process_restore_config(restore_config)
         restore_rules=self.process_restore_rules(restore_rules,extra)
+
+        if restore_rules['explicit_input_required']:
+            self.process_hooks("top", self, message="started object processing",hashe=getattr(self, '_da_expected_full_hashe', "unknown"))
 
         log(render("{BLUE}requested "+("OUTPUT" if restore_rules['output_required'] else "")+" by{/} "+" ".join(requested_by)),'{log:top}')
         requested_by=[("+" if restore_rules['output_required'] else "-")+self.get_version()]+requested_by
@@ -1148,12 +1154,20 @@ class DataAnalysis(object):
 
             #### process input
 
+            if restore_rules['explicit_input_required']:
+                self.process_hooks("top", self, message="treating dependencies",
+                         hashe=getattr(self, '_da_expected_full_hashe', "unknown"))
+
             input_hash,input=self.process_input(obj=None,
                                                 process_function=process_function,
                                                 restore_rules=update_dict(restore_rules,dict(
                                                                                                 output_required=False,
                                                                                                 can_delegate=restore_rules['can_delegate_input'])),
                                                 requested_by=["input_of"]+requested_by)
+
+            if restore_rules['explicit_input_required']:
+                self.process_hooks("top", self, message="dependencies ready",
+                         hashe=getattr(self, '_da_expected_full_hashe', "unknown"))
 
         #### /process input
 
@@ -1206,11 +1220,6 @@ class DataAnalysis(object):
                                         #restore_rules=update_dict(restore_rules,dict(output_required=True,explicit_input_required=True)) )
                     ##  /process
 
-                delegated_inputs=self.process_list_delegated_inputs(input)
-                if delegated_inputs!=[]:
-                    log("some input was delegated:",delegated_inputs)
-                    log(render("{RED}waiting for delegated input!{/}"))
-                    self._da_delegated_input=delegated_inputs
 
                 if restore_rules['can_delegate'] and self.cached:
                     log("will delegate this analysis")
@@ -1219,10 +1228,6 @@ class DataAnalysis(object):
                     return fih,self # RETURN!
 
              # check if can and inpust  relaxe
-
-                if delegated_inputs!=[]:
-                    log("analysis design problem! input was delegated but the analysis can not be. wait until the input is done!")
-                    raise
 
                 self.process_verify_inputs(input)
 
@@ -1330,9 +1335,7 @@ class DataAnalysis(object):
         self.note_resource_stats({'resource_type':'usertime','seconds':self._da_resource_summary['process_tspent']})
         self.summarize_resource_stats()
         
-        for dda_hook in dda_hooks:
-            log("running hook",dda_hook,self)
-            dda_hook("top",self,message="processing over",resource_stats=self._da_resource_summary,hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
+        #self.process_hooks("top",self,message="processing over",resource_stats=self._da_resource_summary,hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
         return_object=self
         if substitute_object is not None:
@@ -1348,6 +1351,16 @@ class DataAnalysis(object):
         self.alias=hash2
         AnalysisFactory.register_alias(hash1,hash2)
 
+    _da_callbacks=None
+
+    @property
+    def callbacks(self):
+        if self._da_callbacks is None:
+            return []
+        else:
+            print("callbacks",self._da_callbacks)
+            assert len(self._da_callbacks)<3
+            return self._da_callbacks
 
     def prepare_restore_config(self,restore_config):
         if restore_config is None:
@@ -1522,7 +1535,7 @@ class DataAnalysis(object):
             log("item:",item._da_locally_complete)
         except Exception as e:
             raise Exception(str(item)+" has no locally complete!")
-        input_hash,newitem=item.process(restore_rules=rr,restore_config=restore_config,requested_by=requested_by) # recursively for all inputs process input
+        input_hash,newitem=item.process(restore_rules=rr,restore_config=restore_config,requested_by=requested_by, callback_url=self.callbacks) # recursively for all inputs process input
         log("process_input finishing at the end",input_hash,newitem)
 
         return input_hash,newitem # return path to the item (hash) and the item

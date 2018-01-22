@@ -4,7 +4,6 @@ import fsqueue
 
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
-import dataanalysis.printhook
 from dataanalysis.caches.delegating import DelegatingCache
 
 
@@ -19,10 +18,12 @@ class QueueCache(DelegatingCache):
         return self.queue.put(dict(
             object_identity=obj.get_identity().serialize(),
             request_origin="undefined",
+            callbacks=obj.callbacks,
         ))
 
     def wipe_queue(self):
         self.queue.wipe()
+
 
     def __repr__(self):
         return "["+self.__class__.__name__+": queue in \""+self.queue_directory+"\"]"
@@ -50,10 +51,13 @@ class QueueCacheWorker(object):
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
 
+        for url in task_data['callbacks']:
+            print("setting object callback",A,url)
+            A.set_callback(url)
+
         print("emerged object:",A)
 
         result=A.get(requested_by=[repr(self)])
-        self.process_callback(task_data,result)
 
         return result
 

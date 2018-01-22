@@ -161,7 +161,7 @@ if args.delegate_to_queue is not None:
     A.read_caches.append(qcache.__class__)
 
 try:
-    A.process(output_required=True,requested_by=["command_line"])
+    A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback)
 except dataanalysis.UnhandledAnalysisException as e:
     yaml.dump(
               dict(
