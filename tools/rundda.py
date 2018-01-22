@@ -82,7 +82,7 @@ if args.prompt_delegate_to_queue:
     print("queue status before", cache.queue.info)
 
     cache.queue.put(dict(
-        object_identity=identity,
+        object_identity=identity.serialize(),
         request_origin="command_line",
         callback=args.callback,
     ))
@@ -136,7 +136,7 @@ for a in args.force_run:
         pass
 
 for a in args.force_produce:
-    print "force produce",a
+    print("force produce",a)
     try:
         b= core.AnalysisFactory[a[0]]()
         b.__class__.read_caches=[]
@@ -144,7 +144,7 @@ for a in args.force_produce:
         pass
 
 for a in args.disable_run:
-    print "disable run",a
+    print("disable run",a)
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
@@ -156,7 +156,9 @@ for inj_fn, in args.inject:
 
 if args.delegate_to_queue is not None:
     from dataanalysis.caches.queue import QueueCache
-    A.cache.tail_parent(QueueCache(args.delegate_to_queue))
+    qcache=QueueCache(args.delegate_to_queue)
+    A.cache.tail_parent(qcache)
+    A.read_caches.append(qcache.__class__)
 
 try:
     A.process(output_required=True,requested_by=["command_line"])

@@ -41,6 +41,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         return "[AnalysisFactory: %i]" % len(self.cache)
 
     def reset(self):
+        self.comment=""
         self.cache = {}
         self.cache_assumptions=[]
         self.cache_stack=[]

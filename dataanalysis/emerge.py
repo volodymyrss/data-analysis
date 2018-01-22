@@ -20,7 +20,7 @@ def import_ddmodules(module_names=None):
         log("module",dd_module[1],"as",dd_module[0],"set to global namespace")
         globals()[dd_module[1]]=dd_module[0]
 
-        reload(dd_module[0])
+ #       reload(dd_module[0])
 
     return modules
 

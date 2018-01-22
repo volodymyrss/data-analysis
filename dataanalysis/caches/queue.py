@@ -16,8 +16,8 @@ class QueueCache(DelegatingCache):
         self.queue = fsqueue.Queue(self.queue_directory)
 
     def delegate(self, hashe, obj):
-        self.queue.put(dict(
-            object_identity=obj.get_identity(),
+        return self.queue.put(dict(
+            object_identity=obj.get_identity().serialize(),
             request_origin="undefined",
         ))
 
@@ -44,7 +44,8 @@ class QueueCacheWorker(object):
         pass
 
     def run_task(self,task_data):
-        object_identity=task_data['object_identity']
+        object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
+        da.reset()
 
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
@@ -96,6 +97,7 @@ if __name__ == "__main__":
     parser.add_argument("queue",default="./queue")
     parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
     parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
+    parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
 
     args=parser.parse_args()
 
@@ -103,9 +105,14 @@ if __name__ == "__main__":
         #dataanalysis.printhook.global_permissive_output=True
         da.debug_output()
 
+    qcworker = QueueCacheWorker(args.queue)
+    if args.watch>0:
+        while True:
+            print(qcworker.queue.info)
+            time.sleep(args.watch)
+    else:
+        qcworker.run_all(burst=args.burst_mode)
 
-    qcworker=QueueCacheWorker(args.queue)
-    qcworker.run_all(burst=args.burst_mode)
 
 
 

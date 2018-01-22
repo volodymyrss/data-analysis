@@ -188,12 +188,13 @@ class AnalysisDelegatedException(Exception):
         if self.hashe[0] == "list":
             return "; ".join([repr(k) for k in self.hashe[1:]])
 
-    def __init__(self,hashe,resources=None,comment=None,origin=None):
+    def __init__(self,hashe,resources=None,comment=None,origin=None, delegation_state=None):
         self.hashe=hashe
         self.resources=[] if resources is None else resources
         self.source_exceptions=None
         self._comment=comment
         self.origin=origin
+        self.delegation_state=delegation_state
 
     @property
     def comment(self):
@@ -219,8 +220,10 @@ class AnalysisDelegatedException(Exception):
         return obj
 
     def __repr__(self):
-        return "[{}: {}; {}]".format(self.__class__.__name__,self.signature, self.comment)
+        return "[{}: {}; {}; {}]".format(self.__class__.__name__,self.signature, self.comment, self.delegation_state)
 
+    def __str__(self):
+        return repr(self)
 
 class decorate_all_methods(type):
     def __new__(cls, name, bases, local):
@@ -267,6 +270,21 @@ class DataAnalysisIdentity(object):
         return "[%s: %s; %s]"%(self.factory_name,
                                ",".join([m for o,m,l in self.modules]),
                                ",".join([a if a is not None else "custom eval" for a,b in self.assumptions]))
+
+    def serialize(self):
+        return self.__dict__
+
+    @classmethod
+    def from_dict(cls,d):
+        obj=cls(
+            factory_name=d['factory_name'],
+            full_name=d['full_name'],
+            modules=d['modules'],
+            assumptions=d['assumptions'],
+            expected_hashe=d['expected_hashe'],
+        )
+        return obj
+
 
 class DataAnalysis(object):
     __metaclass__ = decorate_all_methods
@@ -1098,6 +1116,10 @@ class DataAnalysis(object):
     def expected_hashe(self):
         return self.process(output_required=False)[0]
 
+    @property
+    def resource_stats(self):
+        return self._da_resource_summary
+
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
         log(render("{BLUE}PROCESS{/} "+repr(self)))
 
@@ -1135,7 +1157,10 @@ class DataAnalysis(object):
 
         #### /process input
 
-        self.process_t0=time.time()
+        if not hasattr(self,'_da_resource_summary'):
+            self._da_resource_summary={}
+
+        self._da_resource_summary['process_t0']=time.time()
 
         log("input hash:",input_hash)
         log("input objects:",input)
@@ -1300,14 +1325,14 @@ class DataAnalysis(object):
 
         self.process_checkout_assumptions()
 
-        self.process_tspent=time.time()-self.process_t0
-        log(render("{MAGENTA}process took in total{/}"),self.process_tspent)
-        self.note_resource_stats({'resource_type':'usertime','seconds':self.process_tspent})
+        self._da_resource_summary['process_tspent']=time.time()-self._da_resource_summary['process_t0']
+        log(render("{MAGENTA}process took in total{/}"),self._da_resource_summary['process_tspent'])
+        self.note_resource_stats({'resource_type':'usertime','seconds':self._da_resource_summary['process_tspent']})
         self.summarize_resource_stats()
         
         for dda_hook in dda_hooks:
             log("running hook",dda_hook,self)
-            dda_hook("top",self,message="processing over",resource_stats=self.resource_stats,hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
+            dda_hook("top",self,message="processing over",resource_stats=self._da_resource_summary,hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
 
         return_object=self
         if substitute_object is not None:
@@ -1536,12 +1561,15 @@ class DataAnalysis(object):
             requested_by=self._da_requested_by,
         )
 
-        self.resource_stats={
+        if not hasattr(self,'_da_resource_summary'):
+            self._da_resource_summary={}
+
+        self._da_resource_summary.update({
                                 'total_usertime':total_usertime,
                                 'total_runtime':total_runtime,
                                 'total_cachetime':total_cachetime,
                                 'main_executed_on':main_exectured_on,
-                            }
+                            })
 
 
     def __call__(self):
