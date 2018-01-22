@@ -15,11 +15,12 @@ def import_ddmodules(module_names=None):
 
         log("importing", dd_module_name)
         dd_module=importing.load_by_name(dd_module_name)
-        reload(dd_module[0])
         modules.append(dd_module[0])
 
         log("module",dd_module[1],"as",dd_module[0],"set to global namespace")
         globals()[dd_module[1]]=dd_module[0]
+
+        reload(dd_module[0])
 
     return modules
 

@@ -2,6 +2,7 @@ import time
 
 import fsqueue
 
+import dataanalysis.core as da
 import dataanalysis.emerge as emerge
 import dataanalysis.printhook
 from dataanalysis.caches.delegating import DelegatingCache
@@ -79,9 +80,10 @@ class QueueCacheWorker(object):
                     continue
 
             try:
-                self.run_task(task['object_identity'])
+                self.run_task(task)
             except Exception as e:
                 print("task failed:",e)
+                raise
                 self.queue.task_failed() # history and current status
             else:
                 self.queue.task_done()
@@ -98,7 +100,8 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     if args.very_verbose:
-        dataanalysis.printhook.global_permissive_output=True
+        #dataanalysis.printhook.global_permissive_output=True
+        da.debug_output()
 
 
     qcworker=QueueCacheWorker(args.queue)

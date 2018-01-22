@@ -124,6 +124,7 @@ def import_analysis_module(name,version):
 
 
 def load_by_name(m, local_gitroot=None,remote_git_root=None):
+    log("requested to load by name:",m)
     if isinstance(m,list):
         if m[0]=="filesystem":
             if m[2] is not None:
@@ -135,6 +136,9 @@ def load_by_name(m, local_gitroot=None,remote_git_root=None):
             else:
                 m=m[1]
                 log("using generic load from filesystem:",m[1])
+        else:
+            m=m[0]+"://"+m[1]
+            log("loading with provider:",m)
 
     if m.startswith("/"):
         log("will import modul from cache")
