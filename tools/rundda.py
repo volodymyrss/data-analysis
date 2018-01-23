@@ -165,7 +165,7 @@ if args.prompt_delegate_to_queue:
 
 import requests
 
-if args.callback and args.callback.startswith("file://"):
+if args.callback and args.callback.startswith("http://"):
     params = dict(
         level='modules',
         node=args.object_name,
@@ -182,7 +182,7 @@ for m in modules:
     module,name= importing.load_by_name(m)
     globals()[name]=module
 
-if args.callback and args.callback.startswith("file://"):
+if args.callback and args.callback.startswith("http://"):
     params = dict(
         level='modules',
         node=args.object_name,
