@@ -707,7 +707,8 @@ class DataAnalysis(object):
                 log("disabled self.rename_output_unique",level='cache')
 
             self.process_hooks("top", self, message="restored from cache", resource_stats=dict(enumerate(self._da_resource_stats)),
-                         hashe=getattr(self, '_da_expected_full_hashe', "unknown"))
+                         hashe=getattr(self, '_da_expected_full_hashe', "unknown"),
+                         state="done")
 
             return r
         return r # twice
@@ -899,7 +900,7 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
-            self.process_hooks("top",self,message="analysis exception",exception=repr(ae))
+            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="failed")
         except Exception as ex:
             #os.system("ls -ltor")
             self.stop_main_watchdog()
@@ -912,7 +913,7 @@ class DataAnalysis(object):
             except Exception:
                 print("unable to report exception!")
 
-            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue())
+            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="failed")
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
@@ -949,7 +950,7 @@ class DataAnalysis(object):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
 
-        self.process_hooks("top",self,message="main done",resource_stats=dict(enumerate(self._da_resource_stats)),hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
+        self.process_hooks("top",self,message="main done",resource_stats=dict(enumerate(self._da_resource_stats)),hashe=getattr(self,'_da_expected_full_hashe',"unknown"),state="done")
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1358,8 +1359,7 @@ class DataAnalysis(object):
         if self._da_callbacks is None:
             return []
         else:
-            print("callbacks",self._da_callbacks)
-            assert len(self._da_callbacks)<3
+            log("callbacks",self._da_callbacks)
             return self._da_callbacks
 
     def prepare_restore_config(self,restore_config):

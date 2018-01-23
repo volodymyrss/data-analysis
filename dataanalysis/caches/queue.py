@@ -1,6 +1,7 @@
 import time
 
 import fsqueue
+import traceback
 
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
@@ -15,11 +16,15 @@ class QueueCache(DelegatingCache):
         self.queue = fsqueue.Queue(self.queue_directory)
 
     def delegate(self, hashe, obj):
-        return self.queue.put(dict(
-            object_identity=obj.get_identity().serialize(),
-            request_origin="undefined",
-            callbacks=obj.callbacks,
-        ))
+        return self.queue.put(
+            dict(
+                object_identity=obj.get_identity().serialize(),
+            ),
+            submission_data=dict(
+                callbacks=obj.callbacks,
+                request_origin="undefined",
+            ),
+        )
 
     def wipe_queue(self):
         self.queue.wipe()
@@ -41,23 +46,25 @@ class QueueCacheWorker(object):
     def load_queue(self):
         self.queue = fsqueue.Queue(self.queue_directory)
 
-    def process_callback(self,task_data,result):
-        pass
 
-    def run_task(self,task_data):
+    def run_task(self,task):
+        task_data=task.task_data
         object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
         da.reset()
 
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
 
-        for url in task_data['callbacks']:
+        for url in task.submission_info['callbacks']:
             print("setting object callback",A,url)
             A.set_callback(url)
 
         print("emerged object:",A)
 
-        result=A.get(requested_by=[repr(self)])
+        try:
+            result=A.get(requested_by=[repr(self)])
+        except da.AnalysisException:
+            raise
 
         return result
 
@@ -88,8 +95,15 @@ class QueueCacheWorker(object):
                 self.run_task(task)
             except Exception as e:
                 print("task failed:",e)
-                raise
-                self.queue.task_failed() # history and current status
+                traceback.print_exc()
+
+                def update(task):
+                    task.execution_info = dict(
+                        status="failed",
+                        exception=(e.__class__.__name__,e.message,e.args),
+                    )
+
+                self.queue.task_failed(update)
             else:
                 self.queue.task_done()
 

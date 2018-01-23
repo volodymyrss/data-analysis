@@ -7,6 +7,8 @@ import sys
 import yaml
 
 from dataanalysis.caches.queue import QueueCache
+import dataanalysis.callback
+
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -65,6 +67,7 @@ if args.very_verbose:
 
 modules=[m[0] for m in args.module]
 
+
 if args.prompt_delegate_to_queue:
     identity=dataanalysis.DataAnalysisIdentity(
         factory_name=args.object_name,
@@ -81,33 +84,86 @@ if args.prompt_delegate_to_queue:
     print("cache:",cache,"from",args.prompt_delegate_to_queue)
     print("queue status before", cache.queue.info)
 
-    cache.queue.put(dict(
-        object_identity=identity.serialize(),
-        request_origin="command_line",
-        callback=args.callback,
-    ))
+    delegation_state=cache.queue.put(
+        dict(
+            object_identity=identity.serialize(),
+
+        ),
+        submission_data=dict(
+            request_origin="command_line",
+            callbacks=[args.callback],
+        )
+    )
 
     print("queue status now",cache.queue.info)
     print("put in cache, exiting")
 
     e=dataanalysis.AnalysisDelegatedException(None)
 
-    print("delegation exception", e)
-    yaml.dump(
-        dict(
-            exception_type="delegation",
-            exception=repr(e),
-            hashe=e.hashe,
-            resources=[],
-            source_exceptions=None,
-            comment=None,
-            origin=None,
-        ),
-        open("exception.yaml", "w"),
-        default_flow_style=False,
-    )
+    if delegation_state is not None and any([d['state']=="done" for d in delegation_state]):
+        print("the prompt delegation already done, disabling run and hoping for results")
+        args.disable_run.append([args.object_name])
+    elif delegation_state is not None and any([d['state'] == "failed" for d in delegation_state]):
+        print("the prompt delegation already done and failed, raising exception")
 
-    raise e
+        failures=[d for d in delegation_state if d['state'] == "failed"]
+
+        if len(failures)>1:
+            yaml.dump(
+                dict(
+                    exception_type="queue",
+                    exception=repr(e),
+                    hashe=e.hashe,
+                    resources=[],
+                    source_exceptions=None,
+                    comment=None,
+                    origin=None,
+                    delegation_state=delegation_state,
+                ),
+                open("exception.yaml", "w"),
+                default_flow_style=False,
+            )
+        else:
+            failure=failures[0]
+            failed_task=yaml.load(open(failure['fn']))
+            print("failed task",failed_task)
+            failed_task_execution_info=failed_task['execution_info']
+
+            yaml.dump(
+                dict(
+                    exception_type="analysis",
+                    exception=failed_task_execution_info['exception'][0],
+                    hashe=None,
+                    resources=[],
+                    source_exceptions=None,
+                    comment=None,
+                    origin=None,
+                    delegation_state=failure['state'],
+                ),
+                open("exception.yaml", "w"),
+                default_flow_style=False,
+            )
+            sys.exit(1)
+
+        #args.disable_run.append([args.object_name])
+    else:
+        print("delegation exception", e)
+        yaml.dump(
+            dict(
+                exception_type="delegation",
+                exception=repr(e),
+                hashe=e.hashe,
+                resources=[],
+                source_exceptions=None,
+                comment=None,
+                origin=None,
+                delegation_state=delegation_state,
+            ),
+            open("exception.yaml", "w"),
+            default_flow_style=False,
+        )
+
+        raise e
 
 for m in modules:
     print "importing",m
@@ -123,9 +179,13 @@ if len(args.assume)>0:
     print("assumptions:",assumptions)
     core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
 
+
 A= core.AnalysisFactory[args.object_name]()
 
-print A
+dataanalysis.callback.Callback.set_callback_accepted_classes([A.__class__])
+
+
+print(A)
 
 for a in args.force_run:
     print "force run",a
