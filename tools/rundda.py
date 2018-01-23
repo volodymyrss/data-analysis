@@ -157,7 +157,7 @@ if args.prompt_delegate_to_queue:
                 source_exceptions=None,
                 comment=None,
                 origin=None,
-                delegation_state=delegation_state,
+                delegation_state=delegation_state[0]['state'] if delegation_state is not None else 'submitted',
             ),
             open("exception.yaml", "w"),
             default_flow_style=False,
@@ -165,12 +165,32 @@ if args.prompt_delegate_to_queue:
 
         raise e
 
+import requests
+
+if args.callback:
+    params = dict(
+        level='modules',
+        node=args.object_name,
+        message="loading modules",
+    )
+    requests.get(args.callback+ "/progress",
+                 params=params)
+
 for m in modules:
     print "importing",m
 
     sys.path.append(".")
     module,name= importing.load_by_name(m)
     globals()[name]=module
+
+if args.callback:
+    params = dict(
+        level='modules',
+        node=args.object_name,
+        message="done loading modules",
+    )
+    requests.get(args.callback+ "/progress",
+                 params=params)
 
 
 
