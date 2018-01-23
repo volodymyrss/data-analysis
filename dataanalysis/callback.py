@@ -1,6 +1,8 @@
-from dataanalysis.printhook import log
 import datetime
+
 import requests
+
+from dataanalysis.printhook import log
 
 
 class CallbackHook(object):
@@ -76,7 +78,8 @@ class Callback(object):
                 message=message,
             )
             params.update(self.extract_data(obj))
-            requests.get(self.url+"/"+data.get('state','progress'),
+            params['action']=data.get('state', 'progress')
+            requests.get(self.url,
                          params=params)
         else:
             raise Exception("unknown callback method",self.url)

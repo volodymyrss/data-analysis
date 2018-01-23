@@ -7,8 +7,6 @@ import sys
 import yaml
 
 from dataanalysis.caches.queue import QueueCache
-import dataanalysis.callback
-
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -167,13 +165,14 @@ if args.prompt_delegate_to_queue:
 
 import requests
 
-if args.callback:
+if args.callback and args.callback.startswith("file://"):
     params = dict(
         level='modules',
         node=args.object_name,
         message="loading modules",
+        action="progress",
     )
-    requests.get(args.callback+ "/progress",
+    requests.get(args.callback,
                  params=params)
 
 for m in modules:
@@ -183,13 +182,14 @@ for m in modules:
     module,name= importing.load_by_name(m)
     globals()[name]=module
 
-if args.callback:
+if args.callback and args.callback.startswith("file://"):
     params = dict(
         level='modules',
         node=args.object_name,
         message="done loading modules",
+        action="progress",
     )
-    requests.get(args.callback+ "/progress",
+    requests.get(args.callback,
                  params=params)
 
 
