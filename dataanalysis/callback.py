@@ -34,6 +34,8 @@ class Callback(object):
                 log("adding accepted class",c)
                 cls.callback_accepted_classes.append(c)
 
+        log("callback currently accepts classes",cls.callback_accepted_classes)
+
     def __init__(self,url):
         self.url=url
 
@@ -45,14 +47,21 @@ class Callback(object):
             return True
 
         for accepted_class in self.callback_accepted_classes:
-            if issubclass(obj.__class__, accepted_class):
-                return True
+            try:
+                if issubclass(obj.__class__, accepted_class):
+                    return True
+            except Exception as e:
+                log("unable to filter",obj,obj.__class__,accepted_class)
+                raise
 
-        return True
+        return False
 
     def process_callback(self,level,obj,message,data):
         if self.filter_callback(level,obj,message,data):
             return self.process_filtered(level,obj,message,data)
+
+    def extract_data(self,obj):
+        return obj._da_locally_complete
 
     def process_filtered(self,level,obj,message,data):
         if self.url.startswith("file://"):
@@ -61,12 +70,14 @@ class Callback(object):
                 f.write(str(datetime.datetime.now())+" "+level+": "+" in "+str(obj)+" got "+message+"; "+repr(data)+"\n")
 
         elif self.url.startswith("http://"):
+            params=dict(
+                level=level,
+                node=obj.get_signature(),
+                message=message,
+            )
+            params.update(self.extract_data(obj))
             requests.get(self.url+"/"+data.get('state','progress'),
-                         params=dict(
-                             level=level,
-                             node=obj.get_signature(),
-                             message=message,
-                         ))
+                         params=params)
         else:
             raise Exception("unknown callback method",self.url)
 

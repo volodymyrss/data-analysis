@@ -6,6 +6,7 @@ import traceback
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
 from dataanalysis.caches.delegating import DelegatingCache
+import dataanalysis.callback
 
 
 class QueueCache(DelegatingCache):
@@ -54,6 +55,8 @@ class QueueCacheWorker(object):
 
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
+
+        dataanalysis.callback.Callback.set_callback_accepted_classes([da.byname(object_identity.factory_name).__class__])
 
         for url in task.submission_info['callbacks']:
             print("setting object callback",A,url)
