@@ -706,7 +706,8 @@ class DataAnalysis(object):
             else:
                 log("disabled self.rename_output_unique",level='cache')
 
-            self.process_hooks("top", self, message="restored from cache", resource_stats=dict(enumerate(self._da_resource_stats)),
+            self.process_hooks("top", self, message="restored from cache",
+                         resource_stats=dict(enumerate(self._da_resource_stats)) if self._da_resource_stats is not None else {},
                          hashe=getattr(self, '_da_expected_full_hashe', "unknown"),
                          state="done")
 

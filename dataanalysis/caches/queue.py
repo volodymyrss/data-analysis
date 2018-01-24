@@ -1,12 +1,12 @@
 import time
-
-import fsqueue
 import traceback
 
+import fsqueue
+
+import dataanalysis.callback
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
 from dataanalysis.caches.delegating import DelegatingCache
-import dataanalysis.callback
 
 
 class QueueCache(DelegatingCache):
@@ -27,8 +27,8 @@ class QueueCache(DelegatingCache):
             ),
         )
 
-    def wipe_queue(self):
-        self.queue.wipe()
+    def wipe_queue(self,kinds=["waiting"]):
+        self.queue.wipe(kinds)
 
 
     def __repr__(self):
@@ -73,12 +73,12 @@ class QueueCacheWorker(object):
 
 
     def run_once(self):
-        task_data=self.queue.get()
-        object_identity=task_data['object_identity']
+        task=self.queue.get()
+        object_identity=task.task_data['object_identity']
 
         print("object identity",object_identity)
 
-        self.run_task(task_data)
+        self.run_task(task)
         self.queue.task_done()
 
     def run_all(self,burst=True,wait=1):

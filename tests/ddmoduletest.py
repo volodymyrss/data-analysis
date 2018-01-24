@@ -154,5 +154,5 @@ class ChainedServerProducer(da.DataAnalysis):
 
 class GenerativeAnalysis(da.DataAnalysis):
     def main(self):
-        self.data=AAnalysis(use_assumed_data="data1"), AAnalysis(use_assumed_data="data2")
+        self.data=AAnalysis(use_assumed_data="data1"), BAnalysis(use_assumed_data="data2")
         print("cache of generated:",self.data[0].cache)

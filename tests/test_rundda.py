@@ -151,15 +151,11 @@ def test_delegation():
     p.wait()
     print(p.stdout.read())
 
-    assert os.path.exists(callback_file)
-    callback_info=open(callback_file).readlines()
-    print(callback_info)
-    assert len(callback_info)==1
-
     assert os.path.exists(exception_report)
-    recovered_exception=yaml.load(open(exception_report))
+    recovered_exception = yaml.load(open(exception_report))
 
     print(recovered_exception)
+
 
     jobs=(glob.glob(queue_dir+"/waiting/*"))
     assert len(jobs)==1
@@ -176,13 +172,15 @@ def test_delegation():
 
     qw.run_once()
 
-    jobs = (glob.glob(queue_dir + "/waiting/*"))
-    assert len(jobs) == 0
-
     assert os.path.exists(callback_file)
     callback_info = open(callback_file).readlines()
     print(callback_info)
-    assert len(callback_info) == 0
+    assert len(callback_info) == 5
+
+
+    jobs = (glob.glob(queue_dir + "/waiting/*"))
+    assert len(jobs) == 0
+
 
     # run again, expecting from cache
     exception_report = "exception.yaml"
