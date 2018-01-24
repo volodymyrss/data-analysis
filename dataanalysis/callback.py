@@ -66,6 +66,9 @@ class Callback(object):
         return obj._da_locally_complete
 
     def process_filtered(self,level,obj,message,data):
+        if self.url is None:
+            return
+
         if self.url.startswith("file://"):
             fn=self.url[len("file://"):]
             with open(fn,'a') as f:
