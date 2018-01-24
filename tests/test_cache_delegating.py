@@ -83,7 +83,8 @@ def test_queue_cache_generative():
 
 
     print(q_cache.queue.list())
-    assert len(q_cache.queue.list())==2
+#    assert len(q_cache.queue.list())==2
+    assert len(q_cache.queue.list())==1
 
     # worker part
 
