@@ -41,6 +41,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         return "[AnalysisFactory: %i]" % len(self.cache)
 
     def reset(self):
+        self.comment=""
         self.cache = {}
         self.cache_assumptions=[]
         self.cache_stack=[]
@@ -311,6 +312,17 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         return self.definitions
 
         #   return [[a,b] for a,b in self.aliases if contains(h0,a)]
+
+    def format_module_description(self,modules):
+        module_description = []
+        for m in modules:
+            if m.startswith("git://"):
+                name=m[len("git://"):]
+                module_description.append(["git", name, None])
+            else:
+                module_description.append(['filesystem', m, None])
+
+        return module_description
 
     def get_module_description(self):
         module_description = []

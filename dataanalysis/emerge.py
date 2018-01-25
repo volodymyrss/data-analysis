@@ -15,8 +15,12 @@ def import_ddmodules(module_names=None):
 
         log("importing", dd_module_name)
         dd_module=importing.load_by_name(dd_module_name)
-        reload(dd_module[0])
         modules.append(dd_module[0])
+
+        log("module",dd_module[1],"as",dd_module[0],"set to global namespace")
+        globals()[dd_module[1]]=dd_module[0]
+
+ #       reload(dd_module[0])
 
     return modules
 
@@ -37,14 +41,21 @@ def emerge_from_identity(identity):
 
     log("assumptions:",identity.assumptions)
 
-    A = da.AnalysisFactory.byname(identity.factory_name)
+    #A = da.AnalysisFactory.byname(identity.factory_name)
 
     for assumption in identity.assumptions:
         log("requested assumption:", assumption)
-        a = da.AnalysisFactory.byname(assumption[0])
-        a.import_data(assumption[1])
-        print(a, "from", assumption)
 
+        if assumption[0] == '':
+            log("ATTENTION: dangerous eval from string",assumption[1])
+            da.AnalysisFactory.WhatIfCopy('queue emergence', eval(assumption[1]))
+        else:
+            a = da.AnalysisFactory.byname(assumption[0])
+            a.import_data(assumption[1])
+
+            print(a, "from", assumption)
+
+    A = da.AnalysisFactory.byname(identity.factory_name)
     producable_hashe=A.get_hashe()
 
     if identity.expected_hashe is None:
