@@ -6,6 +6,7 @@ import fsqueue
 import dataanalysis.callback
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
+from dataanalysis.printhook import log
 from dataanalysis.caches.delegating import DelegatingCache
 
 
@@ -50,6 +51,7 @@ class QueueCacheWorker(object):
 
     def run_task(self,task):
         task_data=task.task_data
+        log("emerging from object_identity",task_data['object_identity'])
         object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
         da.reset()
 
@@ -124,7 +126,7 @@ if __name__ == "__main__":
     args=parser.parse_args()
 
     if args.very_verbose:
-        #dataanalysis.printhook.global_permissive_output=True
+        dataanalysis.printhook.global_permissive_output=True
         da.debug_output()
 
     qcworker = QueueCacheWorker(args.queue)
