@@ -25,7 +25,7 @@ class FileBackend:
         return os.path.getsize(origin)/1024./1024.
     
     def get(self,orig,dest,gz=False):
-        print(orig,"to",dest)
+        log(self,orig,"to",dest)
         if gz:
             open(dest,"w").write(gzip.open(orig).read())
         else:
@@ -35,6 +35,7 @@ class FileBackend:
         os.symlink(orig,dest)
     
     def put(self,orig,dest):
+        log("backend",self,"writing",orig,"to",dest)
         shutil.copy(orig,dest)
     
     def makedirs(self,dirs):

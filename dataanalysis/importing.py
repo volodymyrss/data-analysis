@@ -129,6 +129,10 @@ def load_by_name(m, local_gitroot=None,remote_git_root=None):
             name=m[1]
             fullpath=m[2].replace(".pyc",".py")
             return imp.load_source(name, fullpath), name
+        elif m[0]=="git":
+            m=m[-1]
+        else:
+            raise Exception("unrecognized module definition "+repr(m))
 
     if m.startswith("/"):
         log("will import modul from cache")
