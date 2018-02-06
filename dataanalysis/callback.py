@@ -63,7 +63,9 @@ class Callback(object):
             return self.process_filtered(level,obj,message,data)
 
     def extract_data(self,obj):
-        return obj._da_locally_complete
+        if obj._da_locally_complete is not None:
+            return obj._da_locally_complete
+        return {}
 
     def process_filtered(self,level,obj,message,data):
         if self.url is None:
@@ -82,8 +84,11 @@ class Callback(object):
             )
             params.update(self.extract_data(obj))
             params['action']=data.get('state', 'progress')
-            requests.get(self.url,
-                         params=params)
+            try:
+                requests.get(self.url,
+                             params=params)
+            except requests.ConnectionError as e:
+                log("callback failed:",e)
         else:
             raise Exception("unknown callback method",self.url)
 

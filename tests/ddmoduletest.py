@@ -33,6 +33,9 @@ class ClientDelegatableAnalysisA(da.DataAnalysis):
 
     def main(self):
         self.data = "dataA"
+        if hasattr(self,'data_add'):
+            self.data+=self.data_add
+
         if self.sleep is not None:
             time.sleep(self.sleep)
 

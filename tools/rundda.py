@@ -65,13 +65,18 @@ if args.very_verbose:
 
 modules=[m[0] for m in args.module]
 
+injected_objects=[]
+for inj_fn, in args.inject:
+    print("injecting from",inj_fn)
+    injected_objects.append(json.load(open(inj_fn)))
+
 
 if args.prompt_delegate_to_queue:
     identity=dataanalysis.DataAnalysisIdentity(
         factory_name=args.object_name,
         full_name=args.object_name,
         modules=dataanalysis.AnalysisFactory.format_module_description(modules),
-        assumptions=[('',a[0]) for a in args.assume],
+        assumptions=[('',a[0]) for a in args.assume]+[(a,b) for a,b in injected_objects],
         expected_hashe=None,
     )
 
@@ -228,10 +233,7 @@ for a in args.disable_run:
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
-for inj_fn, in args.inject:
-    print("injecting from",inj_fn)
-    inj_content=json.load(open(inj_fn))
-
+for inj_content, in injected_objects:
     core.AnalysisFactory.inject_serialization(inj_content)
 
 if args.delegate_to_queue is not None:

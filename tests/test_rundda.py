@@ -5,6 +5,7 @@ import subprocess
 import sys
 
 import yaml
+import json
 
 package_root=os.path.dirname(os.path.dirname(__file__))
 
@@ -21,8 +22,6 @@ env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 
 def test_simple():
-    return
-
     cmd=[
         'python',rundda_path,
         'ClientDelegatableAnalysisA',
@@ -40,17 +39,25 @@ def test_simple():
 
 
 def test_prompt_delegation():
-    return
-
     queue_dir="tmp.queue"
 
     randomized_version="v%i"%random.randint(1,10000)
+
+    injection_fn = "injection.json"
+    json.dump(['ClientDelegatableAnalysisA',
+               {
+                   "data_add": "added"
+               }
+               ],
+              open(injection_fn,"w"),
+              )
 
     cmd=[
         'python',rundda_path,
         'ClientDelegatableAnalysisA',
         '-m','ddmoduletest',
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache,use_version="%s")'%randomized_version,
+        '-i',injection_fn,
         '-V','-x',
         '-D',queue_dir,
         '--callback', 'http://test/callback',
@@ -117,6 +124,7 @@ def test_prompt_delegation():
     A.run_if_haveto=False
     A.get()
     assert A._da_output_origin=="cache"
+    assert A.data=="dataAadded"
     print(A.resource_stats)
 
 def test_delegation():
@@ -124,6 +132,9 @@ def test_delegation():
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
+
+
+
 
     cmd=[
         'python',rundda_path,
