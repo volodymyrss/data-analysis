@@ -233,7 +233,7 @@ for a in args.disable_run:
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
-for inj_content, in injected_objects:
+for inj_content in injected_objects:
     core.AnalysisFactory.inject_serialization(inj_content)
 
 if args.delegate_to_queue is not None:
