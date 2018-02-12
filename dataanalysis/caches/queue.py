@@ -6,6 +6,7 @@ import fsqueue
 import dataanalysis.callback
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
+import dataanalysis.graphtools
 from dataanalysis.printhook import log
 from dataanalysis.caches.delegating import DelegatingCache
 
@@ -54,6 +55,8 @@ class QueueCacheWorker(object):
         log("emerging from object_identity",task_data['object_identity'])
         object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
         da.reset()
+
+        reload(dataanalysis.graphtools)
 
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
