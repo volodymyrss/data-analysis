@@ -1258,11 +1258,11 @@ class DataAnalysis(object):
 
                         mr=self.process_run_main() # MAIN!
                         self.process_timespent_interpret()
+                        output_origin="main"
+                        self._da_output_origin=output_origin
                     else:
                         raise Exception("not allowed to run but has to! at "+repr(self))
 
-                    output_origin="main"
-                    self._da_output_origin=output_origin
 
                     #log("new output:",self.export_data())
 
@@ -1341,7 +1341,7 @@ class DataAnalysis(object):
 
         return_object=self
         if substitute_object is not None:
-            log("returning substituted object")
+            log("returning substituted object",substitute_object)
             return_object=substitute_object
 
         log("PROCESS done",fih,return_object)

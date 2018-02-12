@@ -57,7 +57,7 @@ class QueueCacheWorker(object):
         da.reset()
 
         reload(dataanalysis.graphtools)
-        print("fresh factory knows",da.analysisfactory.cache)
+        print("fresh factory knows",da.AnalysisFactory.cache)
 
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)

@@ -1,6 +1,7 @@
 import dataanalysis.importing as importing
 from dataanalysis.caches.resources import jsonify
 from dataanalysis.printhook import log
+import dataanalysis.graphtools
 
 dd_module_names=[]
 
@@ -36,6 +37,10 @@ class InconsitentEmergence(Exception):
 def emerge_from_identity(identity):
     import dataanalysis.core as da
     da.reset()
+
+    reload(dataanalysis.graphtools)
+    print("fresh factory knows",da.AnalysisFactory.cache)
+
 
     import_ddmodules(identity.modules)
 
