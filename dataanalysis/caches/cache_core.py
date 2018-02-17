@@ -129,7 +129,7 @@ class Cache(object):
             log("no parent available to call for")
             return None
         
-        log("there is a parent available to call for:",self.parent)
+        log(self,"there is a parent available to call for:",self.parent)
         from_parent=self.parent.restore(hashe,obj,rc)
             
         if from_parent is not None:
@@ -144,7 +144,7 @@ class Cache(object):
             log("no parent available to call for")
             return None
         
-        log("there is a parent available to call for:",self.parent)
+        log(self,"there is a parent available to call for:",self.parent)
         return self.parent.store(hashe,obj)
 
 
@@ -469,7 +469,11 @@ class Cache(object):
 
             for k,i in c.items():
                 print("setting",obj,k,i)
-                setattr(obj,k,i)
+
+                try:
+                    setattr(obj,k,i)
+                except Exception as e:
+                    print("can not set: assuming blueprint class upgrade (might be incomplete update!)")
 
 
             obj._da_recovered_restore_config=copy.copy(restore_config)

@@ -2,8 +2,11 @@
 
 import argparse
 import json
+import sys
 
 import yaml
+
+from dataanalysis.caches.queue import QueueCache
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -23,16 +26,19 @@ parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, he
 parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 #parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
+parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
+parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
+parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
 args = parser.parse_args()
 
-print args.module
+print(args.module)
 
 from dataanalysis import core, importing
 import dataanalysis.printhook
 
 if args.verbose:
-    print "will be chatty"
+    print("will be chatty")
     dataanalysis.printhook.global_log_enabled=True
     dataanalysis.printhook.global_fancy_output=True
     dataanalysis.printhook.global_permissive_output=True
@@ -41,17 +47,17 @@ else:
     dataanalysis.printhook.global_fancy_output=False
 
 if args.failsafe:
-    print "will be chatty"
+    print("will be chatty and safe")
     dataanalysis.printhook.global_log_enabled=True
     dataanalysis.printhook.global_fancy_output=False
     dataanalysis.printhook.global_permissive_output=True
 
 
 if args.quiet:
-    print "will be quiet"
+    print("will be quiet")
     dataanalysis.printhook.LogStream(None, lambda x: set(x) & set(['top', 'main']))
 else:
-    print "will not be quiet"
+    print("will not be quiet")
     dataanalysis.printhook.LogStream(None, lambda x:True)
 
 if args.very_verbose:
@@ -59,7 +65,120 @@ if args.very_verbose:
 
 modules=[m[0] for m in args.module]
 
-import sys
+injected_objects=[]
+for inj_fn, in args.inject:
+    print("injecting from",inj_fn)
+    injected_objects.append(json.load(open(inj_fn)))
+
+
+if args.prompt_delegate_to_queue:
+    identity=dataanalysis.DataAnalysisIdentity(
+        factory_name=args.object_name,
+        full_name=args.object_name,
+        modules=dataanalysis.AnalysisFactory.format_module_description(modules),
+        assumptions=[('',a[0]) for a in args.assume]+[(a,b) for a,b in injected_objects],
+        expected_hashe=None,
+    )
+
+    print("generated identity",identity)
+
+    cache=QueueCache(args.prompt_delegate_to_queue.strip())
+
+    print("cache:",cache,"from",args.prompt_delegate_to_queue)
+    print("queue status before", cache.queue.info)
+
+    delegation_state=cache.queue.put(
+        dict(
+            object_identity=identity.serialize(),
+
+        ),
+        submission_data=dict(
+            request_origin="command_line",
+            callbacks=[args.callback],
+        )
+    )
+
+    print("queue status now",cache.queue.info)
+    print("put in cache, exiting")
+
+    e=dataanalysis.AnalysisDelegatedException(None)
+
+    if delegation_state is not None and any([d['state']=="done" for d in delegation_state]):
+        print("the prompt delegation already done, disabling run and hoping for results")
+        args.disable_run.append([args.object_name])
+    elif delegation_state is not None and any([d['state'] == "failed" for d in delegation_state]):
+        print("the prompt delegation already done and failed, raising exception")
+
+        failures=[d for d in delegation_state if d['state'] == "failed"]
+
+        if len(failures)>1:
+            yaml.dump(
+                dict(
+                    exception_type="queue",
+                    exception=repr(e),
+                    hashe=e.hashe,
+                    resources=[],
+                    source_exceptions=None,
+                    comment=None,
+                    origin=None,
+                    delegation_state=delegation_state,
+                ),
+                open("exception.yaml", "w"),
+                default_flow_style=False,
+            )
+        else:
+            failure=failures[0]
+            failed_task=yaml.load(open(failure['fn']))
+            print("failed task",failed_task)
+            failed_task_execution_info=failed_task['execution_info']
+
+            yaml.dump(
+                dict(
+                    exception_type="analysis",
+                    exception=failed_task_execution_info['exception'][0],
+                    hashe=None,
+                    resources=[],
+                    source_exceptions=None,
+                    comment=None,
+                    origin=None,
+                    delegation_state=failure['state'],
+                ),
+                open("exception.yaml", "w"),
+                default_flow_style=False,
+            )
+            sys.exit(1)
+
+        #args.disable_run.append([args.object_name])
+    else:
+        print("delegation exception", e)
+        yaml.dump(
+            dict(
+                exception_type="delegation",
+                exception=repr(e),
+                hashe=e.hashe,
+                resources=[],
+                source_exceptions=None,
+                comment=None,
+                origin=None,
+                delegation_state=delegation_state[0]['state'] if delegation_state is not None else 'submitted',
+            ),
+            open("exception.yaml", "w"),
+            default_flow_style=False,
+        )
+
+        raise e
+
+import requests
+
+if args.callback and args.callback.startswith("http://"):
+    params = dict(
+        level='modules',
+        node=args.object_name,
+        message="loading modules",
+        action="progress",
+    )
+    requests.get(args.callback,
+                 params=params)
 
 for m in modules:
     print "importing",m
@@ -68,16 +187,30 @@ for m in modules:
     module,name= importing.load_by_name(m)
     globals()[name]=module
 
+if args.callback and args.callback.startswith("http://"):
+    params = dict(
+        level='modules',
+        node=args.object_name,
+        message="done loading modules",
+        action="progress",
+    )
+    requests.get(args.callback,
+                 params=params)
+
 
 
 if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
-    print assumptions
+    print("assumptions:",assumptions)
     core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+
 
 A= core.AnalysisFactory[args.object_name]()
 
-print A
+dataanalysis.callback.Callback.set_callback_accepted_classes([A.__class__])
+
+
+print(A)
 
 for a in args.force_run:
     print "force run",a
@@ -88,7 +221,7 @@ for a in args.force_run:
         pass
 
 for a in args.force_produce:
-    print "force produce",a
+    print("force produce",a)
     try:
         b= core.AnalysisFactory[a[0]]()
         b.__class__.read_caches=[]
@@ -96,18 +229,21 @@ for a in args.force_produce:
         pass
 
 for a in args.disable_run:
-    print "disable run",a
+    print("disable run",a)
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
-for inj_fn, in args.inject:
-    print("injecting from",inj_fn)
-    inj_content=json.load(open(inj_fn))
-
+for inj_content in injected_objects:
     core.AnalysisFactory.inject_serialization(inj_content)
 
+if args.delegate_to_queue is not None:
+    from dataanalysis.caches.queue import QueueCache
+    qcache=QueueCache(args.delegate_to_queue)
+    A.cache.tail_parent(qcache)
+    A.read_caches.append(qcache.__class__)
+
 try:
-    A.process(output_required=True)
+    A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback)
 except dataanalysis.UnhandledAnalysisException as e:
     yaml.dump(
               dict(
@@ -120,6 +256,22 @@ except dataanalysis.UnhandledAnalysisException as e:
               open("exception.yaml","w"),
               default_flow_style=False,
         )
+    raise
+except dataanalysis.AnalysisDelegatedException as e:
+    print("delegation exception",e)
+    yaml.dump(
+        dict(
+            exception_type="delegation",
+            exception=repr(e),
+            hashe=e.hashe,
+            resources=e.resources,
+            source_exceptions=e.source_exceptions,
+            comment=e.comment ,
+            origin=e.origin,
+        ),
+        open("exception.yaml", "w"),
+        default_flow_style=False,
+    )
     raise
 except Exception as e:
     print("graph exception",e)
@@ -153,5 +305,7 @@ if args.cachelink:
     if hasattr(A,'_da_cached_pathes'):
         print "will note cache link"
         open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
+
+
 
 

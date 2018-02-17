@@ -1,3 +1,5 @@
+import time
+
 from dataanalysis import core as da
 from dataanalysis.caches.cache_core import CacheNoIndex
 from dataanalysis.caches.resources import CacheDelegateToResources, WebResourceFactory
@@ -21,8 +23,21 @@ class ClientDelegatableAnalysisA(da.DataAnalysis):
     cached=True
     cache=cache
 
+    sleep=None
+
+    def get_version(self):
+        v=da.DataAnalysis.get_version(self)
+        if self.sleep is not None:
+            v+="sleep.%i"%self.sleep
+        return v
+
     def main(self):
         self.data = "dataA"
+        if hasattr(self,'data_add'):
+            self.data+=self.data_add
+
+        if self.sleep is not None:
+            time.sleep(self.sleep)
 
 class ClientDelegatableAnalysisA1(da.DataAnalysis):
     cached=True
@@ -142,5 +157,5 @@ class ChainedServerProducer(da.DataAnalysis):
 
 class GenerativeAnalysis(da.DataAnalysis):
     def main(self):
-        self.data=AAnalysis(use_assumed_data="data1"), AAnalysis(use_assumed_data="data2")
+        self.data=AAnalysis(use_assumed_data="data1"), BAnalysis(use_assumed_data="data2")
         print("cache of generated:",self.data[0].cache)
