@@ -45,13 +45,14 @@ graylog_logger=None
 
 def setup_logstash():
     import os
+    import sys
     import logging
     from logstash_formatter import LogstashFormatterV1
 
     my_logger = logging.getLogger('logstash_logger')
     my_logger.setLevel(logging.DEBUG)
 
-    handler = logging.StreamHandler()
+    handler = logging.StreamHandler(stream=sys.stdout)
     formatter = LogstashFormatterV1()
     handler.setFormatter(formatter)
     my_logger.addHandler(handler)
@@ -80,11 +81,27 @@ def log(*args,**kwargs):
         if level in global_output_levels:
             print(time.time(),level,my_pid,"/",my_thread, *args)
 
+import base64
+import json
+import os
+import re
+
+logstash_levels=map(re.compile,os.environ.get("LOGSTASH_LEVELS",".*").split(","))
+
 def log_hook(level,obj,**aa):
+    for l in logstash_levels:
+        if l.match(level):
+            return log_in_context(level,obj,**aa)
+
+def log_in_context(level,obj,**aa):
     if obj._da_locally_complete is not None:
-        aa['hashe']=obj._da_locally_complete
+        aa['graph']=obj._da_locally_complete
     else:
-        aa['hashe']={}
+        aa['graph']={}
+
+    aa['graph']=base64.b64encode(json.dumps(aa['graph']))
+    aa.pop("hashe")
+
     aa['target']=obj.get_signature()
     aa['target_full']=obj.get_version()
     log_logstash(level,**aa)
@@ -95,7 +112,6 @@ def log_logstash(a,**aa):
         aa.pop("message")
         aa['action']=a
         aa['origin']="dda"
-        print("\n"*100)
         logstash_logger.info(aa['note'],extra=aa)
 
 
