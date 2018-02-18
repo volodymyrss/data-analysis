@@ -74,9 +74,6 @@ def log(*args,**kwargs):
         if graylog_logger is not None and "net" in level or "top" in level:
             graylog_logger.debug(args)
         
-        if "net" in level:
-            graylog_logger.debug(args)
-
         if global_permissive_output:
             print(time.time(),"DEBUG",my_pid,"/",my_thread,level, *args)
 
