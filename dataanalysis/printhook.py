@@ -43,6 +43,14 @@ def setup_graylog():
 graylog_logger=None
 #graylog_logger=setup_graylog()
 
+import base64
+import json
+import os
+import re
+
+logstash_levels=os.environ.get("LOGSTASH_LEVELS",".*").split(",")
+logstash_levels_patterns=map(re.compile,logstash_levels)
+
 def setup_logstash():
     import os
     import sys
@@ -57,7 +65,7 @@ def setup_logstash():
     handler.setFormatter(formatter)
     my_logger.addHandler(handler)
 
-    my_logger.info("starting logstash logger",extra=dict(main=__file__,origin="dda"))
+    my_logger.info("starting logstash logger",extra=dict(main=__file__,origin="dda",levels=logstash_levels))
     return my_logger
 
 graylog_logger=setup_graylog()
@@ -81,15 +89,9 @@ def log(*args,**kwargs):
         if level in global_output_levels:
             print(time.time(),level,my_pid,"/",my_thread, *args)
 
-import base64
-import json
-import os
-import re
-
-logstash_levels=map(re.compile,os.environ.get("LOGSTASH_LEVELS",".*").split(","))
 
 def log_hook(level,obj,**aa):
-    for l in logstash_levels:
+    for l in logstash_levels_patterns:
         if l.match(level):
             return log_in_context(level,obj,**aa)
 
