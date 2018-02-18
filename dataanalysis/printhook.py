@@ -71,7 +71,7 @@ def log(*args,**kwargs):
 
         level = kwargs['level'] if 'level' in kwargs else ""
 
-        if graylog_logger is not None and "net" in level or "top" in level:
+        if graylog_logger is not None and ("net" in level or "top" in level):
             graylog_logger.debug(args)
         
         if global_permissive_output:
