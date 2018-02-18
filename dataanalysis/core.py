@@ -26,11 +26,11 @@ from dataanalysis.caches import cache_core
 from dataanalysis.analysisfactory import AnalysisFactory
 
 from dataanalysis import printhook
-from dataanalysis.printhook import decorate_method_log,log,debug_print
+from dataanalysis.printhook import decorate_method_log,log,debug_print,log_hook
 
 from dataanalysis.callback import CallbackHook
 
-dda_hooks=[CallbackHook()]
+dda_hooks=[CallbackHook(),log_hook]
 
 Cache = cache_core.CacheNoIndex()
 TransientCacheInstance = cache_core.TransientCache()
@@ -706,8 +706,10 @@ class DataAnalysis(object):
             else:
                 log("disabled self.rename_output_unique",level='cache')
 
+            self.summarize_resource_stats()
             self.process_hooks("top", self, message="restored from cache",
-                         resource_stats=dict(enumerate(self._da_resource_stats)) if self._da_resource_stats is not None else {},
+                         resource_stats=self._da_resource_summary,
+                         #resource_stats=dict([[rs['resource_type'],rs] for rs in self._da_resource_stats]) if self._da_resource_stats is not None else {},
                          hashe=getattr(self, '_da_expected_full_hashe', "unknown"),
                          state="done")
 
@@ -951,7 +953,10 @@ class DataAnalysis(object):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
 
-        self.process_hooks("top",self,message="main done",resource_stats=dict(enumerate(self._da_resource_stats)),hashe=getattr(self,'_da_expected_full_hashe',"unknown"),state="done")
+        self.summarize_resource_stats()
+        self.process_hooks("top",self,message="main done",
+                        resource_stats=self._da_resource_summary,
+                        hashe=getattr(self,'_da_expected_full_hashe',"unknown"),state="done")
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1557,14 +1562,20 @@ class DataAnalysis(object):
         log('note resource stats:',info['resource_type'],'{log:resources}')
         self._da_resource_stats.append(info)
 
+    @property
+    def current_resource_stats(self):
+        if self._da_resource_stats is None:
+            return {}
+        return self._da_resource_stats 
+
     def summarize_resource_stats(self):
-        total_usertime=sum([a['seconds'] for a in self._da_resource_stats if a['resource_type']=='usertime'])
+        total_usertime=sum([a['seconds'] for a in self.current_resource_stats if a['resource_type']=='usertime'])
         log(render("collected resource stats, total {MAGENTA}usertime{/}"),total_usertime,'{log:resources}')
 
-        total_runtime=sum([a['seconds'] for a in self._da_resource_stats if a['resource_type']=='runtime'])
+        total_runtime=sum([a['seconds'] for a in self.current_resource_stats if a['resource_type']=='runtime'])
         log(render("collected resource stats, total {MAGENTA}run time{/}"),total_runtime,'{log:resources}')
 
-        total_cachetime=sum([a['stats']['copytime'] for a in self._da_resource_stats if a['resource_type']=='cache'])
+        total_cachetime=sum([a['stats']['copytime'] for a in self.current_resource_stats if a['resource_type']=='cache'])
         log(render("collected resource stats, total {MAGENTA}cache copy time{/}"),total_cachetime,'{log:resources}')
 
         main_exectured_on=dict(

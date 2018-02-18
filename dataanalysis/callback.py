@@ -68,6 +68,9 @@ class Callback(object):
         return {}
 
     def process_filtered(self,level,obj,message,data):
+        object_data=self.extract_data(obj)
+        log(message,extra=dict(level=level,object_data=object_data,data=data,message=message),level="top")
+
         if self.url is None:
             return
 
@@ -82,7 +85,7 @@ class Callback(object):
                 node=obj.get_signature(),
                 message=message,
             )
-            params.update(self.extract_data(obj))
+            params.update(object_data)
             params['action']=data.get('state', 'progress')
             try:
                 requests.get(self.url,

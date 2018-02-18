@@ -9,7 +9,7 @@ from dataanalysis.bcolors import render
 global_suppress_output=False
 global_fancy_output=False
 global_catch_main_output=True
-global_output_levels=['top','cache']
+global_output_levels=['top','cache','net']
 #global_permissive_output=True
 global_permissive_output=False
 global_all_output=True
@@ -26,17 +26,41 @@ def setup_graylog():
     except ImportError:
         return
 
+    import os
     import logging
+    from logstash_formatter import LogstashFormatterV1
 
     my_logger = logging.getLogger('dda_logger')
     my_logger.setLevel(logging.DEBUG)
 
-    handler = graypy.GELFHandler('localhost', 12201)
+    handler = graypy.GELFHandler(os.environ.get('GELF_HOST','localhost'), 12201)
+    formatter = LogstashFormatterV1()
+    handler.setFormatter(formatter)
     my_logger.addHandler(handler)
+
+    return my_logger
+
+graylog_logger=None
+#graylog_logger=setup_graylog()
+
+def setup_logstash():
+    import os
+    import logging
+    from logstash_formatter import LogstashFormatterV1
+
+    my_logger = logging.getLogger('logstash_logger')
+    my_logger.setLevel(logging.DEBUG)
+
+    handler = logging.StreamHandler()
+    formatter = LogstashFormatterV1()
+    handler.setFormatter(formatter)
+    my_logger.addHandler(handler)
+
+    my_logger.info("starting logstash logger",extra=dict(main=__file__,origin="dda"))
     return my_logger
 
 graylog_logger=setup_graylog()
-
+logstash_logger=setup_logstash()
 
 def log(*args,**kwargs):
     if global_suppress_output:
@@ -45,18 +69,38 @@ def log(*args,**kwargs):
         my_pid = os.getpid()
         my_thread=threading.current_thread().ident
 
-        level = kwargs['level'] if 'level' in kwargs else None
+        level = kwargs['level'] if 'level' in kwargs else ""
 
+        if graylog_logger is not None and "net" in level or "top" in level:
+            graylog_logger.debug(args)
+        
+        if "net" in level:
+            graylog_logger.debug(args)
 
         if global_permissive_output:
             print(time.time(),"DEBUG",my_pid,"/",my_thread,level, *args)
-            if graylog_logger is not None:
-                graylog_logger.debug(args)
 
         if level in global_output_levels:
             print(time.time(),level,my_pid,"/",my_thread, *args)
-            if graylog_logger is not None:
-                graylog_logger.debug(args)
+
+def log_hook(level,obj,**aa):
+    if obj._da_locally_complete is not None:
+        aa['hashe']=obj._da_locally_complete
+    else:
+        aa['hashe']={}
+    aa['target']=obj.get_signature()
+    aa['target_full']=obj.get_version()
+    log_logstash(level,**aa)
+
+def log_logstash(a,**aa):
+    if logstash_logger is not None: 
+        aa['note']=aa['message']
+        aa.pop("message")
+        aa['action']=a
+        aa['origin']="dda"
+        print("\n"*100)
+        logstash_logger.info(aa['note'],extra=aa)
+
 
 def debug_print(text):
     if global_debug_enabled:

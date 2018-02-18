@@ -93,6 +93,7 @@ class QueueCacheWorker(object):
 
             try:
                 task=self.queue.get()
+                log('{"worker_event":"taking_task"}')
             except fsqueue.Empty:
                 if burst:
                     break
@@ -104,6 +105,7 @@ class QueueCacheWorker(object):
                 self.run_task(task)
             except Exception as e:
                 print("task failed:",e)
+                log('{"worker_event":"failed"}')
                 traceback.print_exc()
 
                 def update(task):
@@ -115,6 +117,7 @@ class QueueCacheWorker(object):
                 self.queue.task_failed(update)
             else:
                 print("DONE!")
+                log('{"worker_event":"done"}')
                 self.queue.task_done()
 
 
