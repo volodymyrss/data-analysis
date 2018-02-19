@@ -20,7 +20,12 @@ class CallbackHook(object):
             log("callback class:",callback_class)
             callback=callback_class(callback_url)
             log("processing callback url", callback_url, callback)
-            callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
+            if callback.process_callback(level=level,obj=obj,message=message,data=kwargs) is not None:
+                object_data=callback.extract_data(obj)
+                if 'hashe' in object_data:
+                    object_data.pop('hashe')
+                log("loghook from callback")
+                log_hook("callback",obj,level_orig=level,**kwargs)
 
 
 class Callback(object):
@@ -73,11 +78,6 @@ class Callback(object):
         return {}
 
     def process_filtered(self,level,obj,message,data):
-        object_data=self.extract_data(obj)
-        if 'hashe' in object_data:
-            object_data.pop('hashe')
-        log("loghook from callback")
-        log_hook("callback",obj,message=message,hashe=object_data,data=data,origin_level=level)
 
         if self.url is None:
             return
@@ -93,13 +93,16 @@ class Callback(object):
                 node=obj.get_signature(),
                 message=message,
             )
+            object_data=self.extract_data(obj)
             params.update(object_data)
             params['action']=data.get('state', 'progress')
             try:
-                requests.get(self.url,
+                return requests.get(self.url,
                              params=params)
             except requests.ConnectionError as e:
                 log("callback failed:",e)
+                log_hook("callback",obj,message="callback failed!",exception=repr(e))
+                return "callback failed"
         else:
             raise Exception("unknown callback method",self.url)
 
