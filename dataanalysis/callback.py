@@ -65,7 +65,7 @@ class Callback(object):
                 log("unable to filter",obj,obj.__class__,accepted_class)
                 raise
 
-        log("callback NOT accepted:",message,level="top")
+        log("callback NOT accepted:",message,repr(obj),level="top")
         return False
 
     def process_callback(self,level,obj,message,data):
