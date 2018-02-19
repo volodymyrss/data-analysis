@@ -953,9 +953,10 @@ class DataAnalysis(object):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
 
-        self.summarize_resource_stats()
+        log("main DONE!",level='top')
+ 
         self.process_hooks("top",self,message="main done",
-                        resource_stats=self._da_resource_summary,
+                        resource_stats=self.current_resource_stats,
                         state="done")
 
     def process_find_output_objects(self):

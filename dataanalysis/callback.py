@@ -45,10 +45,11 @@ class Callback(object):
         return "[%s: %s]"%(self.__class__.__name__,self.url)
 
     def filter_callback(self,level,obj,message,data):
-        if data.get('state','any') in ["failed","any"]:
+        if data.get('state','unknown') in ["failed"]:
             return True
 
         if self.callback_accepted_classes is None:
+            log("callback  accepted:",message,level="top")
             return True
 
         for accepted_class in self.callback_accepted_classes:
@@ -59,6 +60,7 @@ class Callback(object):
                 log("unable to filter",obj,obj.__class__,accepted_class)
                 raise
 
+        log("callback NOT accepted:",message,level="top")
         return False
 
     def process_callback(self,level,obj,message,data):
@@ -74,6 +76,7 @@ class Callback(object):
         object_data=self.extract_data(obj)
         if 'hashe' in object_data:
             object_data.pop('hashe')
+        log("loghook from callback")
         log_hook("callback",obj,message=message,hashe=object_data,data=data,origin_level=level)
 
         if self.url is None:
