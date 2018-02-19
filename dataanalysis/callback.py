@@ -100,7 +100,7 @@ class Callback(object):
                 return requests.get(self.url,
                              params=params)
             except requests.ConnectionError as e:
-                log("callback failed:",e)
+                log("callback failed",self.url,":",e)
                 log_hook("callback",obj,message="callback failed!",exception=repr(e))
                 return "callback failed"
         else:
