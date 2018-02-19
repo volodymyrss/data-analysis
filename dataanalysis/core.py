@@ -16,6 +16,7 @@ import socket
 import sys
 import traceback
 import time
+import base64
 from collections import Mapping, Set, Sequence
 
 from dataanalysis import hashtools
@@ -708,9 +709,8 @@ class DataAnalysis(object):
 
             self.summarize_resource_stats()
             self.process_hooks("top", self, message="restored from cache",
-                         resource_stats=self._da_resource_summary,
+                         resource_stats=self.current_resource_stats,
                          #resource_stats=dict([[rs['resource_type'],rs] for rs in self._da_resource_stats]) if self._da_resource_stats is not None else {},
-                         hashe=getattr(self, '_da_expected_full_hashe', "unknown"),
                          state="done")
 
             return r
@@ -878,7 +878,7 @@ class DataAnalysis(object):
         self.cache.report_analysis_state(self,"done")
 
     def process_run_main(self):
-        self.process_hooks("top",self,message="main starting",hashe=getattr(self,'_da_expected_full_hashe',"unknown"))
+        self.process_hooks("top",self,message="main starting")
 
         #self.runtime_update('running')
         if self.abstract:
@@ -956,7 +956,7 @@ class DataAnalysis(object):
         self.summarize_resource_stats()
         self.process_hooks("top",self,message="main done",
                         resource_stats=self._da_resource_summary,
-                        hashe=getattr(self,'_da_expected_full_hashe',"unknown"),state="done")
+                        state="done")
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:

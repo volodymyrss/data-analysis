@@ -94,6 +94,9 @@ def log_hook(level,obj,**aa):
     for l in logstash_levels_patterns:
         if l.match(level):
             return log_in_context(level,obj,**aa)
+    if global_permissive_output:
+        print("suppressed log, \""+level+"\" while",logstash_levels,",:",end="")
+        log_in_context(level,obj,**aa)
 
 def log_in_context(level,obj,**aa):
     if obj._da_locally_complete is not None:
@@ -102,7 +105,8 @@ def log_in_context(level,obj,**aa):
         aa['graph']={}
 
     aa['graph']=base64.b64encode(json.dumps(aa['graph']))
-    aa.pop("hashe")
+    if 'hashe' in aa:
+        aa.pop("hashe")
 
     aa['target']=obj.get_signature()
     aa['target_full']=obj.get_version()
