@@ -66,6 +66,7 @@ class Callback(object):
                 raise
 
         log("callback NOT accepted:",message,repr(obj),level="top")
+        log("accepted callbacks:",self.callback_accepted_classes,level="top")
         return False
 
     def process_callback(self,level,obj,message,data):
