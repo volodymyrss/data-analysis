@@ -7,7 +7,7 @@ import dataanalysis.callback
 import dataanalysis.core as da
 import dataanalysis.emerge as emerge
 import dataanalysis.graphtools
-from dataanalysis.printhook import log
+from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import DelegatingCache
 
 
@@ -93,7 +93,7 @@ class QueueCacheWorker(object):
 
             try:
                 task=self.queue.get()
-                log('{"worker_event":"taking_task"}')
+                log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task")
             except fsqueue.Empty:
                 if burst:
                     break
@@ -105,7 +105,7 @@ class QueueCacheWorker(object):
                 self.run_task(task)
             except Exception as e:
                 print("task failed:",e)
-                log('{"worker_event":"failed"}')
+                log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed")
                 traceback.print_exc()
 
                 def update(task):
@@ -117,7 +117,7 @@ class QueueCacheWorker(object):
                 self.queue.task_failed(update)
             else:
                 print("DONE!")
-                log('{"worker_event":"done"}')
+                log_logstash("worker",message="worker task done",origin="dda_worker",worker_event="task_done")
                 self.queue.task_done()
 
 

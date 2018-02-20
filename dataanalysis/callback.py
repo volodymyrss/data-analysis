@@ -1,6 +1,7 @@
 import datetime
 
 import requests
+from urlparse import urlparse
 
 from dataanalysis.printhook import log, log_hook
 
@@ -25,7 +26,7 @@ class CallbackHook(object):
                 if 'hashe' in object_data:
                     object_data.pop('hashe')
                 log("loghook from callback")
-                log_hook("callback",obj,level_orig=level,**kwargs)
+                log_hook("callback",obj,level_orig=level,callback_params=callback.url_params,**kwargs)
 
 
 class Callback(object):
@@ -45,6 +46,11 @@ class Callback(object):
 
     def __init__(self,url):
         self.url=url
+
+        try:
+            self.url_params=urlparse(self).params
+        except:
+            self.url_params={}
 
     def __repr__(self):
         return "[%s: %s]"%(self.__class__.__name__,self.url)

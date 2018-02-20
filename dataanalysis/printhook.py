@@ -114,11 +114,13 @@ def log_in_context(level,obj,**aa):
 
 def log_logstash(a,**aa):
     if logstash_logger is not None: 
-        aa['note']=aa['message']
-        aa.pop("message")
+        if 'message ' in aa:
+            aa['note']=aa.pop('message')
         aa['action']=a
-        aa['origin']="dda"
-        logstash_logger.info(aa['note'],extra=aa)
+
+        if 'origin' not in aa:
+            aa['origin']="dda"
+        logstash_logger.info(aa.get('note',''),extra=aa)
 
 
 def debug_print(text):
