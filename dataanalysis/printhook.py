@@ -114,7 +114,7 @@ def log_in_context(level,obj,**aa):
 
 def log_logstash(a,**aa):
     if logstash_logger is not None: 
-        if 'message ' in aa:
+        if 'message' in aa:
             aa['note']=aa.pop('message')
         aa['action']=a
 
