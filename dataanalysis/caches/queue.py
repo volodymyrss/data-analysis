@@ -88,8 +88,9 @@ class QueueCacheWorker(object):
         self.queue.task_done()
 
     def run_all(self,burst=True,wait=1):
+        log_logstash("worker", worker_event="starting")
         while True:
-            print("now",time.time(), self.queue.info)
+            log_logstash("worker", queue_info=self.queue.info)
 
             try:
                 task=self.queue.get()
