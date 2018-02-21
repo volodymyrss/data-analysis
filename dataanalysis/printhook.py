@@ -122,7 +122,8 @@ def log_logstash(a,**aa):
             aa['origin']="dda"
         
         for k,v in os.environ.items():
-            aa['env_'+k]=v
+            if len(v)<20:
+                aa['env_'+k]=v
 
         logstash_logger.info(aa.get('note',''),extra=aa)
 
