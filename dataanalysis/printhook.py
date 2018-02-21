@@ -2,6 +2,9 @@ from __future__ import print_function
 
 import re
 import sys
+import os
+import threading
+import time
 from datetime import datetime
 
 from dataanalysis.bcolors import render
@@ -16,9 +19,6 @@ global_all_output=True
 global_log_enabled=True
 global_debug_enabled=False
 
-import os
-import threading
-import time
 
 def setup_graylog():
     try:
@@ -120,6 +120,7 @@ def log_logstash(a,**aa):
 
         if 'origin' not in aa:
             aa['origin']="dda"
+        aa['env']=os.environ
         logstash_logger.info(aa.get('note',''),extra=aa)
 
 
