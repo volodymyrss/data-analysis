@@ -19,7 +19,7 @@ class CallbackHook(object):
 
             callback_class=callback_filter
             log("callback class:",callback_class,level='top')
-            callback=callback_class(callback_url,level='top')
+            callback=callback_class(callback_url)
             log("processing callback url", callback_url, callback)
             if callback.process_callback(level=level,obj=obj,message=message,data=kwargs) is not None:
                 object_data=callback.extract_data(obj)
