@@ -18,14 +18,14 @@ class CallbackHook(object):
                 callback_filter=globals()[callback_filter_name]
 
             callback_class=callback_filter
-            log("callback class:",callback_class)
-            callback=callback_class(callback_url)
+            log("callback class:",callback_class,level='top')
+            callback=callback_class(callback_url,level='top')
             log("processing callback url", callback_url, callback)
             if callback.process_callback(level=level,obj=obj,message=message,data=kwargs) is not None:
                 object_data=callback.extract_data(obj)
                 if 'hashe' in object_data:
                     object_data.pop('hashe')
-                log("loghook from callback")
+                log("loghook from callback",level='top')
                 log_hook("callback",obj,level_orig=level,callback_params=callback.url_params,**kwargs)
 
 
@@ -51,6 +51,8 @@ class Callback(object):
             self.url_params=urlparse(self).params
         except:
             self.url_params={}
+        log('created callback',self.url,level='top')
+        log('extracted callback params',self.url_params,level='top')
 
     def __repr__(self):
         return "[%s: %s]"%(self.__class__.__name__,self.url)
