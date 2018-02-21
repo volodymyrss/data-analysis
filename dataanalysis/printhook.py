@@ -120,7 +120,10 @@ def log_logstash(a,**aa):
 
         if 'origin' not in aa:
             aa['origin']="dda"
-        aa['env']=os.environ
+        
+        for k,v in os.environ.items():
+            aa['env_'+k]=v
+
         logstash_logger.info(aa.get('note',''),extra=aa)
 
 
