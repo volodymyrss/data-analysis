@@ -75,7 +75,7 @@ class QueueCacheWorker(object):
         except da.AnalysisException:
             raise
 
-        A.process_hooks("top",A,message="task complete",state="task_done")
+        A.process_hooks("top",A,message="task complete",state="done")
 
         return result
 

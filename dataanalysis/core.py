@@ -711,7 +711,7 @@ class DataAnalysis(object):
             self.process_hooks("top", self, message="restored from cache",
                          resource_stats=self.current_resource_stats,
                          #resource_stats=dict([[rs['resource_type'],rs] for rs in self._da_resource_stats]) if self._da_resource_stats is not None else {},
-                         state="done")
+                         state="node_done")
 
             return r
         return r # twice
@@ -957,7 +957,7 @@ class DataAnalysis(object):
  
         self.process_hooks("top",self,message="main done",
                         resource_stats=self.current_resource_stats,
-                        state="done")
+                        state="main_done")
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
