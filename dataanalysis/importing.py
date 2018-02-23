@@ -78,6 +78,9 @@ class load_module(DataAnalysis):
 
 
 def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
+    if remote_git_root == "any":
+        return import_git_module(name, version, local_gitroot, ["volodymyrss-private","volodymyrss-public"])
+
     if isinstance(remote_git_root,list):
         exceptions=[]
         for try_remote_git_root in remote_git_root:
