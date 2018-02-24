@@ -2,6 +2,7 @@ import time
 import traceback
 
 import fsqueue
+import os
 
 import dataanalysis.callback
 import dataanalysis.core as da
@@ -91,8 +92,18 @@ class QueueCacheWorker(object):
 
     def run_all(self,burst=True,wait=1):
         log_logstash("worker", message="worker starting", worker_event="starting")
+        worker_age=0
+
+        try:
+            worker_heartrate_skip=int(os.environ.get("WORKER_HEARTRATE_SKIP","0"))
+        except Exception as e:
+            log("problem determining worker heartrate",os.environ.get("WORKER_HEARTRATE_SKIP","UNDEFINED"))
+            worker_heartrate_skip=0
+
         while True:
-            log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info)
+            if worker_heartrate_skip>0 and worker_age%worker_heartrate_skip==0:
+                log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_age)
+            worker_age+=1
 
             try:
                 task=self.queue.get()
