@@ -126,7 +126,7 @@ def import_analysis_module(name,version):
 
 
 
-def load_by_name(m, local_gitroot=None,remote_git_root=None):
+def load_by_name(m, local_gitroot=None,remote_git_root='any'):
     log("requested to load by name:",m)
     if isinstance(m,list):
         if m[0]=="filesystem":
