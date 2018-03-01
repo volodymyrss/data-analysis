@@ -84,7 +84,7 @@ class Callback(object):
 
     def extract_data(self,obj):
         if obj._da_locally_complete is not None:
-            return obj._da_locally_complete
+            return dict(hashe=obj._da_locally_complete)
         return {}
 
     def process_filtered(self,level,obj,message,data):

@@ -1,11 +1,11 @@
 import glob
+import json
 import os
 import random
 import subprocess
 import sys
 
 import yaml
-import json
 
 package_root=os.path.dirname(os.path.dirname(__file__))
 
@@ -186,7 +186,7 @@ def test_delegation():
     assert os.path.exists(callback_file)
     callback_info = open(callback_file).readlines()
     print(callback_info)
-    assert len(callback_info) == 5
+    assert len(callback_info) == 6
 
 
     jobs = (glob.glob(queue_dir + "/waiting/*"))
