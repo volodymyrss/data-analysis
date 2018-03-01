@@ -96,3 +96,65 @@ def test_input_assumption():
     eC.get()
 
     assert C.data == eC.data
+
+
+
+def test_used_modules_stacking():
+    import dataanalysis.core as da
+    da.reset()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    import ddmoduletest2
+    reload(ddmoduletest)
+    reload(ddmoduletest2)
+    reload(ddmoduletest)
+    reload(ddmoduletest2)
+
+    print()
+    for i,m in enumerate(da.AnalysisFactory.dda_modules_used):
+        print(i,m)
+
+    assert len(da.AnalysisFactory.dda_modules_used) == 2
+
+    C=ddmoduletest.AAnalysis()
+    C.get()
+
+
+    ident=C.get_identity()
+
+    print("identity",ident)
+
+    import dataanalysis.emerge as emerge
+    da.reset()
+
+    eC=emerge.emerge_from_identity(ident)
+    eC.get()
+
+    assert C.data == eC.data
+
+def test_destacking_tool():
+    input=[
+        1,
+        2,
+        3,
+        1,
+        2,
+        1,
+        2,
+        3,
+        5,
+        5,
+    ]
+    from dataanalysis.hashtools import remove_repeating_stacks
+    output=remove_repeating_stacks(input)
+
+    assert output==[
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
+        5,
+    ]

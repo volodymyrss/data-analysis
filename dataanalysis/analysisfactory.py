@@ -3,7 +3,7 @@ import sys
 from dataanalysis import printhook
 from dataanalysis.bcolors import render
 from dataanalysis.printhook import log, decorate_method_log, debug_print
-
+import hashtools
 
 #from dataanalysis import core
 #print(core.__file__)
@@ -61,6 +61,24 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.put(obj)
         log("result of injection",self.byname(obj.get_signature()))
 
+    def assume_module_used(self,module):
+        if module.__name__.startswith("dataanalysis."):
+            return # really??
+
+        if self.dda_modules_used == [] or self.dda_modules_used[-1] != module:
+            self.dda_modules_used.append(module)
+
+        while True:
+            cleaned=hashtools.remove_repeating_stacks(self.dda_modules_used)
+            if cleaned==self.dda_modules_used:
+                self.dda_modules_used=cleaned
+                break
+            self.dda_modules_used = cleaned
+
+
+        #self.dda_modules_used()
+        #remove_repeating_stacks()
+
     def put(self, obj, sig=None):
         log("requested to put in factory:", obj, sig)
         log("factory assumptions:", self.cache_assumptions)
@@ -74,8 +92,8 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             raise Exception("can not store in cache object with assumptions")
 
         module_record = sys.modules[obj.__module__]
-        if self.dda_modules_used == [] or self.dda_modules_used[-1] != module_record:
-            self.dda_modules_used.append(module_record)
+
+        self.assume_module_used(module_record)
 
         if isinstance(obj, type):
             log("requested to put class, it will be constructed")
