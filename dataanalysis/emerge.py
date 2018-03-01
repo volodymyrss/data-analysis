@@ -69,9 +69,12 @@ def emerge_from_identity(identity):
         log("producable:\n",jsonify(producable_hashe),"\n")
         log("requested:\n",jsonify(identity.expected_hashe))
 
-        from dataanalysis import displaygraph
-        displaygraph.plot_hashe(producable_hashe,"producable.png")
-        displaygraph.plot_hashe(identity.expected_hashe,"expected.png")
+        try:
+            from dataanalysis import displaygraph
+            displaygraph.plot_hashe(producable_hashe,"producable.png")
+            displaygraph.plot_hashe(identity.expected_hashe,"expected.png")
+        except Exception as e:
+            pass
 
         raise InconsitentEmergence(
             "unable to produce\n"+repr(jsonify(identity.expected_hashe))+"\n while can produce"+repr(jsonify(producable_hashe)),

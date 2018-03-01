@@ -87,7 +87,7 @@ class AAnalysis(da.DataAnalysis):
     def main(self):
         self.data="dataA"
         if self.assumed_data is not None:
-            self.data += self.assumed_data
+            self.data += "assumed:"+self.assumed_data
 
 class BAnalysis(da.DataAnalysis):
     cached=True
@@ -96,7 +96,7 @@ class BAnalysis(da.DataAnalysis):
     input_a = AAnalysis
 
     def main(self):
-        self.data="dataB"+self.input_a.data
+        self.data="dataB_A:"+self.input_a.data
 
 class CAnalysis(da.DataAnalysis):
     cached=True

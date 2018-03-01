@@ -20,6 +20,7 @@ class QueueCache(DelegatingCache):
         self.queue = fsqueue.Queue(self.queue_directory)
 
     def delegate(self, hashe, obj):
+        log(self,"will delegate",obj,"as",hashe)
         return self.queue.put(
             dict(
                 object_identity=obj.get_identity().serialize(),

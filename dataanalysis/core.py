@@ -80,8 +80,12 @@ iteritems = lambda mapping: getattr(mapping, 'iteritems', mapping.items)()
 #class DataHandle:
 #    trivial = True
 
+def named(name):
+    return NamedAnalysis(name)
+
 class NoAnalysis():
     pass
+
 
 def isdataanalysis(obj,alsofile=False):
     if isinstance(obj,DataFile) and not alsofile:
@@ -251,6 +255,7 @@ class decorate_all_methods(type):
             log("   registered",o)
 
         return c
+
 
 class DataAnalysisIdentity(object):
     def __init__(self,
@@ -546,9 +551,32 @@ class DataAnalysis(object):
 
                 if isinstance(v, str):
                     r['_da_stored_string_' + k] = v
+                    continue
 
                 if isinstance(v, DataHandle):
                     r['_da_stored_string_' + k] = v.str()
+                    continue
+
+                if isinstance(v, DataAnalysis):
+                    m_k='_da_stored_link_' + k
+                    log("storing link to",v.get_factory_name(),"as",m_k)
+                    r[m_k] = v.get_factory_name() # discarding deep inputs!
+                    continue
+
+                if isinstance(v, NamedAnalysis):
+                    m_k='_da_stored_link_' + k
+                    log("storing link to named",v.analysis_name,"as",m_k)
+                    r[m_k] = v.analysis_name# discarding deep inputs!
+                    continue
+
+                if not isinstance(v,type):
+                    log("WARNING, what is this:"+repr(v)+"; "+repr(type(v)))
+                else:
+                    if issubclass(v, DataAnalysis):
+                        m_k='_da_stored_link_' + k
+                        log("storing class link to",v.__name__,"as",m_k)
+                        r[m_k] = v.__name__ # discarding deep inputs!
+
 
         log("resulting output:",r)
         return r
@@ -559,14 +587,25 @@ class DataAnalysis(object):
 
         for k, i in c.items():
             log("restoring", k, i)
+
+            if i=="None":
+                i=None
+
             setattr(self, k, i)
 
             if k.startswith("_da_stored_string_input"):
                 nk=k.replace("_da_stored_string_input","input")
+                log("restoring string input",k,nk,i)
                 setattr(self,nk,i)
 
+            if k.startswith("_da_stored_link_input"):
+                nk=k.replace("_da_stored_link_input","input")
+                log("restoring linked input", k, nk, i)
+                setattr(self,nk,named(i))
+
+
     def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
-        log("serialize as",embed_datafiles,verify_jsonifiable,include_class_attributes)
+        log("serialize",self,"as",embed_datafiles,verify_jsonifiable,include_class_attributes)
         return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
@@ -770,8 +809,9 @@ class DataAnalysis(object):
 
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
-            log("cache assumptions:",AnalysisFactory.cache_assumptions)
-            log("assumptions:",self.assumptions)
+            log("assumptions checkin for",self)
+            log("factory assumptions for run:",AnalysisFactory.cache_assumptions)
+            log("object assumptions:",self.assumptions)
             log("non-trivial assumptions require copy of the analysis tree")
             AnalysisFactory.WhatIfCopy("requested by "+repr(self),self.assumptions)
             for a in self.assumptions:
@@ -780,7 +820,7 @@ class DataAnalysis(object):
             log("no special assumptions")
 
     def process_checkout_assumptions(self):
-        log("assumptions checkout")
+        log("assumptions checkout",self)
         if self.assumptions!=[]:
             AnalysisFactory.WhatIfNot()
 
@@ -1685,6 +1725,13 @@ class DataAnalysis(object):
     def from_hashe(cls, hashe, cached=True):
         return cls.from_hashe_and_data(hashe, data=None, cached=cached)
 
+class NamedAnalysis(object):
+    def __init__(self,name):
+        self.analysis_name=name
+
+    def resolve(self):
+        return AnalysisFactory.byname(self.analysis_name)
+
 class FileHashed(DataAnalysis):
     input_filename=None
 
@@ -1910,6 +1957,7 @@ def debug_output():
 
 AnalysisFactory.blueprint_class=DataAnalysis
 AnalysisFactory.blueprint_DataHandle=DataHandle
+AnalysisFactory.named_blueprint_class=NamedAnalysis
 
 byname = lambda x: AnalysisFactory.byname(x)
 

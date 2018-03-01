@@ -7,6 +7,7 @@ import sys
 import yaml
 
 from dataanalysis.caches.queue import QueueCache
+from dataanalysis.printhook import log
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -202,7 +203,10 @@ if args.callback and args.callback.startswith("http://"):
 if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
     print("assumptions:",assumptions)
-    core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+
+    for i,assumption in enumerate(eval(assumptions)):
+        log("assumption from commandline",assumption)
+        core.AnalysisFactory.WhatIfCopy('commandline_%i'%i, assumption)
 
 
 A= core.AnalysisFactory[args.object_name]()

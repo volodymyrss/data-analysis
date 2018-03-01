@@ -114,7 +114,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         """
 
         log("interpreting", item)
-        log("factory knows", self.cache)  # .keys())
+        log("on get factory knows", self.cache)  # .keys())
 
         if item is None:
             log("item is None: is it a virtual class? should not be in the analysis!")
@@ -123,6 +123,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         if not hasattr(self,'blueprint_class'):
             log("no analysis yet")
             return item
+
+        if hasattr(self,'named_blueprint_class') and isinstance(item,self.named_blueprint_class):
+            item=item.resolve()
 
         if isinstance(item, type) and issubclass(item, self.blueprint_class):
             log("is subclass of DataAnalysis, probably need to construct it")
@@ -215,7 +218,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             return self.blueprint_DataHandle(str(item))
 
         log("unable to interpret item: " + repr(item))
-        log("factory knows",AnalysisFactory.cache)
+        log("after get factory knows",AnalysisFactory.cache)
         raise Exception("unable to interpret item: " + repr(item)+" blueprint: "+repr(self.blueprint_class))
         # return None
 
@@ -257,16 +260,21 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             log("assumption group:", assumptions)
             for a in assumptions:
                 log("assumption", a)
-                a.promote()
+                #a.promote()
+                serialization = a.export_data(verify_jsonifiable=False,include_class_attributes=True,deep_export=True)
+                log("export for cloning:",serialization)
+                obj=a.__class__(dynamic=False)
+                obj.import_data(serialization)
+                obj.promote()
 
                 #   else:
                 #       log("non-virtual object! promoting object itself")
                 #       o.promote() # assume??
         # self.cache=copy.deepcopy(self.cache_stack[-1]) # dangerous copy: copying call __new__, takes them from current cache
-        log("current cache copied:", self.cache)
+        log("current cache copied, factory knows:", self.cache)
 
     def WhatIfNot(self):
-        log("factory knows", self.cache)  # .keys())
+        log("before whatifnot factory knows", self.cache)  # .keys())
         if self.cache_stack == []:
             log("empty stack!")
             return
@@ -280,7 +288,10 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         log("current assumptions level %i:" % len(self.cache_assumptions),
                self.cache_assumptions[-1] if self.cache_assumptions != [] else "none")
         self.comment = ""
-        log("factory knows", self.cache)  # .keys())
+        log("after whatifnot factory knows", self.cache)  # .keys())
+        log("complete cache stack:")
+        for i,(assumption,cache) in enumerate(zip(self.cache_assumptions,self.cache_stack)):
+            log(i,assumption,cache)
 
     def byname(self, name):
         if name not in self.cache:

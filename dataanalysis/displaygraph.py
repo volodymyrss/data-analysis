@@ -1,6 +1,7 @@
 import subprocess
 
 import pydot
+import time
 
 
 def plot_hashe(hashe,pngfn,dotfn=None,show=True):
@@ -33,7 +34,10 @@ def plot_hashe(hashe,pngfn,dotfn=None,show=True):
     graph.write_png(pngfn)
 
     if show:
-        subprocess.Popen(["display",pngfn])
+        p=subprocess.Popen(["display",pngfn])
+        time.sleep(0.5)
+        p.kill()
+
 
     if dotfn is not None:
         graph.write(dotfn)
