@@ -1,7 +1,7 @@
 import datetime
+import urlparse
 
 import requests
-from urlparse import urlparse
 
 from dataanalysis.printhook import log, log_hook
 
@@ -48,11 +48,12 @@ class Callback(object):
         self.url=url
 
         try:
-            self.url_params=urlparse(self).params
-        except:
+            self.url_params=urlparse.parse_qs(urlparse.urlparse(self.url).query)
+        except Exception as e:
+            log("failed extracting callback parameters:",e,level='top')
             self.url_params={}
         log('created callback',self.url,level='top')
-        log('extracted callback params',self.url_params,level='top')
+        log('extracted callback params',self.url_params,'from',self.url,level='top')
 
     def __repr__(self):
         return "[%s: %s]"%(self.__class__.__name__,self.url)
