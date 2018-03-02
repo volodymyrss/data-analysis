@@ -261,7 +261,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             for a in assumptions:
                 log("assumption", a)
                 #a.promote()
-                serialization = a.export_data(verify_jsonifiable=False,include_class_attributes=True,deep_export=True)
+                serialization = a.export_data(verify_jsonifiable=False,include_class_attributes=True,deep_export=True,export_caches=True)
                 log("export for cloning:",serialization)
                 obj=a.__class__(dynamic=False)
                 obj.import_data(serialization)

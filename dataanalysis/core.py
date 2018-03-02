@@ -492,7 +492,7 @@ class DataAnalysis(object):
     def jsonify(self,embed_datafiles=False,verify_jsonifiable=False):
         return self.cache.adopt_datafiles(self.export_data(embed_datafiles,verify_jsonifiable))
 
-    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False):
+    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False,export_caches=False):
         log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
         empty_copy=self.__class__
         log("my keys:", self.__dict__.keys())
@@ -545,6 +545,12 @@ class DataAnalysis(object):
             r=dict(res)
 
         for k in dir(self):
+            if k == "cache":
+                v = getattr(self, k)
+                if isinstance(v, cache_core.Cache) and export_caches:
+                    log("trying to preserve linked cache", k, v)
+                    r[k] = v
+
             if k.startswith("input"):
                 v=getattr(self,k)
                 log("trying to preserve linked input", k, v)
@@ -720,7 +726,9 @@ class DataAnalysis(object):
             self._da_locally_complete=fih # info save
             return r
 
-        if not self.cached:
+        if self.cached:
+            log(render("{MAGENTA}cached, proceeding to restore{/}"))
+        else:
             log(render("{MAGENTA}not cached restore only from transient{/}"))
             return None # only transient!
         # discover through different caches

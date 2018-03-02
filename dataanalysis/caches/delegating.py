@@ -26,7 +26,7 @@ class SelectivelyDelegatingCache(DelegatingCache):
     delegating_analysis=None
 
     def will_delegate(self,hashe,obj=None):
-        log("trying for delegation",hashe)
+        log("trying for delegation",hashe,"in",self)
 
         if self.delegating_analysis is None:
             log("this cache has no delegations allowed")

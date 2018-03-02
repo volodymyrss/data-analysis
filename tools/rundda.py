@@ -204,7 +204,11 @@ if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
     print("assumptions:",assumptions)
 
-    for i,assumption in enumerate(eval(assumptions)):
+    assumptions_evaluated=eval(assumptions)
+    if type(assumptions_evaluated) not in (list,tuple):
+        assumptions_evaluated=[assumptions_evaluated]
+
+    for i,assumption in enumerate(assumptions_evaluated):
         log("assumption from commandline",assumption)
         core.AnalysisFactory.WhatIfCopy('commandline_%i'%i, assumption)
 
