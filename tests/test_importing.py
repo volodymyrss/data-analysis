@@ -26,3 +26,6 @@ def test_git_list():
 
     assert m[0].__dda_module_origin__=="git"
     assert m[0].__dda_module_global_name__ == "git://test"
+
+def test_nested_modules():
+    pass

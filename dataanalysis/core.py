@@ -251,7 +251,7 @@ class decorate_all_methods(type):
         if not c.trivial:
             log("declaring analysis class",name,)
             log("   constructing object...")
-            o=c(update=True)
+            o=c(update=True,origins=["from_class","with_metaclass"])
             log("   registered",o)
 
         return c
@@ -395,6 +395,11 @@ class DataAnalysis(object):
 
         # otherwise construct object, test if already there
 
+        if "origins" in args:
+            origins=args.pop("origins")
+        else:
+            origins=[]
+
         self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_") and not a.startswith("set_")]) # exclude registered
 
 
@@ -439,7 +444,7 @@ class DataAnalysis(object):
             r=self
         else:
             log("dynamic object, from",self,level='dynamic')
-            r=AnalysisFactory.get(self,update=update)
+            r=AnalysisFactory.get(self,update=update,origins=["from_new_constructor"]+origins)
             log("dynamic object, to",r,level='dynamic')
 
         if 'assume' in args and args['assume']!=[]:
@@ -457,9 +462,11 @@ class DataAnalysis(object):
 
         return r
 
-    def promote(self):
+    def promote(self,origins=None):
+        if origins is None:
+            origins=[]
         log("promoting to the factory",self)
-        return AnalysisFactory.put(self)
+        return AnalysisFactory.put(self,origins=["self_promote"])
 
     def verify_content(self):
         return True

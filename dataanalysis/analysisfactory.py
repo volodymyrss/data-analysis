@@ -62,7 +62,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
     def inject_serialization(self, serialization):
         log("injecting", serialization)
         obj=self.implement_serialization(serialization)
-        self.put(obj)
+        self.put(obj,origins=["inject_serialization"])
         log("result of injection",self.byname(obj.get_signature()))
 
     def assume_serialization(self, serialization):
@@ -71,8 +71,8 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.WhatIfCopy("injection_of_" + repr(obj),obj)
         log("result of injection", self.byname(obj.get_signature()))
 
-    def assume_module_used(self,module):
-        if module.__name__.startswith("dataanalysis."):
+    def assume_module_used(self,module,sanitize=True):
+        if sanitize and module.__name__.startswith("dataanalysis."):
             return # really??
 
         if self.dda_modules_used == [] or self.dda_modules_used[-1] != module:
@@ -89,8 +89,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         #self.dda_modules_used()
         #remove_repeating_stacks()
 
-    def put(self, obj, sig=None):
+    def put(self, obj, sig=None, origins=None):
         log("requested to put in factory:", obj, sig)
+        log(obj,"origins:",origins)
         log("factory assumptions:", self.cache_assumptions)
 
         if not obj.infactory:
@@ -103,7 +104,11 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
         module_record = sys.modules[obj.__module__]
 
-        self.assume_module_used(module_record)
+        if origins is not None and "with_metaclass" in origins:
+            log("assume module",module_record,"triggered by",obj)
+            self.assume_module_used(module_record)
+        else:
+            log("origins",origins,"not suitable to assume module", module_record, "triggered by", obj)
 
         if isinstance(obj, type):
             log("requested to put class, it will be constructed")
@@ -117,11 +122,14 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.cache[sig] = obj
         return saved
 
-    def get(self, item, update=False):
+    def get(self, item, update=False, origins=None):
         """
         generates and instance of DataAnalysis from something
 
         """
+
+        if origins is None:
+            origins=[]
 
         log("interpreting", item)
         log("on get factory knows", self.cache)  # .keys())
@@ -148,7 +156,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                     log("it is class, constructing")
                     c = c()
                     log("constructed", c)
-                    self.put(c)
+                    self.put(c,origins=["get","from_class"]+origins)
                     # log("will store",c)
                     return c
                 if isinstance(item, self.blueprint_class):
@@ -207,7 +215,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
                 if update:
                     log("recommendation is to force update")
-                    self.put(item)
+                    self.put(item,origins=["get","force_update"]+origins)
                     return item
                 else:
                     log("attention! offered object is discarded:", item)  # ,item.export_data())
@@ -216,7 +224,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                     return storeditem
 
             log("no such object registered! registering")  # attention!
-            self.put(item)
+            self.put(item,origins=["get","from_new_object"]+origins)
             return item
 
         if isinstance(item, str):
@@ -263,7 +271,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             if hasattr(o, '_da_obscure_origin_hashe'):
                 serialization[1]['_da_obscure_origin_hashe']=o._da_obscure_origin_hashe
 
-            o.__class__(dynamic=False).promote()  # assume??
+            o.__class__(dynamic=False).promote(origins=["what_if_copy"])  # assume??
             self.inject_serialization(serialization) # conditional reality contains pale copies of the fundamentals
 
         for assumptions in self.cache_assumptions:

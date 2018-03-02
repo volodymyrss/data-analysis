@@ -22,6 +22,8 @@ def test_queue_cache():
 
     define_analysis()
 
+    assert len(da.AnalysisFactory.dda_modules_used)==1
+
     A=dataanalysis.core.AnalysisFactory['AAnalysis']
     A.produce_disabled=True
     A.cache = q_cache
