@@ -51,15 +51,25 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
     def note_factorization(self,factorization):
         self.factorizations.append(factorization)
 
-    def inject_serialization(self, serialization):
-        log("injecting", serialization)
+    def implement_serialization(self,serialization):
         name, data = serialization
         obj = self[name]
         obj.import_data(data)
         obj.infactory = True
         obj.virtual = True
+        return obj
+
+    def inject_serialization(self, serialization):
+        log("injecting", serialization)
+        obj=self.implement_serialization(serialization)
         self.put(obj)
         log("result of injection",self.byname(obj.get_signature()))
+
+    def assume_serialization(self, serialization):
+        log("assuming injection", serialization)
+        obj = self.implement_serialization(serialization)
+        self.WhatIfCopy("injection_of_" + repr(obj),obj)
+        log("result of injection", self.byname(obj.get_signature()))
 
     def assume_module_used(self,module):
         if module.__name__.startswith("dataanalysis."):
