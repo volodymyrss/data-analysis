@@ -9,7 +9,7 @@ from dataanalysis.hashtools import *
 from printhook import log
 import analysisfactory
 
-def _import_git_module(name,version,local_gitroot=None,remote_git_root=None):
+def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,preserve_found=False):
     if remote_git_root == "any":
         return _import_git_module(name, version, local_gitroot, ["volodymyrss-private","volodymyrss-public"])
 
@@ -46,7 +46,7 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None):
 
     local_module_tag=local_module_dir + "/valid_version"
     module_file=local_module_dir + "/" + name + ".py"
-    if os.path.exists(local_module_tag) and open(local_module_tag).read().strip()==version and os.path.exists(module_file):
+    if preserve_found and os.path.exists(local_module_tag) and open(local_module_tag).read().strip()==version and os.path.exists(module_file):
         print("module already found!")
     else:
         cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
