@@ -81,6 +81,7 @@ def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
     if remote_git_root == "any":
         return import_git_module(name, version, local_gitroot, ["volodymyrss-private","volodymyrss-public"])
 
+
     if isinstance(remote_git_root,list):
         exceptions=[]
         for try_remote_git_root in remote_git_root:
@@ -110,14 +111,22 @@ def import_git_module(name,version,local_gitroot=None,remote_git_root=None):
 
     print("local git clone:",local_module_dir)
 
-    cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
-    print(cmd)
-    os.system(cmd)
-    cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
-    print(cmd)
-    os.system(cmd)
-    print name,local_module_dir+"/"+name+".py"
-    return imp.load_source(name,local_module_dir+"/"+name+".py")
+
+    local_module_tag=local_module_dir + "/valid_version"
+    module_file=local_module_dir + "/" + name + ".py"
+    if os.path.exists(local_module_tag) and open(local_module_tag).read().strip()==version and os.path.exists(module_file):
+        print("module already found!")
+    else:
+        cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
+        print(cmd)
+        os.system(cmd)
+        cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
+        print(cmd)
+        os.system(cmd)
+        open(local_module_dir+"/valid_version","w").write(version)
+
+    print(name,module_file)
+    return imp.load_source(name,module_file)
 
 
 

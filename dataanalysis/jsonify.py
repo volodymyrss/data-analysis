@@ -46,6 +46,9 @@ def totype(v):
     if isinstance(v, list):
         return [totype(b) for b in v]
 
+    if isinstance(v, tuple):
+        return tuple([totype(b) for b in v])
+
     try:
         return float(v)
     except:
