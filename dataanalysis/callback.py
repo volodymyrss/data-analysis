@@ -109,11 +109,14 @@ class Callback(object):
             params.update(object_data)
             params['action']=data.get('state', 'progress')
             try:
-                return requests.get(self.url,
+                r=requests.get(self.url,
                              params=params)
+                log("callback succeeded",self.url,params,r,level="top")
+                log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=params)
+                return r
             except requests.ConnectionError as e:
-                log("callback failed",self.url,":",e)
-                log_hook("callback",obj,message="callback failed!",exception=repr(e))
+                log("callback failed",self.url,params,":",e,level="top")
+                log_hook("callback",obj,message="callback failed!",callback_url=self.url,callback_params=params)
                 return "callback failed"
         else:
             raise Exception("unknown callback method",self.url)
