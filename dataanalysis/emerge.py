@@ -1,6 +1,6 @@
 import dataanalysis.importing as importing
 from dataanalysis.caches.resources import jsonify
-from dataanalysis.printhook import log
+from dataanalysis.printhook import log, log_logstash
 import dataanalysis.graphtools
 
 dd_module_names=[]
@@ -75,6 +75,8 @@ def emerge_from_identity(identity):
             displaygraph.plot_hashe(identity.expected_hashe,"expected.png")
         except Exception as e:
             pass
+
+        log_logstash("emergence exception",note="inconsistent_emergence",producable=producable_hashe,expected_hashe=identity.expected_hashe)
 
         raise InconsitentEmergence(
             "unable to produce\n"+repr(jsonify(identity.expected_hashe))+"\n while can produce"+repr(jsonify(producable_hashe)),
