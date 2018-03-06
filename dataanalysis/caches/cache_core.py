@@ -115,7 +115,7 @@ class Cache(object):
             log("{log:cache}","cache found!",fi)
             return fi
             
-        log("found no cache for",hashe)
+        log("found no cache for",hashe,"in",self)
 
         return None
     
@@ -126,7 +126,7 @@ class Cache(object):
     
     def restore_from_parent(self,hashe,obj,rc=None):
         if self.parent is None:
-            log("no parent available to call for")
+            log("no parent available to call for in",self)
             return None
         
         log(self,"there is a parent available to call for:",self.parent)
@@ -916,14 +916,6 @@ class TransientCache(Cache): #d
 
         log("stored in transient",obj,hashe)
 
-        #self.list()
-
-#        self.guarantee_unique_names(obj)
-        
- #   def guarantee_unique_names(self,obj):
-  #      pass
-
-        #self.store_to_parent(hashe,obj)
 
 class CacheIndex(Cache):
     def __init__(self,*a,**aa):

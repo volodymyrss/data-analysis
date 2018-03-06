@@ -7,6 +7,7 @@ import sys
 import yaml
 
 from dataanalysis.caches.queue import QueueCache
+from dataanalysis.printhook import log
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -202,7 +203,14 @@ if args.callback and args.callback.startswith("http://"):
 if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
     print("assumptions:",assumptions)
-    core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+
+    assumptions_evaluated=eval(assumptions)
+    if type(assumptions_evaluated) not in (list,tuple):
+        assumptions_evaluated=[assumptions_evaluated]
+
+    for i,assumption in enumerate(assumptions_evaluated):
+        log("assumption from commandline",assumption)
+        core.AnalysisFactory.WhatIfCopy('commandline_%i'%i, assumption)
 
 
 A= core.AnalysisFactory[args.object_name]()
@@ -233,8 +241,12 @@ for a in args.disable_run:
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
-for inj_content in injected_objects:
-    core.AnalysisFactory.inject_serialization(inj_content)
+for i,inj_content in enumerate(injected_objects):
+    #core.AnalysisFactory.inject_serialization(inj_content)
+    assumption_from_injection=core.AnalysisFactory.implement_serialization(inj_content)
+    print("assumption from injection",i,assumption_from_injection)
+    print("assumption from injection derived from", inj_content)
+    core.AnalysisFactory.WhatIfCopy('commandline_injection_%i' % i, assumption_from_injection)
 
 if args.delegate_to_queue is not None:
     from dataanalysis.caches.queue import QueueCache

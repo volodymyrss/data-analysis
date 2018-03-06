@@ -1,11 +1,11 @@
 import glob
+import json
 import os
 import random
 import subprocess
 import sys
 
 import yaml
-import json
 
 package_root=os.path.dirname(os.path.dirname(__file__))
 
@@ -173,7 +173,7 @@ def test_delegation():
 
     job=yaml.load(open(jobs[0]))
 
-    print(job)
+    print("\n\nJOB",job)
 
 
     from dataanalysis.caches.queue import QueueCacheWorker
@@ -181,12 +181,13 @@ def test_delegation():
     print(qw.queue.info)
     assert qw.queue.info['waiting']==1
 
+    print("\n\nWORKER")
     qw.run_once()
 
     assert os.path.exists(callback_file)
     callback_info = open(callback_file).readlines()
-    print(callback_info)
-    assert len(callback_info) == 5
+    print("".join(callback_info))
+    assert len(callback_info) == 6
 
 
     jobs = (glob.glob(queue_dir + "/waiting/*"))
@@ -198,6 +199,8 @@ def test_delegation():
     if os.path.exists(exception_report):
         os.remove(exception_report)
 
+    print("\n\nAGAIN")
+    print("cmd:"," ".join(cmd+["-v"]))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())

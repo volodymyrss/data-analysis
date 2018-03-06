@@ -96,3 +96,94 @@ def test_input_assumption():
     eC.get()
 
     assert C.data == eC.data
+
+def test_input_assumption_version():
+    import dataanalysis.core as da
+    da.reset()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    C=ddmoduletest.BAnalysis(assume=[ddmoduletest.AAnalysis(use_version="xxx_version")])
+    C.get()
+
+    print C.data
+
+    ident=C.get_identity()
+
+    assert len(ident.assumptions)==1
+
+    print "assumption",ident.assumptions[0]
+    print "assumption data",ident.assumptions[0][1]['assumed_data'],type(ident.assumptions[0][1]['assumed_data'])
+
+    import dataanalysis.emerge as emerge
+    da.reset()
+
+    #print ident.assumptions[]
+
+    eC=emerge.emerge_from_identity(ident)
+    eC.get()
+
+    assert C.data == eC.data
+
+    print C._da_locally_complete
+    assert C._da_locally_complete[1][2]=='AAnalysis.xxx_version'
+
+def test_used_modules_stacking():
+    import dataanalysis.core as da
+    da.reset()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+    import ddmoduletest2
+    reload(ddmoduletest)
+    reload(ddmoduletest2)
+    reload(ddmoduletest)
+    reload(ddmoduletest2)
+
+    print()
+    for i,m in enumerate(da.AnalysisFactory.dda_modules_used):
+        print(i,m)
+
+    assert len(da.AnalysisFactory.dda_modules_used) == 2
+
+    C=ddmoduletest.AAnalysis()
+    C.get()
+
+
+    ident=C.get_identity()
+
+    print("identity",ident)
+
+    import dataanalysis.emerge as emerge
+    da.reset()
+
+    eC=emerge.emerge_from_identity(ident)
+    eC.get()
+
+    assert C.data == eC.data
+
+def test_destacking_tool():
+    input=[
+        1,
+        2,
+        3,
+        1,
+        2,
+        1,
+        2,
+        3,
+        5,
+        5,
+    ]
+    from dataanalysis.hashtools import remove_repeating_stacks
+    output=remove_repeating_stacks(input)
+
+    assert output==[
+        1,
+        2,
+        3,
+        1,
+        2,
+        3,
+        5,
+    ]

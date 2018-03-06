@@ -3,7 +3,7 @@ import sys
 from dataanalysis import printhook
 from dataanalysis.bcolors import render
 from dataanalysis.printhook import log, decorate_method_log, debug_print
-
+import hashtools
 
 #from dataanalysis import core
 #print(core.__file__)
@@ -51,18 +51,47 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
     def note_factorization(self,factorization):
         self.factorizations.append(factorization)
 
-    def inject_serialization(self, serialization):
-        log("injecting", serialization)
+    def implement_serialization(self,serialization):
         name, data = serialization
         obj = self[name]
         obj.import_data(data)
         obj.infactory = True
         obj.virtual = True
-        self.put(obj)
+        return obj
+
+    def inject_serialization(self, serialization):
+        log("injecting", serialization)
+        obj=self.implement_serialization(serialization)
+        self.put(obj,origins=["inject_serialization"])
         log("result of injection",self.byname(obj.get_signature()))
 
-    def put(self, obj, sig=None):
+    def assume_serialization(self, serialization):
+        log("assuming injection", serialization)
+        obj = self.implement_serialization(serialization)
+        self.WhatIfCopy("injection_of_" + repr(obj),obj)
+        log("result of injection", self.byname(obj.get_signature()))
+
+    def assume_module_used(self,module,sanitize=True):
+        if sanitize and module.__name__.startswith("dataanalysis."):
+            return # really??
+
+        if self.dda_modules_used == [] or self.dda_modules_used[-1] != module:
+            self.dda_modules_used.append(module)
+
+        while True:
+            cleaned=hashtools.remove_repeating_stacks(self.dda_modules_used)
+            if cleaned==self.dda_modules_used:
+                self.dda_modules_used=cleaned
+                break
+            self.dda_modules_used = cleaned
+
+
+        #self.dda_modules_used()
+        #remove_repeating_stacks()
+
+    def put(self, obj, sig=None, origins=None):
         log("requested to put in factory:", obj, sig)
+        log(obj,"origins:",origins)
         log("factory assumptions:", self.cache_assumptions)
 
         if not obj.infactory:
@@ -74,8 +103,12 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             raise Exception("can not store in cache object with assumptions")
 
         module_record = sys.modules[obj.__module__]
-        if self.dda_modules_used == [] or self.dda_modules_used[-1] != module_record:
-            self.dda_modules_used.append(module_record)
+
+        if origins is not None and "with_metaclass" in origins:
+            log("assume module",module_record,"triggered by",obj)
+            self.assume_module_used(module_record)
+        else:
+            log("origins",origins,"not suitable to assume module", module_record, "triggered by", obj)
 
         if isinstance(obj, type):
             log("requested to put class, it will be constructed")
@@ -89,14 +122,17 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         self.cache[sig] = obj
         return saved
 
-    def get(self, item, update=False):
+    def get(self, item, update=False, origins=None):
         """
         generates and instance of DataAnalysis from something
 
         """
 
+        if origins is None:
+            origins=[]
+
         log("interpreting", item)
-        log("factory knows", self.cache)  # .keys())
+        log("on get factory knows", self.cache)  # .keys())
 
         if item is None:
             log("item is None: is it a virtual class? should not be in the analysis!")
@@ -105,6 +141,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         if not hasattr(self,'blueprint_class'):
             log("no analysis yet")
             return item
+
+        if hasattr(self,'named_blueprint_class') and isinstance(item,self.named_blueprint_class):
+            item=item.resolve()
 
         if isinstance(item, type) and issubclass(item, self.blueprint_class):
             log("is subclass of DataAnalysis, probably need to construct it")
@@ -117,7 +156,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                     log("it is class, constructing")
                     c = c()
                     log("constructed", c)
-                    self.put(c)
+                    self.put(c,origins=["get","from_class"]+origins)
                     # log("will store",c)
                     return c
                 if isinstance(item, self.blueprint_class):
@@ -176,7 +215,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
                 if update:
                     log("recommendation is to force update")
-                    self.put(item)
+                    self.put(item,origins=["get","force_update"]+origins)
                     return item
                 else:
                     log("attention! offered object is discarded:", item)  # ,item.export_data())
@@ -185,7 +224,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
                     return storeditem
 
             log("no such object registered! registering")  # attention!
-            self.put(item)
+            self.put(item,origins=["get","from_new_object"]+origins)
             return item
 
         if isinstance(item, str):
@@ -197,7 +236,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             return self.blueprint_DataHandle(str(item))
 
         log("unable to interpret item: " + repr(item))
-        log("factory knows",AnalysisFactory.cache)
+        log("after get factory knows",AnalysisFactory.cache)
         raise Exception("unable to interpret item: " + repr(item)+" blueprint: "+repr(self.blueprint_class))
         # return None
 
@@ -232,23 +271,28 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             if hasattr(o, '_da_obscure_origin_hashe'):
                 serialization[1]['_da_obscure_origin_hashe']=o._da_obscure_origin_hashe
 
-            o.__class__(dynamic=False).promote()  # assume??
+            o.__class__(dynamic=False).promote(origins=["what_if_copy"])  # assume??
             self.inject_serialization(serialization) # conditional reality contains pale copies of the fundamentals
 
         for assumptions in self.cache_assumptions:
             log("assumption group:", assumptions)
             for a in assumptions:
                 log("assumption", a)
-                a.promote()
+                #a.promote()
+                serialization = a.export_data(verify_jsonifiable=False,include_class_attributes=True,deep_export=True,export_caches=True)
+                log("export for cloning:",serialization)
+                obj=a.__class__(dynamic=False)
+                obj.import_data(serialization)
+                obj.promote()
 
                 #   else:
                 #       log("non-virtual object! promoting object itself")
                 #       o.promote() # assume??
         # self.cache=copy.deepcopy(self.cache_stack[-1]) # dangerous copy: copying call __new__, takes them from current cache
-        log("current cache copied:", self.cache)
+        log("current cache copied, factory knows:", self.cache)
 
     def WhatIfNot(self):
-        log("factory knows", self.cache)  # .keys())
+        log("before whatifnot factory knows", self.cache)  # .keys())
         if self.cache_stack == []:
             log("empty stack!")
             return
@@ -262,7 +306,10 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         log("current assumptions level %i:" % len(self.cache_assumptions),
                self.cache_assumptions[-1] if self.cache_assumptions != [] else "none")
         self.comment = ""
-        log("factory knows", self.cache)  # .keys())
+        log("after whatifnot factory knows", self.cache)  # .keys())
+        log("complete cache stack:")
+        for i,(assumption,cache) in enumerate(zip(self.cache_assumptions,self.cache_stack)):
+            log(i,assumption,cache)
 
     def byname(self, name):
         if name not in self.cache:
