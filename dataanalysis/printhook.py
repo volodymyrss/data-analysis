@@ -48,8 +48,12 @@ import json
 import os
 import re
 
-logstash_levels=os.environ.get("LOGSTASH_LEVELS",".*").split(",")
-logstash_levels_patterns=map(re.compile,logstash_levels)
+def extract_logstash_levels():
+    if "LOGSTASH_LEVELS" in os.environ:
+        logstash_levels=os.environ.get("LOGSTASH_LEVELS").split(",")
+        logstash_levels_patterns=map(re.compile,logstash_levels)
+        return logstash_levels, logstash_levels_patterns
+    return None,[]
 
 def setup_logstash():
     import os
@@ -69,6 +73,8 @@ def setup_logstash():
     return my_logger
 
 graylog_logger=setup_graylog()
+
+logstash_levels,logstash_levels_patterns=extract_logstash_levels()
 logstash_logger=setup_logstash()
 
 def log(*args,**kwargs):
@@ -113,19 +119,22 @@ def log_in_context(level,obj,**aa):
     log_logstash(level,**aa)
 
 def log_logstash(a,**aa):
-    if logstash_logger is not None: 
-        if 'message' in aa:
-            aa['note']=aa.pop('message')
-        aa['action']=a
+    if logstash_levels is None:
+        log(a,level="logstash")
+    else:
+        if logstash_logger is not None:
+            if 'message' in aa:
+                aa['note']=aa.pop('message')
+            aa['action']=a
 
-        if 'origin' not in aa:
-            aa['origin']="dda"
-        
-        for k,v in os.environ.items():
-            if len(v)<20:
-                aa['env_'+k]=v
+            if 'origin' not in aa:
+                aa['origin']="dda"
 
-        logstash_logger.info(aa.get('note',''),extra=aa)
+            for k,v in os.environ.items():
+                if len(v)<20:
+                    aa['env_'+k]=v
+
+            logstash_logger.info(aa.get('note',''),extra=aa)
 
 
 def debug_print(text):
