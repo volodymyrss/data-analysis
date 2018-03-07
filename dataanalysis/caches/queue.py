@@ -108,7 +108,7 @@ class QueueCacheWorker(object):
 
             try:
                 task=self.queue.get()
-                log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task")
+                log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
             except fsqueue.Empty:
                 if burst:
                     break
@@ -120,7 +120,7 @@ class QueueCacheWorker(object):
                 self.run_task(task)
             except Exception as e:
                 print("task failed:",e)
-                log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed")
+                log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed",target=task.task_data['object_identity']['factory_name'])
                 traceback.print_exc()
 
                 def update(task):
@@ -132,7 +132,7 @@ class QueueCacheWorker(object):
                 self.queue.task_failed(update)
             else:
                 print("DONE!")
-                log_logstash("worker",message="worker task done",origin="dda_worker",worker_event="task_done")
+                log_logstash("worker",message="worker task done",origin="dda_worker",worker_event="task_done",target=task.task_data['object_identity']['factory_name'])
                 self.queue.task_done()
 
 
