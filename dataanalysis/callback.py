@@ -70,6 +70,8 @@ class Callback(object):
             try:
                 if issubclass(obj.__class__, accepted_class):
                     return True
+                if obj.__class__.__name__ == accepted_class.__name__:
+                    return True
             except Exception as e:
                 log("unable to filter",obj,obj.__class__,accepted_class)
                 raise
