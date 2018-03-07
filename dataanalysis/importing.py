@@ -82,7 +82,7 @@ def load_by_name(m, local_gitroot=None,remote_git_root='any'):
             log("loading with provider:",m)
 
     if m.startswith("git://"):
-        log("will import modul from cache")
+        log("will import module from git",level="top")
         ms=m[len("git://"):].split("/") # or @
 
         if len(ms)==2:
@@ -91,7 +91,7 @@ def load_by_name(m, local_gitroot=None,remote_git_root='any'):
             m0=ms[0]
             m1="master"
 
-        log("as",m0,m1)
+        log("as",m0,m1,level="top")
         result=_import_git_module(m0,m1,local_gitroot=local_gitroot,remote_git_root=remote_git_root),m0
         result[0].__dda_module_global_name__= m
         result[0].__dda_module_origin__ = "git"

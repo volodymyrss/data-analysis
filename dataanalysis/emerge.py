@@ -14,11 +14,11 @@ def import_ddmodules(module_names=None):
         if isinstance(dd_module_name,str) and dd_module_name.startswith("dataanalysis."):
             continue
 
-        log("importing", dd_module_name)
+        log("importing", dd_module_name,level="top")
         dd_module=importing.load_by_name(dd_module_name)
         modules.append(dd_module[0])
 
-        log("module",dd_module[1],"as",dd_module[0],"set to global namespace")
+        log("module",dd_module[1],"as",dd_module[0],"set to global namespace",level="top")
         globals()[dd_module[1]]=dd_module[0]
 
  #       reload(dd_module[0])
