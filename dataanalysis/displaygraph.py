@@ -11,6 +11,9 @@ def dotify_hashe(hashe,assign_nuids=False,filtered_nodes=None,wait=None):
     graph = pydot.Dot(graph_type='digraph', splines='ortho' )
 
     def node_filter(node_label):
+        if filtered_nodes is None:
+            return True
+
         for one_filter in filtered_nodes:
             if re.search(one_filter,node_label): return True
         return False
