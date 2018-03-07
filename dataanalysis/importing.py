@@ -78,7 +78,11 @@ def load_by_name(m, local_gitroot=None,remote_git_root='any'):
                 m=m[1]
                 log("using generic load from filesystem:",m[1])
         else:
-            m=m[0]+"://"+m[1]
+            if len(m)>2 and m[2] is not None:
+                m = m[2]
+            else:
+                m = m[0] + "://" + m[1]
+
             log("loading with provider:",m)
 
     if m.startswith("git://"):
