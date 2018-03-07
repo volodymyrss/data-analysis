@@ -74,7 +74,7 @@ class Callback(object):
                 log("unable to filter",obj,obj.__class__,accepted_class)
                 raise
 
-        log("callback NOT accepted:",message,repr(obj),obj.__class__,level="top")
+        log("callback NOT accepted:",message,repr(obj),"class:",obj.__class__,level="top")
         log("accepted callbacks:",self.callback_accepted_classes,level="top")
         return False
 
