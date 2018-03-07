@@ -1,49 +1,71 @@
+import time
+import re
 import subprocess
 
 import pydot
-import time
+
 import hashtools
 
 
-def plot_hashe(hashe,pngfn,dotfn=None,show=True,assign_nuids=False,filter_nodes=None, assign_status=False):
+def dotify_hashe(hashe,assign_nuids=False,filtered_nodes=None,wait=None):
     graph = pydot.Dot(graph_type='digraph', splines='ortho' )
 
-    def process_hashe(hashe,graph,root=None):
+    def node_filter(node_label):
+        for one_filter in filtered_nodes:
+            if re.search(one_filter,node_label): return True
+        return False
+
+    def process_hashe(hashe,graph,root=None,edge_list=None):
+        if edge_list is None:
+            edge_list=[]
+
         if hashe is None:
             return
 
         if hashe[0]=="list":
             for h in hashe[1:]:
-                process_hashe(h,graph,root)
+                process_hashe(h,graph,root,edge_list)
 
         if hashe[0]=="analysis":
-            node_label=repr(hashe[-1]).replace(":","")
+            node_label=str(hashe[-1]).replace(":","")
             if assign_nuids:
                 nuid=hashtools.shhash(hashe)[:8]
-                node_label+="_"+nuid
+                node_label += "\nNUID=" + nuid
 
-            graph.add_node(pydot.Node(node_label, style="filled", fillcolor="green", shape="box"))
+            if node_filter(node_label):
+                graph.add_node(pydot.Node(node_label, style="filled", fillcolor="green", shape="box"))
+                if root is not None and (node_label, root) not in edge_list:
+                    graph.add_edge(pydot.Edge(node_label, root))
+                    edge_list.append((node_label, root))
 
-            if root is not None:
-                graph.add_edge(pydot.Edge(node_label, repr(root)))
-
-            process_hashe(hashe[1],graph,node_label)
+                process_hashe(hashe[1],graph,node_label,edge_list)
+            else:
+                process_hashe(hashe[1], graph, root,edge_list)
 
         if isinstance(hashe,str):
-            graph.add_node(pydot.Node(repr(hashe).replace(":",""), style="filled", fillcolor="green", shape="box"))
+            node_label = hashe.replace(":", "")
 
-            if root is not None:
-                graph.add_edge(pydot.Edge(repr(hashe).replace(":",""), repr(root)))
+            if node_filter(node_label):
+                graph.add_node(pydot.Node(node_label, style="filled", fillcolor="green", shape="box"))
+                if root is not None and (node_label, root) not in edge_list:
+                    graph.add_edge(pydot.Edge(node_label, root))
+                    edge_list.append((node_label, root))
 
 
     process_hashe(hashe,graph,None)
+
+    return graph
+
+
+def plot_hashe(hashe,pngfn,dotfn=None,show=True,assign_nuids=False,filtered_nodes=None,wait=None):
+    graph=dotify_hashe(hashe,assign_nuids,filtered_nodes,wait)
     graph.write_png(pngfn)
-
-    if show:
-        p=subprocess.Popen(["display",pngfn])
-        time.sleep(0.5)
-        p.kill()
-
 
     if dotfn is not None:
         graph.write(dotfn)
+
+    if show:
+        p=subprocess.Popen(["display",pngfn])
+        if wait is not None:
+            time.sleep(wait)
+            p.kill()
