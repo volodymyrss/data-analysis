@@ -87,7 +87,7 @@ def test_input_assumption():
 
     assert len(ident.assumptions)==1
 
-    print "assumption",ident.assumptions[0]
+    print("assumption",ident.assumptions[0])
 
     import dataanalysis.emerge as emerge
     da.reset()

@@ -29,6 +29,7 @@ parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
+parser.add_argument('--delegate-target', dest='delegate_target', action="store_true",  help='delegate target',default=False)
 parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
 args = parser.parse_args()
@@ -255,7 +256,8 @@ if args.delegate_to_queue is not None:
     A.read_caches.append(qcache.__class__)
 
 try:
-    A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback,_da_prompt_call=True)
+    A._da_delegation_allowed=args.delegate_target
+    A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback)
 except dataanalysis.UnhandledAnalysisException as e:
     yaml.dump(
               dict(

@@ -192,7 +192,7 @@ class AnalysisDelegatedException(Exception):
             return self.hashe[-1]
 
         if self.hashe[0] == "list":
-            return "; ".join([repr(k) for k in self.hashe[1:]])
+            return "; ".join([repr(k[-1]) for k in self.hashe[1:]])
 
     def __init__(self,hashe,resources=None,comment=None,origin=None, delegation_state=None):
         self.hashe=hashe
@@ -208,6 +208,13 @@ class AnalysisDelegatedException(Exception):
             return self._comment
         return ""
 
+    @property
+    def delegation_states(self):
+        if isinstance(self.delegation_state,list):
+            return self.delegation_state
+        else:
+            return [self.delegation_state]
+
     @classmethod
     def from_list(cls,exceptions):
         if len(exceptions)==1:
@@ -218,8 +225,10 @@ class AnalysisDelegatedException(Exception):
         obj.source_exceptions=exceptions
 
         obj.resources=[]
+        obj.delegation_state=[]
         for ex in exceptions:
             obj.resources+=ex.resources
+            obj.delegation_state.append(ex.delegation_state)
 
         obj.hashe=tuple(['list']+[ex.hashe for ex in exceptions])
 

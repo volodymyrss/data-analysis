@@ -9,10 +9,10 @@ import dataanalysis.core as da
 import dataanalysis.emerge as emerge
 import dataanalysis.graphtools
 from dataanalysis.printhook import log,log_logstash
-from dataanalysis.caches.delegating import DelegatingCache
+from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
 
-class QueueCache(DelegatingCache):
+class QueueCache(SelectivelyDelegatingCache):
 
     def __init__(self,queue_directory="/tmp/queue"):
         super(QueueCache, self).__init__()
@@ -63,6 +63,7 @@ class QueueCacheWorker(object):
 
         print(object_identity)
         A=emerge.emerge_from_identity(object_identity)
+        A._da_delegation_allowed=False
 
         dataanalysis.callback.Callback.set_callback_accepted_classes([da.byname(object_identity.factory_name).__class__])
 
@@ -76,20 +77,14 @@ class QueueCacheWorker(object):
             result=A.get(requested_by=[repr(self)])
         except da.AnalysisException:
             raise
+        else:
+            A.process_hooks("top",A,message="task complete",state="done")
 
-        A.process_hooks("top",A,message="task complete",state="done")
-
-        return result
+            return result
 
 
     def run_once(self):
-        task=self.queue.get()
-        object_identity=task.task_data['object_identity']
-
-        print("object identity",object_identity)
-
-        self.run_task(task)
-        self.queue.task_done()
+        self.run_all(limited_burst=1)
 
     def run_all(self,burst=True,wait=1,limited_burst=None):
         log_logstash("worker", message="worker starting", worker_event="starting")
@@ -121,6 +116,12 @@ class QueueCacheWorker(object):
 
             try:
                 self.run_task(task)
+            except da.AnalysisDelegatedException as delegation_exception:
+                log("found delegated dependencies:", delegation_exception.delegation_states)
+                task_dependencies = [fsqueue.Task.from_file(d['fn']).task_data for d in
+                                     delegation_exception.delegation_states]
+                self.queue.put(task, depends_on=task_dependencies)
+                self.queue.task_locked()
             except Exception as e:
                 print("task failed:",e)
                 log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed",target=task.task_data['object_identity']['factory_name'])
