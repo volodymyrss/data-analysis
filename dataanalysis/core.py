@@ -1039,6 +1039,7 @@ class DataAnalysis(object):
         self.summarize_resource_stats()
         self.process_hooks("top",self,message="main done",
                         resource_stats=self.current_resource_stats,
+                        resource_summary=self.current_resource_summary,
                         state="main_done")
 
     def process_find_output_objects(self):
@@ -1651,6 +1652,12 @@ class DataAnalysis(object):
         if self._da_resource_stats is None:
             return {}
         return self._da_resource_stats 
+
+    @property
+    def current_resource_summary(self):
+        if self._da_resource_summary is None:
+            return {}
+        return self._da_resource_summary
 
     def summarize_resource_stats(self):
         total_usertime=sum([a['seconds'] for a in self.current_resource_stats if a['resource_type']=='usertime'])
