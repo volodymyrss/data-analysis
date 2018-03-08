@@ -27,7 +27,7 @@ class CallbackHook(object):
                 if 'hashe' in object_data:
                     object_data.pop('hashe')
                 log("loghook from callback",level='top')
-                log_hook("callback",obj,level_orig=level,callback_params=callback.url_params, callback_result=r,**kwargs)
+                log_hook("callback",obj,level_orig=level,callback_params=callback.url_params, callback_response=r[0], callback_response_content=r[1],**kwargs)
 
 
 class Callback(object):
@@ -113,12 +113,12 @@ class Callback(object):
                 r=requests.get(self.url,
                              params=params)
                 log("callback succeeded",self.url,params,r,level="top")
-                log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params)
-                return r
+                log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r.content)
+                return r,r.content
             except requests.ConnectionError as e:
                 log("callback failed",self.url,params,":",e,level="top")
-                log_hook("callback",obj,message="callback failed!",callback_url=self.url,callback_params=self.url_params,action_params=params)
-                return "callback failed"
+                log_hook("callback",obj,message="callback failed!",callback_exception=repr(e),callback_url=self.url,callback_params=self.url_params,action_params=params)
+                return "callback failed",repr(e)
         else:
             raise Exception("unknown callback method",self.url)
 
