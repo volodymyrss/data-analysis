@@ -20,7 +20,9 @@ env = os.environ
 env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 def test_delegation():
+    from dataanalysis.caches.queue import QueueCacheWorker
     queue_dir="./queue"
+    qw=QueueCacheWorker(queue_dir)
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
@@ -47,6 +49,8 @@ def test_delegation():
 
     assert not os.path.exists(callback_file)
 
+    qw.queue.wipe(["waiting","locked","done","failed","running"])
+
     # run it
     p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
     p.wait()
@@ -66,8 +70,6 @@ def test_delegation():
     print("\n\nJOB",job)
 
 
-    from dataanalysis.caches.queue import QueueCacheWorker
-    qw=QueueCacheWorker(queue_dir)
     print(qw.queue.info)
 
     assert qw.queue.info['waiting'] == 1
@@ -107,14 +109,14 @@ def test_delegation():
         os.remove(exception_report)
 
     print("\n\nAGAIN")
-    print("cmd:"," ".join(cmd+["-v"]))
+    print("cmd:"," ".join(cmd+["-V"]))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
 
-    assert qw.queue.info['waiting'] == 0
-    assert qw.queue.info['done'] == 3
+    assert qw.queue.info['waiting'] == 1
     assert qw.queue.info['locked'] == 0
+    assert qw.queue.info['done'] == 2
 
     assert os.path.exists(exception_report)
 

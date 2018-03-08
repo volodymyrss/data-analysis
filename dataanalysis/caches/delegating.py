@@ -24,7 +24,7 @@ class DelegatingCache(dataanalysis.caches.cache_core.Cache):
 
 class SelectivelyDelegatingCache(DelegatingCache):
     delegating_analysis=None
-    delegate_by_default=False
+    delegate_by_default=True
 
     def will_delegate(self,hashe,obj):
         log("trying for delegation",hashe,"in",self,level="top")

@@ -13,6 +13,7 @@ from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
 
 class QueueCache(SelectivelyDelegatingCache):
+    delegate_by_default=True
 
     def __init__(self,queue_directory="/tmp/queue"):
         super(QueueCache, self).__init__()
@@ -120,7 +121,15 @@ class QueueCacheWorker(object):
                 log("found delegated dependencies:", delegation_exception.delegation_states)
                 task_dependencies = [fsqueue.Task.from_file(d['fn']).task_data for d in
                                      delegation_exception.delegation_states]
-                self.queue.put(task, depends_on=task_dependencies)
+                locked_task=fsqueue.Task.from_file(self.queue.put(task.task_data, depends_on=task_dependencies)['fn'])
+                print("former task:",task,task.filename_key)
+                print("locked task:",locked_task,locked_task.filename_key)
+                print("former task data:",task.task_data)
+                print("locked task data:",locked_task.task_data)
+                print("former task key:",task.filename_key)
+                print("locked task key:",locked_task.filename_key)
+                assert task.filename_key == locked_task.filename_key
+
                 self.queue.task_locked()
             except Exception as e:
                 print("task failed:",e)
