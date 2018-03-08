@@ -39,7 +39,7 @@ class Callback(object):
 
         for c in classes:
             if c not in cls.callback_accepted_classes:
-                log("adding accepted class",c)
+                log("adding accepted class",c,level="top")
                 cls.callback_accepted_classes.append(c)
 
         log("callback currently accepts classes",cls.callback_accepted_classes)

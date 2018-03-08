@@ -386,7 +386,7 @@ class DataAnalysis(object):
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
-            assumptions=[a.serialize() for a in ([x[0] for x in self.factory.cache_assumptions] + self.assumptions)],
+            assumptions=[a.serialize() for a in (self.factory.factory_assumptions_stacked + self.assumptions)],
             expected_hashe=self.expected_hashe,
         )
 
@@ -1530,6 +1530,7 @@ class DataAnalysis(object):
             if delegated != []:
                 log("delegated:",len(delegated),delegated)
                 log("still implemented:", len(inputhashes),inputs)
+
                 raise AnalysisDelegatedException.from_list(delegated)
 
             if len(inputhashes)>1:

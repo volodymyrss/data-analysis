@@ -244,6 +244,14 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
     cache_assumptions = []
     comment = ""
 
+    @property
+    def factory_assumptions_stacked(self):
+        r=[]
+        for a in self.cache_assumptions:
+            r+=a
+        log("stacked cache assumptions",r,level="top")
+        return r
+
     def WhatIfCopy(self, description, new_assumptions):
         if isinstance(new_assumptions, tuple):
             new_assumptions = list(new_assumptions)

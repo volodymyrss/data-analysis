@@ -48,15 +48,17 @@ def emerge_from_identity(identity):
 
     #A = da.AnalysisFactory.byname(identity.factory_name)
 
-    for assumption in identity.assumptions:
+
+    for i,assumption in enumerate(identity.assumptions):
         log("requested assumption:", assumption)
 
         if assumption[0] == '':
             log("ATTENTION: dangerous eval from string",assumption[1])
-            da.AnalysisFactory.WhatIfCopy('queue emergence', eval(assumption[1]))
+            da.AnalysisFactory.WhatIfCopy('queue emergence %i'%i, eval(assumption[1]))
         else:
             a = da.AnalysisFactory.byname(assumption[0])
             a.import_data(assumption[1])
+            da.AnalysisFactory.WhatIfCopy('queue emergence %i'%i, a)
 
             print(a, "from", assumption)
 

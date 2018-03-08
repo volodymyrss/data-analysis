@@ -91,7 +91,7 @@ class QueueCacheWorker(object):
         self.run_task(task)
         self.queue.task_done()
 
-    def run_all(self,burst=True,wait=1):
+    def run_all(self,burst=True,wait=1,limited_burst=None):
         log_logstash("worker", message="worker starting", worker_event="starting")
         worker_age=0
 
@@ -105,6 +105,9 @@ class QueueCacheWorker(object):
             if worker_heartrate_skip>0 and worker_age%worker_heartrate_skip==0:
                 log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_age)
             worker_age+=1
+
+            if worker_age>limited_burst:
+                break
 
             try:
                 task=self.queue.get()
@@ -143,6 +146,7 @@ if __name__ == "__main__":
     parser.add_argument("queue",default="./queue")
     parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
     parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
+    parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
     parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
 
     args=parser.parse_args()
@@ -157,7 +161,7 @@ if __name__ == "__main__":
             print(qcworker.queue.info)
             time.sleep(args.watch)
     else:
-        qcworker.run_all(burst=args.burst_mode)
+        qcworker.run_all(burst=args.burst_mode,limited_burst=args.limited_burst)
 
 
 
