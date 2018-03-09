@@ -121,16 +121,10 @@ class QueueCacheWorker(object):
                 log("found delegated dependencies:", delegation_exception.delegation_states)
                 task_dependencies = [fsqueue.Task.from_file(d['fn']).task_data for d in
                                      delegation_exception.delegation_states]
-                locked_task=fsqueue.Task.from_file(self.queue.put(task.task_data, depends_on=task_dependencies)['fn'])
-                print("former task:",task,task.filename_key)
-                print("locked task:",locked_task,locked_task.filename_key)
-                print("former task data:",task.task_data)
-                print("locked task data:",locked_task.task_data)
-                print("former task key:",task.filename_key)
-                print("locked task key:",locked_task.filename_key)
+                locked_task=fsqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
                 assert task.filename_key == locked_task.filename_key
 
-                self.queue.task_locked()
+                self.queue.task_locked(depends_on=task_dependencies)
             except Exception as e:
                 print("task failed:",e)
                 log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed",target=task.task_data['object_identity']['factory_name'])

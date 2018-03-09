@@ -17,7 +17,7 @@ import sys
 import traceback
 import time
 import base64
-from collections import Mapping, Set, Sequence
+from collections import Mapping, Set, Sequence, OrderedDict
 
 from dataanalysis import hashtools
 from dataanalysis import jsonify
@@ -277,7 +277,7 @@ class DataAnalysisIdentity(object):
         self.full_name=full_name
         self.modules=modules
         self.assumptions=assumptions
-        self.expected_hashe=expected_hashe
+        self.expected_hashe=hashtools.hashe_replace_object(expected_hashe,None,'None')
 
     def get_modules_loadable(self):
         return [m[1] for m in self.modules]
@@ -288,7 +288,18 @@ class DataAnalysisIdentity(object):
                                ",".join([a if a is not None else "custom eval" for a,b in self.assumptions]))
 
     def serialize(self):
-        return self.__dict__
+        result=self.__dict__
+
+        serialized_assumptions=[]
+        for assumption in result['assumptions']:
+            if isinstance(assumption,tuple):
+                for k,v in assumption[1].items():
+                    if v is None:
+                        assumption[1][k]='None'
+            serialized_assumptions.append((assumption[0],OrderedDict(sorted(assumption[1].items()))))
+
+        result['assumptions']=sorted(serialized_assumptions)
+        return OrderedDict(sorted(result.items()))
 
     @classmethod
     def from_dict(cls,d):

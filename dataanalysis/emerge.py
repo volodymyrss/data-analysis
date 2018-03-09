@@ -2,6 +2,7 @@ import dataanalysis.importing as importing
 from dataanalysis.caches.resources import jsonify
 from dataanalysis.printhook import log, log_logstash
 import dataanalysis.graphtools
+from dataanalysis import hashtools
 
 dd_module_names=[]
 
@@ -67,7 +68,7 @@ def emerge_from_identity(identity):
 
     if identity.expected_hashe is None:
         log("expected hashe verification skipped")
-    elif jsonify(producable_hashe) != jsonify(identity.expected_hashe):
+    elif jsonify(hashtools.hashe_replace_object(producable_hashe,None,'None')) != jsonify(identity.expected_hashe):
         log("producable:\n",jsonify(producable_hashe),"\n",level="top")
         log("requested:\n",jsonify(identity.expected_hashe),level="top")
 

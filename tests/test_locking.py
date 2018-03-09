@@ -31,9 +31,8 @@ def test_delegation():
         'python',rundda_path,
         'Mosaic',
         '-m','ddmoduletest',
-        '-a','ddmoduletest.RandomModifier(use_version="v%i")'%random.randint(1,1000),
+        '-a','ddmoduletest.RandomModifier(use_version="%s")'%randomized_version,
         '-Q',queue_dir,
-        '--delegate-target',
         '--callback','file://'+callback_file,
     ]
 
@@ -52,7 +51,7 @@ def test_delegation():
     qw.queue.wipe(["waiting","locked","done","failed","running"])
 
     # run it
-    p=subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
+    p=subprocess.Popen(cmd+['--delegate-target'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
 
@@ -103,13 +102,21 @@ def test_delegation():
     assert qw.queue.info['locked'] == 1
     assert qw.queue.info['done'] == 2
 
+
+    print("\n\nWORKER")
+    qw.run_once()
+
+    assert qw.queue.info['waiting'] == 1
+    assert qw.queue.info['locked'] == 0
+    assert qw.queue.info['done'] == 2
+
     # run again, expecting from cache
     exception_report = "exception.yaml"
     if os.path.exists(exception_report):
         os.remove(exception_report)
 
     print("\n\nAGAIN")
-    print("cmd:"," ".join(cmd+["-V"]))
+    print("cmd:"," ".join(cmd+["-V",'--delegate-target']))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
@@ -118,14 +125,13 @@ def test_delegation():
     assert qw.queue.info['locked'] == 0
     assert qw.queue.info['done'] == 2
 
-    assert os.path.exists(exception_report)
-
     #assert not os.path.exists(exception_report)
 
     import ddmoduletest
 
     da.debug_output()
 
+    da.AnalysisFactory.WhatIfCopy("test",ddmoduletest.RandomModifier(use_version=randomized_version))
     A=ddmoduletest.Mosaic()
     A.write_caches=[]
     A.produce_disabled=True
