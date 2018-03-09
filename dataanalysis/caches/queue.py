@@ -102,7 +102,7 @@ class QueueCacheWorker(object):
                 log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_age)
             worker_age+=1
 
-            if worker_age>limited_burst:
+            if limited_burst>0 and worker_age>limited_burst:
                 break
 
             try:
