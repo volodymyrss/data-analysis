@@ -106,9 +106,9 @@ def test_delegation():
     print("\n\nWORKER")
     qw.run_once()
 
-    assert qw.queue.info['waiting'] == 1
+    assert qw.queue.info['waiting'] == 0
     assert qw.queue.info['locked'] == 0
-    assert qw.queue.info['done'] == 2
+    assert qw.queue.info['done'] == 3
 
     # run again, expecting from cache
     exception_report = "exception.yaml"
@@ -121,11 +121,7 @@ def test_delegation():
     p.wait()
     print(p.stdout.read())
 
-    assert qw.queue.info['waiting'] == 1
-    assert qw.queue.info['locked'] == 0
-    assert qw.queue.info['done'] == 2
-
-    #assert not os.path.exists(exception_report)
+    assert not os.path.exists(exception_report)
 
     import ddmoduletest
 
