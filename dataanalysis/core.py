@@ -910,7 +910,7 @@ class DataAnalysis(object):
 
 
     def process_timespent_interpret(self):
-        tspent=self.time_spent_in_main
+        tspent=self._da_time_spent_in_main
         if tspent<self.min_timespent_tocache and self.cached:
             log(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
             if self.allow_timespent_adjustment:
@@ -1013,7 +1013,7 @@ class DataAnalysis(object):
         log("closing main log stream",main_log,main_logstream,level="logstreams")
 
         tspent=time.time()-t0
-        self.time_spent_in_main=tspent
+        self._da_time_spent_in_main=tspent
         log(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
         self.report_runtime("done in %g seconds"%tspent)
         self.note_resource_stats({'resource_type':'runtime','seconds':tspent})

@@ -151,14 +151,26 @@ class QueueCacheWorker(object):
                 self.queue.task_done()
 
     def queue_status(self):
+        def get_task_attributes(task):
+            for k in task.task_data['object_identity']['assumptions']:
+                if isinstance(k,tuple) and k[0] == "ScWData":
+                    return {'scw':k[1]['_da_stored_string_input_scwid']}
+
         r="="*80+"\n"
         for kind in "done","locked","waiting","running":
             r+=kind+":"
             tasks=self.queue.list(kind)
             r += "(%i) \n" % len(tasks)
             for task_fn in tasks:
-                task=fsqueue.Task.from_file(self.queue.queue_dir(kind)+"/"+task_fn)
-                r+="> "+task_fn+": "+task.task_data['object_identity']['factory_name']+"\n"
+                try:
+                    task=fsqueue.Task.from_file(self.queue.queue_dir(kind)+"/"+task_fn)
+                except Exception as e:
+                    r+="> unreadable"
+                else:
+                    r+="> "+task_fn+": "+task.task_data['object_identity']['factory_name'] + ";"+repr(get_task_attributes(task))+"\n"
+                    if task.depends_on is not None:
+                        for dependency in task.depends_on:
+                            r+="> > "+dependency['object_identity']['factory_name'] + ";"+repr(get_task_attributes(task)) + "\n"
             r+="\n\n"
         return r
 
