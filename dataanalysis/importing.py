@@ -3,11 +3,14 @@ import os
 import shutil
 import sys
 
-from dataanalysis.caches import cache_core
-from dataanalysis.core import DataAnalysis, DataFile
+#from dataanalysis.caches import cache_core
+#from dataanalysis.core import DataAnalysis, DataFile
 from dataanalysis.hashtools import *
-from printhook import log
-import analysisfactory
+from dataanalysis.printhook import log as printhook_log
+#from dataanalysis import analysisfactory
+
+from dataanalysis.printhook import get_local_log
+log=get_local_log(__name__)
 
 def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,preserve_found=False):
     if remote_git_root == "any":
@@ -41,23 +44,23 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
 
     local_module_dir=local_gitroot+"/dda-"+name
 
-    print("local git clone:",local_module_dir)
+    log("local git clone:",local_module_dir)
 
 
     local_module_tag=local_module_dir + "/valid_version"
     module_file=local_module_dir + "/" + name + ".py"
     if preserve_found and os.path.exists(local_module_tag) and open(local_module_tag).read().strip()==version and os.path.exists(module_file):
-        print("module already found!")
+        log("module already found!")
     else:
         cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
-        print(cmd)
+        log(cmd)
         os.system(cmd)
         cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
-        print(cmd)
+        log(cmd)
         os.system(cmd)
         open(local_module_dir+"/valid_version","w").write(version)
 
-    print(name,module_file)
+    log(name,module_file,level="importing")
     m=imp.load_source(name,module_file)
     return m
 

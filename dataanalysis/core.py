@@ -27,7 +27,10 @@ from dataanalysis.caches import cache_core
 from dataanalysis.analysisfactory import AnalysisFactory
 
 from dataanalysis import printhook
-from dataanalysis.printhook import decorate_method_log,log,debug_print,log_hook
+from dataanalysis.printhook import decorate_method_log,debug_print,log_hook
+
+from dataanalysis.printhook import get_local_log
+log=get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
 
@@ -137,7 +140,7 @@ class UnhandledAnalysisException(Exception):
         )
 
     def __repr__(self):
-        print(self.argdict)
+        log(self.argdict)
         return  "\n\n>>> main log\n" + \
                 "\n".join([">>> "+l for l in self.argdict['main_log'].split("\n")])+ "\n\n" + \
                 self.argdict['tb']+"\n"+ \
@@ -292,11 +295,13 @@ class DataAnalysisIdentity(object):
 
         serialized_assumptions=[]
         for assumption in result['assumptions']:
-            if isinstance(assumption,tuple):
+            if isinstance(assumption,tuple) and isinstance(assumption[1],dict):
                 for k,v in assumption[1].items():
                     if v is None:
                         assumption[1][k]='None'
-            serialized_assumptions.append((assumption[0],OrderedDict(sorted(assumption[1].items()))))
+                serialized_assumptions.append((assumption[0],OrderedDict(sorted(assumption[1].items()))))
+            else:
+                serialized_assumptions.append((assumption[0], assumption[1]))
 
         result['assumptions']=sorted(serialized_assumptions)
         return OrderedDict(sorted(result.items()))
@@ -804,7 +809,7 @@ class DataAnalysis(object):
 
             try:
                 tmp_dir = tempfile.mkdtemp()  # create dir
-                print("tempdir:",tmp_dir)
+                log("tempdir:",tmp_dir)
                 olddir=os.getcwd()
                 os.chdir(tmp_dir)
                 self.get(**aax)
@@ -826,7 +831,7 @@ class DataAnalysis(object):
         if fih is None:
             fih=self.process(output_required=False,**aa)[0]
 
-        print("restoring as",fih)
+        log("restoring as",fih)
         self.retrieve_cache(fih)
         return self.get(**aa)
 
@@ -839,7 +844,7 @@ class DataAnalysis(object):
         if fih is None:
             fih=self.process(output_required=False,**aa)[0]
 
-        print("storing as",fih)
+        log("storing as",fih)
         return self.store_cache(fih)
 
     def process_checkin_assumptions(self):
@@ -989,7 +994,7 @@ class DataAnalysis(object):
                 self.cache.report_exception(self,ex)
                 self.report_runtime("failed "+repr(ex))
             except Exception:
-                print("unable to report exception!")
+                log("unable to report exception!")
 
             self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="failed")
 
@@ -1151,7 +1156,7 @@ class DataAnalysis(object):
         try:
             if not self.report_runtime_destination.startswith("mysql://"): return
             dbname,table=self.report_runtime_destination[8:].split(".")
-            print("state goes to",dbname,table)
+            log("state goes to",dbname,table)
 
             import MySQLdb
             db = MySQLdb.connect(host="apcclwn12",
@@ -1174,7 +1179,7 @@ class DataAnalysis(object):
             db.close()
 
         except Exception as e:
-            print("failed:",e)
+            log("failed:",e)
 
     _da_output_origin=None
 
@@ -1382,7 +1387,7 @@ class DataAnalysis(object):
                     das=da
 
                 for _output_object,_substitute_object in zip(das,ros):
-                    print("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache)
+                    log("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache,level="generative")
 
 
                 log("--- old input hash:",fih)
@@ -1482,8 +1487,8 @@ class DataAnalysis(object):
 
     def list_inputs(self):
         hashe, inputs_dda = self.process_input()
-        print("\n\ncalling REQUIRES for", self, "\n\n")
-        print(inputs_dda)
+        log("\n\ncalling REQUIRES for", self, "\n\n")
+        log(inputs_dda)
 
         if inputs_dda is None:
             inputs_dda = []
@@ -1752,7 +1757,7 @@ class DataAnalysis(object):
 
         if data is not None:
             #obj._da_locally_complete = hashe
-            print("storing obscure to the TransientCache:")
+            log("storing obscure to the TransientCache:")
             TransientCacheInstance.store(hashe, obj)
 
         return obj
@@ -1854,7 +1859,7 @@ class DataFile(DataAnalysis):
         #log("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
 
         if hasattr(self,'cached_path'):
-            print("have cached path",self.cached_path)
+            log("have cached path",self.cached_path)
 
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
@@ -1898,7 +1903,7 @@ class DataFile(DataAnalysis):
                 from astropy.io import fits
                 return jsonify.jsonify_fits(fits.open())
             except Exception as e:
-                print("can not interpret as fits:",e)
+                log("can not interpret as fits:",e)
             
             try:
                 json.dumps(content)

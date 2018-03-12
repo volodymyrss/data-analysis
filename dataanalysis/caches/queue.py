@@ -11,6 +11,9 @@ import dataanalysis.graphtools
 from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
+from dataanalysis.printhook import get_local_log
+log=get_local_log("queue")
+
 
 class QueueCache(SelectivelyDelegatingCache):
     delegate_by_default=True
@@ -22,15 +25,18 @@ class QueueCache(SelectivelyDelegatingCache):
 
     def delegate(self, hashe, obj):
         log(self,"will delegate",obj,"as",hashe)
-        return self.queue.put(
-            dict(
-                object_identity=obj.get_identity().serialize(),
-            ),
+        task_data = dict(
+            object_identity=obj.get_identity().serialize(),
+        )
+        r=self.queue.put(
+            task_data,
             submission_data=dict(
                 callbacks=obj.callbacks,
                 request_origin="undefined",
             ),
         )
+        r['task_data']=task_data
+        return r
 
     def wipe_queue(self,kinds=["waiting"]):
         self.queue.wipe(kinds)
@@ -119,14 +125,16 @@ class QueueCacheWorker(object):
                 self.run_task(task)
             except da.AnalysisDelegatedException as delegation_exception:
                 log("found delegated dependencies:", delegation_exception.delegation_states)
-                task_dependencies = [fsqueue.Task.from_file(d['fn']).task_data for d in
-                                     delegation_exception.delegation_states]
-                locked_task=fsqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
-                assert task.filename_key == locked_task.filename_key
+                task_dependencies = [d['task_data'] for d in delegation_exception.delegation_states]
+                #locked_task=fsqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
+                #assert task.filename_key == locked_task.filename_key
 
                 self.queue.task_locked(depends_on=task_dependencies)
+                log("task locked",task)
+                log_logstash("worker", message="worker task locked", origin="dda_worker", worker_event="task_done",
+                             target=task.task_data['object_identity']['factory_name'])
             except Exception as e:
-                print("task failed:",e)
+                log("task failed:",e)
                 log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed",target=task.task_data['object_identity']['factory_name'])
                 traceback.print_exc()
 

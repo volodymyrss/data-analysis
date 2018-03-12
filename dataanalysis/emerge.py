@@ -66,7 +66,7 @@ def emerge_from_identity(identity):
     A = da.AnalysisFactory.byname(identity.factory_name)
     producable_hashe=A.get_hashe()
 
-    if identity.expected_hashe is None:
+    if identity.expected_hashe is None or identity.expected_hashe == "None":
         log("expected hashe verification skipped")
     elif jsonify(hashtools.hashe_replace_object(producable_hashe,None,'None')) != jsonify(identity.expected_hashe):
         log("producable:\n",jsonify(producable_hashe),"\n",level="top")

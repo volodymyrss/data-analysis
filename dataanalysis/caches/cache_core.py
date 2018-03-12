@@ -456,7 +456,7 @@ class Cache(object):
             map_nested_structure(c, datafile_restore_mapper)
 
             for k, i in add_keys:
-                print("adding key:",k,i)
+                log("adding key:",k,i,level=__name__)
 
                 sub_c=c
                 for ck in k[:-1]:
@@ -468,12 +468,12 @@ class Cache(object):
             #    del c[k]
 
             for k,i in c.items():
-                print("setting",obj,k,i)
+                log("setting",obj,k,i,level=__name__)
 
                 try:
                     setattr(obj,k,i)
                 except Exception as e:
-                    print("can not set: assuming blueprint class upgrade (might be incomplete update!)")
+                    log("can not set: assuming blueprint class upgrade (might be incomplete update!)",level="core")
 
 
             obj._da_recovered_restore_config=copy.copy(restore_config)
