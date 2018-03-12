@@ -150,6 +150,18 @@ class QueueCacheWorker(object):
                 log_logstash("worker",message="worker task done",origin="dda_worker",worker_event="task_done",target=task.task_data['object_identity']['factory_name'])
                 self.queue.task_done()
 
+    def queue_status(self):
+        r="="*80+"\n"
+        for kind in "done","locked","waiting","running":
+            r+=kind+":"
+            tasks=self.queue.list(kind)
+            r += "(%i) \n" % len(tasks)
+            for task_fn in tasks:
+                task=fsqueue.Task.from_file(self.queue.queue_dir(kind)+"/"+task_fn)
+                r+="> "+task_fn+": "+task.task_data['object_identity']['factory_name']+"\n"
+            r+="\n\n"
+        return r
+
 
 if __name__ == "__main__":
     import argparse
@@ -160,6 +172,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
     parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
     parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
+    parser.add_argument('-W', dest='watch_closely', type=int, help='...', default=0)
 
     args=parser.parse_args()
 
@@ -168,7 +181,11 @@ if __name__ == "__main__":
         da.debug_output()
 
     qcworker = QueueCacheWorker(args.queue)
-    if args.watch>0:
+    if args.watch_closely > 0:
+        while True:
+            print(qcworker.queue_status())
+            time.sleep(args.watch_closely)
+    elif args.watch>0:
         while True:
             print(qcworker.queue.info)
             time.sleep(args.watch)

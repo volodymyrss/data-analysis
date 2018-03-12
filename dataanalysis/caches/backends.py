@@ -39,7 +39,10 @@ class FileBackend:
         shutil.copy(orig,dest)
     
     def makedirs(self,dirs):
-        os.makedirs(dirs)
+        try:
+            os.makedirs(dirs)
+        except OSError as e:
+            log("backend failed makedirs:",e)
 
     def open(self,fn,mode="r",gz=False):
         if gz:

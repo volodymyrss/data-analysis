@@ -105,10 +105,10 @@ if args.prompt_delegate_to_queue:
 
     e=dataanalysis.AnalysisDelegatedException(None)
 
-    if delegation_state is not None and any([d['state']=="done" for d in delegation_state]):
+    if delegation_state is not None and delegation_state['state']=="done":
         print("the prompt delegation already done, disabling run and hoping for results")
         args.disable_run.append([args.object_name])
-    elif delegation_state is not None and any([d['state'] == "failed" for d in delegation_state]):
+    elif delegation_state is not None and delegation_state['state']=="failed":
         print("the prompt delegation already done and failed, raising exception")
 
         failures=[d for d in delegation_state if d['state'] == "failed"]
@@ -162,7 +162,7 @@ if args.prompt_delegate_to_queue:
                 source_exceptions=None,
                 comment=None,
                 origin=None,
-                delegation_state=delegation_state[0]['state'] if delegation_state is not None else 'submitted',
+                delegation_state=delegation_state['state'] if delegation_state is not None else 'submitted',
             ),
             open("exception.yaml", "w"),
             default_flow_style=False,
