@@ -14,9 +14,24 @@ def hash_for_file(f, block_size=2**20):
 def shhash(x):
     try:
         x=hashe_replace_object(x,None,'None')
-    except:
-        pass
+    except Exception as e:
+        log("error while hashe_replace_object",e,level="hashe")
+
+    try:
+        x=hashe_map(x,str)
+    except Exception as e:
+        log("error while hash_map",e,level="hashe")
+
     return sha224(str(hash(x)).encode('utf-8')).hexdigest()
+
+def hashe_map(hashe,f):
+    if isinstance(hashe,tuple):
+        if hashe[0]=='analysis':
+            return ('analysis',hashe_map(hashe[1],f),hashe_map(hashe[2],f))
+        if hashe[0]=='list':
+            return ('list',)+tuple([hashe_map(h,f) for h in hashe[1:]])
+        raise Exception("in hashe: \""+str(hashe)+"\" incomprehenisve entry!")
+    return f(hashe)
 
 def hashe_replace_object(hashe,what,witha):
     if hashe==what:
