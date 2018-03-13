@@ -34,6 +34,37 @@ def test_object_export_import():
     B.import_data(object_data)
     assert B.data == "data1"
 
+
+def test_object_injection_identity():
+    from dataanalysis import core as da
+    from dataanalysis.emerge import emerge_from_identity
+
+    da.reset()
+
+    import ddmoduletest
+    reload(ddmoduletest)
+
+    da.AnalysisFactory.assume_serialization(("AAnalysis",{'assumed_data':"bdata1"}))
+
+    B=ddmoduletest.BAnalysis()
+    B.get()
+
+    assert B.data=="dataB_A:dataAassumed:bdata1"
+
+    ident=B.get_identity()
+
+    assert len(ident.assumptions)==1
+    print(ident.assumptions)
+    assert ident.assumptions[0][1]['assumed_data']=="bdata1"
+
+    da.reset()
+
+    C=emerge_from_identity(ident)
+    C.get()
+
+    assert C.data == "dataB_A:dataAassumed:bdata1"
+
+
 def test_object_injection():
     from dataanalysis import core as da
 

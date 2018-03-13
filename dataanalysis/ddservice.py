@@ -164,6 +164,13 @@ class Produce(Resource):
                 ),
             ).jsonify()
 
+class Callback(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('target', type=str, help='')
+        args = parser.parse_args()
+
+
 
 def create_app():
     app = Flask(__name__)
@@ -172,6 +179,7 @@ def create_app():
     api.add_resource(List, '/api/%s/list'%api_version)
     api.add_resource(Produce, '/api/%s/produce'%api_version)
     api.add_resource(Status, '/api/%s/status'%api_version)
+    api.add_resource(Callback, '/api/%s/callback' % api_version)
     return app
 
 if __name__ == '__main__':

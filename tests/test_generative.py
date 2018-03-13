@@ -229,4 +229,128 @@ def test_generate_aliased():
     #assert r[0]
 
 
+def test_generate_factory_assumptions_leak():
+    debug_output()
+    da.reset()
 
+    class BAnalysis(da.DataAnalysis):
+        c = None
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[B %s]" % repr(self.c)
+
+    class AAnalysis(da.DataAnalysis):
+        input_b=BAnalysis
+
+        # run_for_hashe=True
+        def main(self):
+            print("test", self.__class__)
+            self.data="A,b:"+self.input_b.data
+
+        def __repr__(self):
+            return "[A %s]" % repr(self.input_b)
+
+    class CAnalysis(da.DataAnalysis):
+        input_a=AAnalysis
+
+    da.AnalysisFactory.WhatIfCopy("test",AAnalysis(input_b=BAnalysis,use_version="v2"))
+
+#    assert da.AnalysisFactory.cache_assumptions is None
+
+    C = CAnalysis(assume=BAnalysis(use_c=1))
+    C.get()
+    assert C._da_locally_complete
+    assert C.input_a.data=="A,b:data 1"
+
+    C = CAnalysis(assume=BAnalysis(use_c=2))
+    C.get()
+    assert C._da_locally_complete
+    assert C.input_a.data=="A,b:data 2"
+
+
+def test_generate_factory_assumptions_references():
+    debug_output()
+    da.reset()
+
+    class BAnalysis(da.DataAnalysis):
+        c = None
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[B %s]" % repr(self.c)
+
+    class AAnalysis(da.DataAnalysis):
+        input_b=None
+
+        # run_for_hashe=True
+        def main(self):
+            print("test", self.__class__)
+            self.data="A,b:"+self.input_b.data
+
+        def __repr__(self):
+            return "[A %s]" % repr(self.input_b)
+
+    class CAnalysis(da.DataAnalysis):
+        input_a=AAnalysis
+
+    da.AnalysisFactory.WhatIfCopy("test",AAnalysis(input_b=BAnalysis,use_version="v2"))
+
+    print(da.AnalysisFactory.cache_assumptions)
+    assert len(da.AnalysisFactory.cache_assumptions)==1
+
+    C = CAnalysis(assume=BAnalysis(use_c=1))
+    C.get()
+    assert C._da_locally_complete
+    assert C.input_a.data=="A,b:data 1"
+
+    C = CAnalysis(assume=BAnalysis(use_c=2))
+    C.get()
+    assert C._da_locally_complete
+    assert C.input_a.data=="A,b:data 2"
+
+
+def test_runtimenamed():
+    debug_output()
+    da.reset()
+
+    class BAnalysis(da.DataAnalysis):
+        c = 1
+
+        _da_settings = ["c"]
+
+        def main(self):
+            print("test", self.c)
+            self.data = "data " + repr(self.c)
+
+        def __repr__(self):
+            return "[B %s]" % repr(self.c)
+
+    class AAnalysis(da.DataAnalysis):
+        input_b = da.NamedAnalysis("BAnalysis")
+
+        # run_for_hashe=True
+        def main(self):
+            print("test", self.__class__)
+            self.data = "A,b:" + self.input_b.data
+
+        def __repr__(self):
+            return "[A %s]" % repr(self.input_b)
+
+    class CAnalysis(da.DataAnalysis):
+        input_a = AAnalysis
+
+    C = CAnalysis(assume=BAnalysis(use_c=1))
+    C.get()
+    assert C._da_locally_complete
+    assert C.input_a.data == "A,b:data 1"

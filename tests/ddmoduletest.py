@@ -3,6 +3,7 @@ import time
 from dataanalysis import core as da
 from dataanalysis.caches.cache_core import CacheNoIndex
 from dataanalysis.caches.resources import CacheDelegateToResources, WebResourceFactory
+from dataanalysis.caches.queue import QueueCache
 
 
 class LocalResourceFactory(WebResourceFactory):
@@ -87,7 +88,7 @@ class AAnalysis(da.DataAnalysis):
     def main(self):
         self.data="dataA"
         if self.assumed_data is not None:
-            self.data += self.assumed_data
+            self.data += "assumed:"+self.assumed_data
 
 class BAnalysis(da.DataAnalysis):
     cached=True
@@ -96,7 +97,7 @@ class BAnalysis(da.DataAnalysis):
     input_a = AAnalysis
 
     def main(self):
-        self.data="dataB"+self.input_a.data
+        self.data="dataB_A:"+self.input_a.data
 
 class CAnalysis(da.DataAnalysis):
     cached=True
@@ -159,3 +160,50 @@ class GenerativeAnalysis(da.DataAnalysis):
     def main(self):
         self.data=AAnalysis(use_assumed_data="data1"), BAnalysis(use_assumed_data="data2")
         print("cache of generated:",self.data[0].cache)
+
+class RandomModifier(da.DataAnalysis):
+    version="vx"
+
+class RawData(da.DataAnalysis):
+    input_random=RandomModifier
+
+    cached=True
+    cache=cache
+
+    data_id="undefiled"
+
+    def get_version(self):
+        return da.DataAnalysis.get_version(self)+"."+self.data_id
+
+    def main(self):
+        self.data=self.data_id
+
+class TestQueueCache(QueueCache):
+    delegating_analysis = ["Mosaic","Image"]
+
+
+queue_cache=TestQueueCache("./queue")
+
+mosaic_server_local_cache=CacheNoIndex()
+mosaic_server_local_cache.parent=queue_cache
+
+class Image(da.DataAnalysis):
+    cached=True
+    cache=mosaic_server_local_cache
+
+    input_raw = RawData
+
+    def main(self):
+        self.data="image_from_"+self.input_raw.data
+
+class Mosaic(da.DataAnalysis):
+    cached=True
+    cache=mosaic_server_local_cache
+
+    input_image_list = [
+        Image(assume=RawData(use_data_id="data1")),
+        Image(assume=RawData(use_data_id="data2")),
+    ]
+
+    def main(self):
+        self.data=".and.".join([i.data for i in self.input_image_list])

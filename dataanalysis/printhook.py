@@ -19,6 +19,16 @@ global_all_output=True
 global_log_enabled=True
 global_debug_enabled=False
 
+if 'DDA_OUTPUT_LEVELS' in os.environ:
+    global_output_levels=os.environ.get("DDA_OUTPUT_LEVELS").split(",")
+
+def get_local_log(local_level):
+    def local_log(*args, **kwargs):
+        if 'level' not in kwargs:
+            kwargs['level'] = local_level
+        log(*args, **kwargs)
+    return local_log
+
 
 def setup_graylog():
     try:
@@ -48,8 +58,12 @@ import json
 import os
 import re
 
-logstash_levels=os.environ.get("LOGSTASH_LEVELS",".*").split(",")
-logstash_levels_patterns=map(re.compile,logstash_levels)
+def extract_logstash_levels():
+    if "LOGSTASH_LEVELS" in os.environ:
+        logstash_levels=os.environ.get("LOGSTASH_LEVELS").split(",")
+        logstash_levels_patterns=map(re.compile,logstash_levels)
+        return logstash_levels, logstash_levels_patterns
+    return None,[]
 
 def setup_logstash():
     import os
@@ -68,7 +82,8 @@ def setup_logstash():
     my_logger.info("starting logstash logger",extra=dict(main=__file__,origin="dda",levels=logstash_levels))
     return my_logger
 
-graylog_logger=setup_graylog()
+
+logstash_levels,logstash_levels_patterns=extract_logstash_levels()
 logstash_logger=setup_logstash()
 
 def log(*args,**kwargs):
@@ -78,16 +93,16 @@ def log(*args,**kwargs):
         my_pid = os.getpid()
         my_thread=threading.current_thread().ident
 
-        level = kwargs['level'] if 'level' in kwargs else ""
+        level = kwargs['level'] if 'level' in kwargs else "debug"
 
         if graylog_logger is not None and ("net" in level or "top" in level):
             graylog_logger.debug(args)
-        
+
         if global_permissive_output:
             print(time.time(),"DEBUG",my_pid,"/",my_thread,level, *args)
 
         if level in global_output_levels:
-            print(time.time(),level,my_pid,"/",my_thread, *args)
+            print(time.time(),render("{BLUE}%s{/}"%level),str(my_pid)+"/"+str(my_thread), *args)
 
 
 def log_hook(level,obj,**aa):
@@ -113,19 +128,22 @@ def log_in_context(level,obj,**aa):
     log_logstash(level,**aa)
 
 def log_logstash(a,**aa):
-    if logstash_logger is not None: 
-        if 'message' in aa:
-            aa['note']=aa.pop('message')
-        aa['action']=a
+    if logstash_levels is None:
+        log(a,level="logstash")
+    else:
+        if logstash_logger is not None:
+            if 'message' in aa:
+                aa['note']=aa.pop('message')
+            aa['action']=a
 
-        if 'origin' not in aa:
-            aa['origin']="dda"
-        
-        for k,v in os.environ.items():
-            if len(v)<20:
-                aa['env_'+k]=v
+            if 'origin' not in aa:
+                aa['origin']="dda"
 
-        logstash_logger.info(aa.get('note',''),extra=aa)
+            for k,v in os.environ.items():
+                if len(v)<20:
+                    aa['env_'+k]=v
+
+            logstash_logger.info(aa.get('note',''),extra=aa)
 
 
 def debug_print(text):

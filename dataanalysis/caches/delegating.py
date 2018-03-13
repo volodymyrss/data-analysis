@@ -24,19 +24,24 @@ class DelegatingCache(dataanalysis.caches.cache_core.Cache):
 
 class SelectivelyDelegatingCache(DelegatingCache):
     delegating_analysis=None
+    delegate_by_default=True
 
-    def will_delegate(self,hashe,obj=None):
-        log("trying for delegation",hashe)
+    def will_delegate(self,hashe,obj):
+        log("trying for delegation",hashe,"in",self,level="top")
 
-        if self.delegating_analysis is None:
-            log("this cache has no delegations allowed")
+        if not getattr(obj,'_da_delegation_allowed',True):
+            log("this object explicitly prohibits delegation",obj,level="top")
             return False
 
+        if self.delegating_analysis is None:
+            log("this cache has no delegation specifications, going for default:",self.delegate_by_default,level="top")
+            return self.delegate_by_default
+
         if any([hashe[-1] == option or re.match(option,hashe[-1]) for option in self.delegating_analysis]):
-            log("delegation IS allowed")
+            log("delegation IS allowed",level="top")
             return True
         else:
-            log("failed to find:",hashe[-1],self.delegating_analysis)
+            log("delegation not chosen:",hashe[-1],self.delegating_analysis,level="top")
             return False
 
     def restore(self,hashe,obj,restore_config=None):

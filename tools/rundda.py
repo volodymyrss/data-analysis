@@ -7,6 +7,7 @@ import sys
 import yaml
 
 from dataanalysis.caches.queue import QueueCache
+from dataanalysis.printhook import log
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -28,6 +29,7 @@ parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
+parser.add_argument('--delegate-target', dest='delegate_target', action="store_true",  help='delegate target',default=False)
 parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
 args = parser.parse_args()
@@ -103,10 +105,10 @@ if args.prompt_delegate_to_queue:
 
     e=dataanalysis.AnalysisDelegatedException(None)
 
-    if delegation_state is not None and any([d['state']=="done" for d in delegation_state]):
+    if delegation_state is not None and delegation_state['state']=="done":
         print("the prompt delegation already done, disabling run and hoping for results")
         args.disable_run.append([args.object_name])
-    elif delegation_state is not None and any([d['state'] == "failed" for d in delegation_state]):
+    elif delegation_state is not None and delegation_state['state']=="failed":
         print("the prompt delegation already done and failed, raising exception")
 
         failures=[d for d in delegation_state if d['state'] == "failed"]
@@ -160,7 +162,7 @@ if args.prompt_delegate_to_queue:
                 source_exceptions=None,
                 comment=None,
                 origin=None,
-                delegation_state=delegation_state[0]['state'] if delegation_state is not None else 'submitted',
+                delegation_state=delegation_state['state'] if delegation_state is not None else 'submitted',
             ),
             open("exception.yaml", "w"),
             default_flow_style=False,
@@ -202,7 +204,14 @@ if args.callback and args.callback.startswith("http://"):
 if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
     print("assumptions:",assumptions)
-    core.AnalysisFactory.WhatIfCopy('commandline', eval(assumptions))
+
+    assumptions_evaluated=eval(assumptions)
+    if type(assumptions_evaluated) not in (list,tuple):
+        assumptions_evaluated=[assumptions_evaluated]
+
+    for i,assumption in enumerate(assumptions_evaluated):
+        log("assumption from commandline",assumption)
+        core.AnalysisFactory.WhatIfCopy('commandline_%i'%i, assumption)
 
 
 A= core.AnalysisFactory[args.object_name]()
@@ -233,8 +242,12 @@ for a in args.disable_run:
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
-for inj_content in injected_objects:
-    core.AnalysisFactory.inject_serialization(inj_content)
+for i,inj_content in enumerate(injected_objects):
+    #core.AnalysisFactory.inject_serialization(inj_content)
+    assumption_from_injection=core.AnalysisFactory.implement_serialization(inj_content)
+    print("assumption from injection",i,assumption_from_injection)
+    print("assumption from injection derived from", inj_content)
+    core.AnalysisFactory.WhatIfCopy('commandline_injection_%i' % i, assumption_from_injection)
 
 if args.delegate_to_queue is not None:
     from dataanalysis.caches.queue import QueueCache
@@ -243,6 +256,7 @@ if args.delegate_to_queue is not None:
     A.read_caches.append(qcache.__class__)
 
 try:
+    A._da_delegation_allowed=args.delegate_target
     A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback)
 except dataanalysis.UnhandledAnalysisException as e:
     yaml.dump(
