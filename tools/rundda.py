@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+import urllib
 
 import yaml
 
@@ -243,6 +244,8 @@ for a in args.disable_run:
     log("disable run",a)
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
+
+injected_objects.append((args.object_name,dict(request_root_node=True)))
 
 for i,inj_content in enumerate(injected_objects):
     #core.AnalysisFactory.inject_serialization(inj_content)
