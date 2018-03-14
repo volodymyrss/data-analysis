@@ -24,6 +24,7 @@ class CallbackHook(object):
             r=callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
             if r is not None:
                 object_data=callback.extract_data(obj)
+                object_data['request_root_node']=getattr(obj,'request_root_node',False)
                 if 'hashe' in object_data:
                     object_data.pop('hashe')
                 log("loghook from callback",level='top')
@@ -95,20 +96,27 @@ class Callback(object):
         if self.url is None:
             return
 
+        object_data={}
+        object_data.update(data)
+        object_data.update(self.extract_data(obj))
+        object_data['request_root_node'] = getattr(obj, 'request_root_node', False)
+
+        params = dict(
+            level=level,
+            node=obj.get_signature(),
+            message=message,
+        )
+
+        params.update(object_data)
+        params['action'] = data.get('state', 'progress')
+
         if self.url.startswith("file://"):
             fn=self.url[len("file://"):]
             with open(fn,'a') as f:
-                f.write(str(datetime.datetime.now())+" "+level+": "+" in "+str(obj)+" got "+message+"; "+repr(data)+"\n")
+                f.write(str(datetime.datetime.now())+" "+level+": "+" in "+str(obj)+" got "+message+"; "+repr(object_data)+"\n")
 
         elif self.url.startswith("http://"):
-            params=dict(
-                level=level,
-                node=obj.get_signature(),
-                message=message,
-            )
-            object_data=self.extract_data(obj)
-            params.update(object_data)
-            params['action']=data.get('state', 'progress')
+
             try:
                 r=requests.get(self.url,
                              params=params)

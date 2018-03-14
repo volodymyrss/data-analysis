@@ -71,16 +71,23 @@ class QueueCacheWorker(object):
 
         print("emerged object:",A)
 
+        request_root_node=getattr(A, 'request_root_node', False)
+        if request_root_node:
+            final_state = "done"
+        else:
+            final_state = "task_done"
+
         try:
             result=A.get(requested_by=[repr(self)])
         except da.AnalysisException as e:
-            A.process_hooks("top", A, message="task complete", state="done", task_comment="completed with failure "+repr(e))
+
+            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             raise
         except Exception as e:
-            A.process_hooks("top", A, message="task complete", state="done", task_comment="completed with failure "+repr(e))
+            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             raise
         else:
-            A.process_hooks("top",A,message="task complete",state="done", task_comment="completed with success")
+            A.process_hooks("top",A,message="task complete",state=final_state, task_comment="completed with success")
             return result
 
 
