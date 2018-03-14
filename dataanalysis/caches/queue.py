@@ -157,7 +157,7 @@ class QueueCacheWorker(object):
                     return {'scw':k[1]['_da_stored_string_input_scwid']}
 
         r="="*80+"\n"
-        for kind in "done","locked","waiting","running":
+        for kind in "failed","done","locked","waiting","running":
             r+=kind+":"
             tasks=self.queue.list(kind)
             r += "(%i) \n" % len(tasks)
