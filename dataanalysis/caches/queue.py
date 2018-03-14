@@ -82,11 +82,14 @@ class QueueCacheWorker(object):
 
         try:
             result=A.get(requested_by=[repr(self)])
-        except da.AnalysisException:
+        except da.AnalysisException as e:
+            A.process_hooks("top", A, message="task complete", state="done", task_comment="completed with failure "+repr(e))
+            raise
+        except Exception as e:
+            A.process_hooks("top", A, message="task complete", state="done", task_comment="completed with failure "+repr(e))
             raise
         else:
-            A.process_hooks("top",A,message="task complete",state="done")
-
+            A.process_hooks("top",A,message="task complete",state="done", task_comment="completed with success")
             return result
 
 
