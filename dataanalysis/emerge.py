@@ -66,26 +66,33 @@ def emerge_from_identity(identity):
     A = da.AnalysisFactory.byname(identity.factory_name)
     producable_hashe=A.get_hashe()
 
+    producable_hashe_jsonified=jsonify(hashtools.hashe_replace_object(producable_hashe, None, "None"))
+    expected_hashe_jsonified=jsonify(identity.expected_hashe)
+
     if identity.expected_hashe is None or identity.expected_hashe == "None":
         log("expected hashe verification skipped")
-    elif jsonify(hashtools.hashe_replace_object(producable_hashe,None,'None')) != jsonify(identity.expected_hashe):
-        log("producable:\n",jsonify(producable_hashe),"\n",level="top")
-        log("requested:\n",jsonify(identity.expected_hashe),level="top")
+    elif producable_hashe_jsonified != expected_hashe_jsonified:
+        log("producable:\n",jsonify(producable_hashe_jsonified),"\n",level="top")
+        log("requested:\n",jsonify(expected_hashe_jsonified),level="top")
 
         try:
             from dataanalysis import displaygraph
-            displaygraph.plot_hashe(producable_hashe,"producable.png")
-            displaygraph.plot_hashe(identity.expected_hashe,"expected.png")
+            displaygraph.plot_hashe(producable_hashe_jsonified,"producable.png")
+            displaygraph.plot_hashe(expected_hashe_jsonified,"expected.png")
         except Exception as e:
             pass
 
-        log_logstash("emergence exception",note="inconsistent_emergence",producable=producable_hashe,expected_hashe=identity.expected_hashe)
+        log_logstash("emergence exception",note="inconsistent_emergence",producable=producable_hashe_jsonified,expected_hashe=expected_hashe_jsonified)
+
+        raise Exception("HERE TOO")
 
         raise InconsitentEmergence(
-            "unable to produce\n"+repr(jsonify(identity.expected_hashe))+"\n while can produce"+repr(jsonify(producable_hashe)),
-            jsonify(producable_hashe),
-            jsonify(identity.expected_hashe),
+            "unable to produce\n"+repr(producable_hashe_jsonified)+"\n while can produce"+repr(expected_hashe_jsonified),
+            producable_hashe_jsonified,
+            expected_hashe_jsonified,
         )
+
+    log("successfully emerged")
 
     return A
 
