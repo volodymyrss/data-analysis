@@ -1,5 +1,7 @@
 #!/bin/env python
 
+#TODO all this is very bad. fix
+
 import argparse
 import json
 import sys
@@ -28,7 +30,6 @@ parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', defa
 parser.add_argument('-c', dest='cachelink',  help='...',action='store_true', default=False)
 parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
-#parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
@@ -75,6 +76,7 @@ for inj_fn, in args.inject:
     log("injecting from",inj_fn)
     injected_objects.append(json.load(open(inj_fn)))
 
+injected_objects.append((args.object_name,dict(request_root_node=True)))
 
 if args.prompt_delegate_to_queue:
     identity=dataanalysis.DataAnalysisIdentity(
@@ -244,8 +246,6 @@ for a in args.disable_run:
     log("disable run",a)
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
-
-injected_objects.append((args.object_name,dict(request_root_node=True)))
 
 for i,inj_content in enumerate(injected_objects):
     #core.AnalysisFactory.inject_serialization(inj_content)
