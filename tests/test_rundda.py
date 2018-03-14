@@ -143,6 +143,7 @@ def test_delegation():
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache,use_version="%s")'%randomized_version,
         '-Q',queue_dir,
         '--callback','file://'+callback_file,
+        '--delegate-target',
     ]
 
     for fn in glob.glob(queue_dir+"/waiting/*"):
