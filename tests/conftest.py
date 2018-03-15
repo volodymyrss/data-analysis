@@ -2,12 +2,14 @@ from __future__ import print_function
 
 import pytest
 
-from dataanalysis.ddservice import create_app
+import dataanalysis.ddservice
 
 
 @pytest.fixture
 def app():
-    app = create_app()
+    print(dataanalysis.__file__)
+    print(dataanalysis.ddservice.__file__)
+    app = dataanalysis.ddservice.create_app()
     return app
 
 import re
@@ -24,7 +26,7 @@ def kill_child_processes(parent_pid, sig=signal.SIGTERM):
         return
 
 @pytest.yield_fixture
-def ddservice(pytestconfig):
+def ddservice_fixture(pytestconfig):
     import subprocess
     import os
     import copy

@@ -6,6 +6,7 @@ import requests
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 from dataanalysis.core import AnalysisDelegatedException
 from dataanalysis.printhook import log
+from dataanalysis import hashtools
 
 
 # execution is also from cache?..
@@ -61,6 +62,11 @@ class ResourceFactory(object):
         return Resource(hashe,identity)
 
 def jsonify(x):
+    try:
+        x=hashtools.hashe_replace_object(x, None, 'None')
+    except:
+        pass
+
     return json.loads(json.dumps(x))
 
 class WebResource(Resource):

@@ -85,7 +85,7 @@ def test_delegation():
     assert os.path.exists(callback_file)
     callback_info = open(callback_file).readlines()
     print("".join(callback_info))
-    assert len(callback_info) == 2
+    assert len(callback_info) == 3
 
 
     print("\n\nWORKER")

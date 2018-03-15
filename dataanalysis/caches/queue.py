@@ -66,27 +66,37 @@ class QueueCacheWorker(object):
         da.reset()
 
         reload(dataanalysis.graphtools)
-        print("fresh factory knows",da.AnalysisFactory.cache)
+        log("fresh factory knows",da.AnalysisFactory.cache)
 
-        print(object_identity)
+        log(object_identity)
         A=emerge.emerge_from_identity(object_identity)
         A._da_delegation_allowed=False
 
         dataanalysis.callback.Callback.set_callback_accepted_classes([da.byname(object_identity.factory_name).__class__])
 
         for url in task.submission_info['callbacks']:
-            print("setting object callback",A,url)
+            log("setting object callback",A,url)
             A.set_callback(url)
 
-        print("emerged object:",A)
+        log("emerged object:",A)
+
+        request_root_node=getattr(A, 'request_root_node', False)
+        if request_root_node:
+            final_state = "done"
+        else:
+            final_state = "task_done"
 
         try:
             result=A.get(requested_by=[repr(self)])
-        except da.AnalysisException:
+        except da.AnalysisException as e:
+
+            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
+            raise
+        except Exception as e:
+            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             raise
         else:
-            A.process_hooks("top",A,message="task complete",state="done")
-
+            A.process_hooks("top",A,message="task complete",state=final_state, task_comment="completed with success")
             return result
 
 
@@ -146,7 +156,7 @@ class QueueCacheWorker(object):
 
                 self.queue.task_failed(update)
             else:
-                print("DONE!")
+                log("DONE!")
                 log_logstash("worker",message="worker task done",origin="dda_worker",worker_event="task_done",target=task.task_data['object_identity']['factory_name'])
                 self.queue.task_done()
 
@@ -157,7 +167,7 @@ class QueueCacheWorker(object):
                     return {'scw':k[1]['_da_stored_string_input_scwid']}
 
         r="="*80+"\n"
-        for kind in "done","locked","waiting","running":
+        for kind in "failed","done","locked","waiting","running":
             r+=kind+":"
             tasks=self.queue.list(kind)
             r += "(%i) \n" % len(tasks)
@@ -195,11 +205,11 @@ if __name__ == "__main__":
     qcworker = QueueCacheWorker(args.queue)
     if args.watch_closely > 0:
         while True:
-            print(qcworker.queue_status())
+            log(qcworker.queue_status())
             time.sleep(args.watch_closely)
     elif args.watch>0:
         while True:
-            print(qcworker.queue.info)
+            log(qcworker.queue.info)
             time.sleep(args.watch)
     else:
         qcworker.run_all(burst=args.burst_mode,limited_burst=args.limited_burst)

@@ -16,11 +16,11 @@ def test_api_ping(client):
     assert res.json['ping']== 'pong'
 
 
-def test_api_ping_separate(ddservice,app):
+def test_api_ping_separate(ddservice_fixture,app):
     url=url_for('status')
     import requests
-    print("full url",ddservice+url)
-    res = requests.get(ddservice+url)
+    print("full url",ddservice_fixture+url)
+    res = requests.get(ddservice_fixture+url)
     assert res.json()['ping']== 'pong'
     assert res.json()['pid'] != os.getpid()
     print(res.json()['thread'], threading.current_thread().ident)
@@ -36,13 +36,13 @@ def test_app_list(client):
 
 
 
-def test_live_delegation(ddservice,app):
+def test_live_delegation(ddservice_fixture,app):
     import requests
     import dataanalysis.core as da
     da.reset()
     da.debug_output()
 
-    r=requests.get(ddservice+url_for('produce', target="BAnalysis", modules="ddmoduletest"))
+    r=requests.get(ddservice_fixture+url_for('produce', target="BAnalysis", modules="ddmoduletest"))
 
     print(r.content)
 
@@ -54,13 +54,13 @@ def test_live_delegation(ddservice,app):
 
     assert len(factory_r)>0
 
-def test_live_delegation_assumptions(ddservice,app):
+def test_live_delegation_assumptions(ddservice_fixture,app):
     import requests
     import dataanalysis.core as da
     da.reset()
     da.debug_output()
 
-    r=requests.get(ddservice+url_for('produce', target="BAnalysis", modules="ddmoduletest", assume="AAnalysis.assumed_data=\"clients\""))
+    r=requests.get(ddservice_fixture+url_for('produce', target="BAnalysis", modules="ddmoduletest", assume="AAnalysis.assumed_data=\"clients\""))
 
     print(r.content)
 
@@ -126,10 +126,11 @@ def test_multiple_resource_delegation(client):
 
 
 def test_live_resource_delegation(client):
-    import os
-    import threading
     import dataanalysis.core as da
     import dataanalysis
+
+    #print(dir(client))
+    #raise Exception(client.__module__)
 
     da.reset()
     da.debug_output()
@@ -149,8 +150,8 @@ def test_live_resource_delegation(client):
 
     fr=excinfo.value.resources[0].fetch(getter=getter)
 
-    print fr
-    print fr.data
+    print(fr)
+    print(fr.data)
 
     assert fr.status == 'not allowed to produce'
 
@@ -228,7 +229,7 @@ def test_live_multiple_resource_delegation(client):
     print(excinfo.value.resources)
 
 
-def test_live_chained_delegation(ddservice, app):
+def test_live_chained_delegation(ddservice_fixture, app):
     import dataanalysis.core as da
     import dataanalysis
 
@@ -248,7 +249,7 @@ def test_live_chained_delegation(ddservice, app):
 
     assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
 
-def test_chained_waiting(ddservice, app):
+def test_chained_waiting(ddservice_fixture, app):
     import dataanalysis.core as da
 
     da.reset()
@@ -260,7 +261,7 @@ def test_chained_waiting(ddservice, app):
     ddmoduletest.cache.delegating_analysis.append("ChainedDelegator.*")
     ddmoduletest.cache.delegation_mode="interactive"
 
-    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    ddmoduletest.cache.resource_factory.endpoint = ddservice_fixture
     #ddmoduletest.cache.resource_factory.getter=getter
 
     A=ddmoduletest.ChainedDelegator()
@@ -272,7 +273,7 @@ def test_chained_waiting(ddservice, app):
     assert excinfo.value.resources[0].hashe[-1] == "ChainedDelegator.v0"
 
 
-def test_chained(ddservice, app):
+def test_chained(ddservice_fixture, app):
     import dataanalysis.core as da
 
     da.reset()
@@ -284,7 +285,7 @@ def test_chained(ddservice, app):
     ddmoduletest.cache.delegating_analysis.append("ChainedServerProducer.*")
     ddmoduletest.cache.delegation_mode="interactive"
 
-    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    ddmoduletest.cache.resource_factory.endpoint = ddservice_fixture
     #ddmoduletest.cache.resource_factory.getter=getter
 
     A=ddmoduletest.ChainedServerProducer()
@@ -297,7 +298,7 @@ def test_chained(ddservice, app):
     assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
 
-def test_passing_assumptions(ddservice, app):
+def test_passing_assumptions(ddservice_fixture, app):
     import dataanalysis.core as da
 
     da.reset()
@@ -309,7 +310,7 @@ def test_passing_assumptions(ddservice, app):
     ddmoduletest.cache.delegating_analysis.append("ChainedServerProducer.*")
     ddmoduletest.cache.delegation_mode="interactive"
 
-    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    ddmoduletest.cache.resource_factory.endpoint = ddservice_fixture
     #ddmoduletest.cache.resource_factory.getter=getter
 
     A=ddmoduletest.ChainedServerProducer(assume=[ddmoduletest.AAnalysis(use_assumed_data="fromclient")])
@@ -326,7 +327,7 @@ def test_passing_assumptions(ddservice, app):
     assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
 
 
-def test_passing_unmanagable_assumptions(ddservice, app):
+def test_passing_unmanagable_assumptions(ddservice_fixture, app):
     import dataanalysis.core as da
     import dataanalysis.caches.resources
 
@@ -339,7 +340,7 @@ def test_passing_unmanagable_assumptions(ddservice, app):
     ddmoduletest.cache.delegating_analysis.append("ChainedServerProducer.*")
     ddmoduletest.cache.delegation_mode="interactive"
 
-    ddmoduletest.cache.resource_factory.endpoint = ddservice
+    ddmoduletest.cache.resource_factory.endpoint = ddservice_fixture
     #ddmoduletest.cache.resource_factory.getter=getter
 
     A=ddmoduletest.ChainedServerProducer(assume=[ddmoduletest.AAnalysis(input_x=ddmoduletest.TwoCDInputAnalysis())])

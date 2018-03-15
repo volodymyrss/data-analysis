@@ -1,13 +1,18 @@
 #!/bin/env python
 
+#TODO all this is very bad. fix
+
 import argparse
 import json
 import sys
+import urllib
 
 import yaml
 
 from dataanalysis.caches.queue import QueueCache
-from dataanalysis.printhook import log
+from dataanalysis.printhook import get_local_log
+
+log=get_local_log(__name__)
 
 parser = argparse.ArgumentParser(description='Run a DDA object')
 parser.add_argument('object_name', metavar='OBJECT_NAME', type=str, help='name of the object')
@@ -25,7 +30,6 @@ parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', defa
 parser.add_argument('-c', dest='cachelink',  help='...',action='store_true', default=False)
 parser.add_argument('-f', dest='force_run', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
 parser.add_argument('-F', dest='force_produce', metavar='ANALYSISNAME', type=str, help='analysis to run', nargs='+', action='append', default=[])
-#parser.add_argument('-v', dest='verbose', metavar='ANALYSISNAME', type=str, help='analysis to verify only', nargs='+', action='append', default=[])
 parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, help='analysis to disable run', nargs='+', action='append', default=[])
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
@@ -34,13 +38,13 @@ parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, he
 
 args = parser.parse_args()
 
-print(args.module)
+log(args.module)
 
 from dataanalysis import core, importing
 import dataanalysis.printhook
 
 if args.verbose:
-    print("will be chatty")
+    log("will be chatty")
     dataanalysis.printhook.global_log_enabled=True
     dataanalysis.printhook.global_fancy_output=True
     dataanalysis.printhook.global_permissive_output=True
@@ -49,17 +53,17 @@ else:
     dataanalysis.printhook.global_fancy_output=False
 
 if args.failsafe:
-    print("will be chatty and safe")
+    log("will be chatty and safe")
     dataanalysis.printhook.global_log_enabled=True
     dataanalysis.printhook.global_fancy_output=False
     dataanalysis.printhook.global_permissive_output=True
 
 
 if args.quiet:
-    print("will be quiet")
+    log("will be quiet")
     dataanalysis.printhook.LogStream(None, lambda x: set(x) & set(['top', 'main']))
 else:
-    print("will not be quiet")
+    log("will not be quiet")
     dataanalysis.printhook.LogStream(None, lambda x:True)
 
 if args.very_verbose:
@@ -69,9 +73,10 @@ modules=[m[0] for m in args.module]
 
 injected_objects=[]
 for inj_fn, in args.inject:
-    print("injecting from",inj_fn)
+    log("injecting from",inj_fn)
     injected_objects.append(json.load(open(inj_fn)))
 
+injected_objects.append((args.object_name,dict(request_root_node=True)))
 
 if args.prompt_delegate_to_queue:
     identity=dataanalysis.DataAnalysisIdentity(
@@ -82,12 +87,12 @@ if args.prompt_delegate_to_queue:
         expected_hashe=None,
     )
 
-    print("generated identity",identity)
+    log("generated identity",identity)
 
     cache=QueueCache(args.prompt_delegate_to_queue.strip())
 
-    print("cache:",cache,"from",args.prompt_delegate_to_queue)
-    print("queue status before", cache.queue.info)
+    log("cache:",cache,"from",args.prompt_delegate_to_queue)
+    log("queue status before", cache.queue.info)
 
     delegation_state=cache.queue.put(
         dict(
@@ -100,16 +105,16 @@ if args.prompt_delegate_to_queue:
         )
     )
 
-    print("queue status now",cache.queue.info)
-    print("put in cache, exiting")
+    log("queue status now",cache.queue.info)
+    log("put in cache, exiting")
 
     e=dataanalysis.AnalysisDelegatedException(None)
 
     if delegation_state is not None and delegation_state['state']=="done":
-        print("the prompt delegation already done, disabling run and hoping for results")
+        log("the prompt delegation already done, disabling run and hoping for results")
         args.disable_run.append([args.object_name])
     elif delegation_state is not None and delegation_state['state']=="failed":
-        print("the prompt delegation already done and failed, raising exception")
+        log("the prompt delegation already done and failed, raising exception")
 
         failures=[d for d in delegation_state if d['state'] == "failed"]
 
@@ -131,7 +136,7 @@ if args.prompt_delegate_to_queue:
         else:
             failure=failures[0]
             failed_task=yaml.load(open(failure['fn']))
-            print("failed task",failed_task)
+            log("failed task",failed_task)
             failed_task_execution_info=failed_task['execution_info']
 
             yaml.dump(
@@ -152,7 +157,7 @@ if args.prompt_delegate_to_queue:
 
         #args.disable_run.append([args.object_name])
     else:
-        print("delegation exception", e)
+        log("delegation exception", e)
         yaml.dump(
             dict(
                 exception_type="delegation",
@@ -183,7 +188,7 @@ if args.callback and args.callback.startswith("http://"):
                  params=params)
 
 for m in modules:
-    print "importing",m
+    log("importing",m)
 
     sys.path.append(".")
     module,name= importing.load_by_name(m)
@@ -203,7 +208,7 @@ if args.callback and args.callback.startswith("http://"):
 
 if len(args.assume)>0:
     assumptions = ",".join([a[0] for a in args.assume])
-    print("assumptions:",assumptions)
+    log("assumptions:",assumptions)
 
     assumptions_evaluated=eval(assumptions)
     if type(assumptions_evaluated) not in (list,tuple):
@@ -219,10 +224,10 @@ A= core.AnalysisFactory[args.object_name]()
 dataanalysis.callback.Callback.set_callback_accepted_classes([A.__class__])
 
 
-print(A)
+log(A)
 
 for a in args.force_run:
-    print "force run",a
+    log("force run",a)
     try:
         b= core.AnalysisFactory[a[0]]()
         b.__class__.cached=False
@@ -230,7 +235,7 @@ for a in args.force_run:
         pass
 
 for a in args.force_produce:
-    print("force produce",a)
+    log("force produce",a)
     try:
         b= core.AnalysisFactory[a[0]]()
         b.__class__.read_caches=[]
@@ -238,15 +243,15 @@ for a in args.force_produce:
         pass
 
 for a in args.disable_run:
-    print("disable run",a)
+    log("disable run",a)
     b= core.AnalysisFactory[a[0]]()
     b.__class__.produce_disabled=True
 
 for i,inj_content in enumerate(injected_objects):
     #core.AnalysisFactory.inject_serialization(inj_content)
     assumption_from_injection=core.AnalysisFactory.implement_serialization(inj_content)
-    print("assumption from injection",i,assumption_from_injection)
-    print("assumption from injection derived from", inj_content)
+    log("assumption from injection",i,assumption_from_injection)
+    log("assumption from injection derived from", inj_content)
     core.AnalysisFactory.WhatIfCopy('commandline_injection_%i' % i, assumption_from_injection)
 
 if args.delegate_to_queue is not None:
@@ -272,7 +277,7 @@ except dataanalysis.UnhandledAnalysisException as e:
         )
     raise
 except dataanalysis.AnalysisDelegatedException as e:
-    print("delegation exception",e)
+    log("delegation exception",e)
     yaml.dump(
         dict(
             exception_type="delegation",
@@ -288,7 +293,7 @@ except dataanalysis.AnalysisDelegatedException as e:
     )
     raise
 except Exception as e:
-    print("graph exception",e)
+    log("graph exception",e)
     yaml.dump(
         dict(
             exception_type="graph",
@@ -301,7 +306,7 @@ except Exception as e:
 
 
 if args.json:
-    print "will dump serialization to json"
+    log("will dump serialization to json")
     json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
                       indent=4, separators=(',', ': '))
 
@@ -312,12 +317,12 @@ if args.serialize_json:
               indent=4, separators=(',', ': '))
 
 if args.tar:
-    print "will tar cache"
-    print A._da_cached_path
+    log("will tar cache")
+    log(A._da_cached_path)
 
 if args.cachelink:
     if hasattr(A,'_da_cached_pathes'):
-        print "will note cache link"
+        log("will note cache link")
         open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
 
 
