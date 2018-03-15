@@ -21,7 +21,9 @@ class CallbackHook(object):
             log("callback class:",callback_class,level='top')
             callback=callback_class(callback_url)
             log("processing callback url", callback_url, callback)
-            if callback.process_callback(level=level,obj=obj,message=message,data=kwargs) is not None:
+
+            r=callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
+            if r is not None:
                 object_data=callback.extract_data(obj)
                 object_data['request_root_node']=getattr(obj,'request_root_node',False)
                 if 'hashe' in object_data:
