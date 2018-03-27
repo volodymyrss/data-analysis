@@ -117,7 +117,9 @@ class Callback(object):
         elif self.url.startswith("http://"):
 
             try:
-                r=requests.get(self.url,
+                session = requests.Session()
+                session.trust_env = False
+                r=session.get(self.url,
                              params=params)
                 log("callback succeeded",self.url,params,r,level="top")
                 log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r.content)
