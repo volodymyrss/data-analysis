@@ -116,44 +116,26 @@ if args.prompt_delegate_to_queue:
     elif delegation_state is not None and delegation_state['state']=="failed":
         log("the prompt delegation already done and failed, raising exception")
 
-        failures=[d for d in delegation_state if d['state'] == "failed"]
+        failure=delegation_state 
+        failed_task=yaml.load(open(failure['fn']))
+        log("failed task",failed_task)
+        failed_task_execution_info=failed_task['execution_info']
 
-        if len(failures)>1:
-            yaml.dump(
-                dict(
-                    exception_type="queue",
-                    exception=repr(e),
-                    hashe=e.hashe,
-                    resources=[],
-                    source_exceptions=None,
-                    comment=None,
-                    origin=None,
-                    delegation_state=delegation_state,
-                ),
-                open("exception.yaml", "w"),
-                default_flow_style=False,
-            )
-        else:
-            failure=failures[0]
-            failed_task=yaml.load(open(failure['fn']))
-            log("failed task",failed_task)
-            failed_task_execution_info=failed_task['execution_info']
-
-            yaml.dump(
-                dict(
-                    exception_type="analysis",
-                    exception=failed_task_execution_info['exception'][0],
-                    hashe=None,
-                    resources=[],
-                    source_exceptions=None,
-                    comment=None,
-                    origin=None,
-                    delegation_state=failure['state'],
-                ),
-                open("exception.yaml", "w"),
-                default_flow_style=False,
-            )
-            sys.exit(1)
+        yaml.dump(
+            dict(
+                exception_type="analysis",
+                exception=failed_task_execution_info['exception'][0],
+                hashe=None,
+                resources=[],
+                source_exceptions=None,
+                comment=None,
+                origin=None,
+                delegation_state=failure['state'],
+            ),
+            open("exception.yaml", "w"),
+            default_flow_style=False,
+        )
+        sys.exit(1)
 
         #args.disable_run.append([args.object_name])
     else:
