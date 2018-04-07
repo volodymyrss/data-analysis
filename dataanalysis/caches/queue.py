@@ -88,6 +88,10 @@ class QueueCacheWorker(object):
 
         try:
             result=A.get(requested_by=[repr(self)])
+        except da.AnalysisDelegatedException as delegation_exception:
+            final_state = "task_done"
+            A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated")
+            raise
         except da.AnalysisException as e:
 
             A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
@@ -151,8 +155,16 @@ class QueueCacheWorker(object):
                 def update(task):
                     task.execution_info = dict(
                         status="failed",
-                        exception=(e.__class__.__name__,e.message,e.args),
+                        exception=dict(
+                            exception_class=e.__class__.__name__,
+                            exception_message=e.message,
+                            exception_args=e.args,
+                            formatted_exception=traceback.format_exc(),
+                        ),
                     )
+
+                #TODO: ddasentry
+         #       A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated")
 
                 self.queue.task_failed(update)
             else:
