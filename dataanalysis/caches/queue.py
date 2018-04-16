@@ -35,6 +35,10 @@ class QueueCache(SelectivelyDelegatingCache):
                 request_origin="undefined",
             ),
         )
+
+        if r['state'] == "done":
+            raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested")
+
         r['task_data']=task_data
         return r
 
@@ -90,10 +94,9 @@ class QueueCacheWorker(object):
             result=A.get(requested_by=[repr(self)])
         except da.AnalysisDelegatedException as delegation_exception:
             final_state = "task_done"
-            A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated")
+            A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated",delegation_exception=repr(delegation_exception))
             raise
         except da.AnalysisException as e:
-
             A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             raise
         except Exception as e:
