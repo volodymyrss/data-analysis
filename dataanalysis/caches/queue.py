@@ -11,6 +11,15 @@ import dataanalysis.graphtools
 from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
+try:
+    import sentryclient
+except ImportError:
+    def get_sentry_client():
+        return None
+else:
+    def get_sentry_client():
+        return sentryclient.get_client()
+
 from dataanalysis.printhook import get_local_log
 log=get_local_log("queue")
 
@@ -96,11 +105,18 @@ class QueueCacheWorker(object):
             final_state = "task_done"
             A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated",delegation_exception=repr(delegation_exception))
             raise
+        except fsqueue.TaskStolen:
+            raise
         except da.AnalysisException as e:
             A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             raise
         except Exception as e:
-            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
+            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with unexpected failure "+repr(e))
+
+            client=get_sentry_client()
+            if client is not None:
+                client.captureException()
+
             raise
         else:
             A.process_hooks("top",A,message="task complete",state=final_state, task_comment="completed with success")
@@ -131,6 +147,9 @@ class QueueCacheWorker(object):
             try:
                 task=self.queue.get()
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
+            except fsqueue.TaskStolen:
+                time.sleep(wait)
+                continue
             except fsqueue.Empty:
                 if burst:
                     break
@@ -140,6 +159,8 @@ class QueueCacheWorker(object):
 
             try:
                 self.run_task(task)
+            except fsqueue.TaskStolen as e:
+                log("task stolen, whatever",e)
             except da.AnalysisDelegatedException as delegation_exception:
                 log("found delegated dependencies:", delegation_exception.delegation_states)
                 task_dependencies = [d['task_data'] for d in delegation_exception.delegation_states]

@@ -984,7 +984,8 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
-            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="failed")
+            log(render("{RED}ANALYSIS EXCEPTION IN MAIN{/}: ")+render("{MAGENTA}"+repr(ae)+"{/}"+" in "+repr(self)),level='top')
+            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_failed")
         except Exception as ex:
             #os.system("ls -ltor")
             self.stop_main_watchdog()
@@ -997,7 +998,7 @@ class DataAnalysis(object):
             except Exception:
                 log("unable to report exception!")
 
-            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="failed")
+            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="node_failed")
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
@@ -1362,6 +1363,10 @@ class DataAnalysis(object):
 
                     self.store_cache(fih)
                     #self.runtime_update("done")
+                else:
+                    log("object input had untreated exceptions, storing exception in the cache",level='cache')
+                    self.store_cache(fih)
+
 
             output_objects=self.process_find_output_objects()
             if output_objects!=[]:
