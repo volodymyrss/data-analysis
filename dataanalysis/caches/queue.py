@@ -46,7 +46,9 @@ class QueueCache(SelectivelyDelegatingCache):
         )
 
         if r['state'] == "done":
-            raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested")
+            self.queue.remember(task_data)
+            raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested: ",task_data['object_identity']['factory_name'])#
+            #,task_data['object_identity']['assumptions'])
 
         r['task_data']=task_data
         return r
