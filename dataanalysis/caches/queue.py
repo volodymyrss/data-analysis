@@ -1,7 +1,7 @@
 import time
 import traceback
 
-import fsqueue
+import dqueue
 import os
 
 import dataanalysis.callback
@@ -30,7 +30,7 @@ class QueueCache(SelectivelyDelegatingCache):
     def __init__(self,queue_directory="/tmp/queue"):
         super(QueueCache, self).__init__()
         self.queue_directory=queue_directory
-        self.queue = fsqueue.Queue(self.queue_directory)
+        self.queue = dqueue.Queue(self.queue_directory)
 
     def delegate(self, hashe, obj):
         log(self,"will delegate",obj,"as",hashe)
@@ -46,8 +46,10 @@ class QueueCache(SelectivelyDelegatingCache):
         )
 
         if r['state'] == "done":
-            self.queue.remember(task_data)
-            raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested: ",task_data['object_identity']['factory_name'])#
+            #todo
+            obj.process_hooks("top",A,message="task dependencies done while deletating, strange",state="locked?", task_comment="dependencies done before task")
+            #self.queue.remember(task_data) # really is a race condit: retry
+            #raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested: ",task_data['object_identity']['factory_name'])#
             #,task_data['object_identity']['assumptions'])
 
         r['task_data']=task_data
@@ -71,7 +73,7 @@ class QueueCacheWorker(object):
         self.load_queue()
 
     def load_queue(self):
-        self.queue = fsqueue.Queue(self.queue_directory)
+        self.queue = dqueue.Queue(self.queue_directory)
 
 
     def run_task(self,task):
@@ -107,7 +109,7 @@ class QueueCacheWorker(object):
             final_state = "task_done"
             A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated",delegation_exception=repr(delegation_exception))
             raise
-        except fsqueue.TaskStolen:
+        except dqueue.TaskStolen:
             raise
         except da.AnalysisException as e:
             A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
@@ -149,10 +151,10 @@ class QueueCacheWorker(object):
             try:
                 task=self.queue.get()
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
-            except fsqueue.TaskStolen:
+            except dqueue.TaskStolen:
                 time.sleep(wait)
                 continue
-            except fsqueue.Empty:
+            except dqueue.Empty:
                 if burst:
                     break
                 else:
@@ -161,12 +163,12 @@ class QueueCacheWorker(object):
 
             try:
                 self.run_task(task)
-            except fsqueue.TaskStolen as e:
+            except dqueue.TaskStolen as e:
                 log("task stolen, whatever",e)
             except da.AnalysisDelegatedException as delegation_exception:
                 log("found delegated dependencies:", delegation_exception.delegation_states)
                 task_dependencies = [d['task_data'] for d in delegation_exception.delegation_states]
-                #locked_task=fsqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
+                #locked_task=dqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
                 #assert task.filename_key == locked_task.filename_key
 
                 self.queue.task_locked(depends_on=task_dependencies)
@@ -199,6 +201,8 @@ class QueueCacheWorker(object):
                 self.queue.task_done()
 
     def queue_status(self):
+        return ""
+
         def get_task_attributes(task):
             for k in task.task_data['object_identity']['assumptions']:
                 if isinstance(k,tuple) and k[0] == "ScWData":
@@ -211,7 +215,7 @@ class QueueCacheWorker(object):
             r += "(%i) \n" % len(tasks)
             for task_fn in tasks:
                 try:
-                    task=fsqueue.Task.from_file(self.queue.queue_dir(kind)+"/"+task_fn)
+                    task=dqueue.Task.from_file(self.queue.queue_dir(kind)+"/"+task_fn)
                 except Exception as e:
                     r+="> unreadable"
                 else:
