@@ -178,6 +178,9 @@ class QueueCacheWorker(object):
             except Exception as e:
                 log("task failed:",e)
                 log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed",target=task.task_data['object_identity']['factory_name'])
+                client=get_sentry_client()
+                if client is not None:
+                    client.captureException()
                 traceback.print_exc()
 
                 def update(task):
