@@ -1,7 +1,7 @@
 import time
 import traceback
 
-import dqueue
+
 import os
 
 import dataanalysis.callback
@@ -10,6 +10,11 @@ import dataanalysis.emerge as emerge
 import dataanalysis.graphtools
 from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
+
+try:
+    import dqueue
+except ImportError:
+    import fsqueue as dqueue
 
 try:
     import sentryclient
