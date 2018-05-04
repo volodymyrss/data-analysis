@@ -113,6 +113,7 @@ def test_base_cache_check_location():
     import os
     assert os.path.exists(cached_path)
     assert os.path.exists(cached_path+"/hash.txt")
+    assert os.path.exists(cached_path+"/object_identity.yaml.gz")
     assert os.path.exists(cached_path + "/cache_preview.yaml.gz")
 
 

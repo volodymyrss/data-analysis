@@ -573,6 +573,8 @@ class Cache(object):
 
         self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
         self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)
+        
+        yaml.dump(obj.get_identity().serialize(), self.filebackend.open(cached_path + "object_identity.yaml.gz","wt",gz=True),default_flow_style=False)
 
         aliases = obj.factory.list_relevant_aliases(obj)
 
