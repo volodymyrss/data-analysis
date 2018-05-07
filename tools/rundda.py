@@ -116,8 +116,8 @@ if args.prompt_delegate_to_queue:
     elif delegation_state is not None and delegation_state['state']=="failed":
         log("the prompt delegation already done and failed, raising exception")
 
-        failure=delegation_state 
-        failed_task=yaml.load(open(failure['fn']))
+        failure=delegation_state
+        failed_task=failure['task_entry']
         log("failed task",failed_task)
         failed_task_execution_info=failed_task['execution_info']
 
