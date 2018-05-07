@@ -69,6 +69,7 @@ class QueueCache(SelectivelyDelegatingCache):
 
 
 class QueueCacheWorker(object):
+
     def __repr__(self):
         return "[%s: %i]"%(self.__class__.__name__,id(self))
 
