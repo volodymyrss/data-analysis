@@ -20,7 +20,7 @@ class TestCache(CacheDelegateToResources):
     resource_factory = local_resource_factory
 
 cache=TestCache()
-server_local_cache=CacheNoIndex(os.getcwd()+"/servercache")
+server_local_cache=CacheNoIndex(os.environ.get('DDA_DEFAULT_CACHE_ROOT','tmp'))
 
 class ClientDelegatableAnalysisA(da.DataAnalysis):
     cached=True
