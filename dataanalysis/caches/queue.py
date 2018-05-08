@@ -110,7 +110,7 @@ class QueueCacheWorker(object):
             final_state = "task_done"
 
         try:
-            result=A.get(requested_by=[repr(self)])
+            result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key)
         except da.AnalysisDelegatedException as delegation_exception:
             final_state = "task_done"
             A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated",delegation_exception=repr(delegation_exception))
@@ -155,7 +155,9 @@ class QueueCacheWorker(object):
                 break
 
             try:
+                log("trying to get a task...")
                 task=self.queue.get()
+                log("got this:",task)
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
             except dqueue.TaskStolen:
                 time.sleep(wait)

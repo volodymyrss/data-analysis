@@ -1,3 +1,4 @@
+import os
 import time
 
 from dataanalysis import core as da
@@ -5,6 +6,7 @@ from dataanalysis.caches.cache_core import CacheNoIndex
 from dataanalysis.caches.resources import CacheDelegateToResources, WebResourceFactory
 from dataanalysis.caches.queue import QueueCache
 
+#da.debug_output()
 
 class LocalResourceFactory(WebResourceFactory):
     host="localhost"
@@ -18,7 +20,7 @@ class TestCache(CacheDelegateToResources):
     resource_factory = local_resource_factory
 
 cache=TestCache()
-server_local_cache=CacheNoIndex()
+server_local_cache=CacheNoIndex(os.getcwd()+"/servercache")
 
 class ClientDelegatableAnalysisA(da.DataAnalysis):
     cached=True
@@ -182,7 +184,7 @@ class TestQueueCache(QueueCache):
     delegating_analysis = ["Mosaic","Image"]
 
 
-queue_cache=TestQueueCache("./queue")
+queue_cache=TestQueueCache("/tmp/queue")
 
 mosaic_server_local_cache=CacheNoIndex()
 mosaic_server_local_cache.parent=queue_cache

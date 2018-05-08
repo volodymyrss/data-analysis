@@ -10,6 +10,9 @@ import threading
 import gzip
 import json
 import os
+import errno
+import shutil
+import tempfile
 import re
 import shutil
 import socket
@@ -802,10 +805,6 @@ class DataAnalysis(object):
 
     def get(self,**aa):
         if 'saveonly' in aa and aa['saveonly'] is not None:
-            import errno
-            import shutil
-            import tempfile
-
             aax=dict(aa.items()+[['saveonly',None]])
 
             try:
@@ -825,7 +824,34 @@ class DataAnalysis(object):
                     if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                         raise  # re-raise exception
 
-        return self.process(output_required=True,**aa)[1]
+        isolated_directory_key=aa.get('isolated_directory_key',None)
+
+        cwd=os.getcwd()
+        if isolated_directory_key is not None:
+            wd=cwd+"/"+self.get_factory_name()+"_"+isolated_directory_key
+        else:
+            wd=cwd
+
+        log('isolated directory key:',isolated_directory_key)
+
+        try:
+            try:
+                os.makedirs(wd)
+            except OSError as exc:  # Python >2.5
+                if exc.errno == errno.EEXIST and os.path.isdir(wd):
+                    pass
+                else:
+                    raise
+            os.chdir(wd)
+            log("object will be processed in",wd)
+            result=self.process(output_required=True,**aa)[1]
+        except:
+            os.chdir(cwd)
+            raise
+        else:
+            os.chdir(cwd)
+
+        return result
 
     def load(self,**aa):
         fih=self._da_locally_complete
