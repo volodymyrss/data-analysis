@@ -21,7 +21,7 @@ env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 def test_delegation():
     from dataanalysis.caches.queue import QueueCacheWorker
-    queue_dir="./queue"
+    queue_dir="/tmp/queue"
     qw=QueueCacheWorker(queue_dir)
 
     randomized_version="v%i"%random.randint(1,10000)
@@ -51,6 +51,7 @@ def test_delegation():
     qw.queue.wipe(["waiting","locked","done","failed","running"])
 
     # run it
+    print("CMD:",cmd)
     p=subprocess.Popen(cmd+['--delegate-target'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
     p.wait()
     print(p.stdout.read())
@@ -78,6 +79,7 @@ def test_delegation():
     print("\n\nWORKER")
     qw.run_once()
 
+    print(qw.queue.info)
     assert qw.queue.info['waiting'] == 2
     assert qw.queue.info['locked'] == 1
     assert qw.queue.info['done'] == 0
@@ -85,7 +87,7 @@ def test_delegation():
     assert os.path.exists(callback_file)
     callback_info = open(callback_file).readlines()
     print("".join(callback_info))
-    assert len(callback_info) == 3
+    assert len(callback_info) == 1
 
 
     print("\n\nWORKER")
@@ -103,7 +105,7 @@ def test_delegation():
     assert qw.queue.info['done'] == 2
 
 
-    print("\n\nWORKER")
+    print("\n\nWORKER run to unlock")
     qw.run_once()
 
     assert qw.queue.info['waiting'] == 0

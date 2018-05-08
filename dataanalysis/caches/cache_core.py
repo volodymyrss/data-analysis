@@ -49,7 +49,7 @@ class Cache(object):
    # __metaclass__ = decorate_all_methods
 
     cache={}
-    filecacheroot="./filecache"
+    filecacheroot=None
 
     parent=None
 
@@ -100,6 +100,9 @@ class Cache(object):
     def __init__(self,rootdir=None):
         if rootdir is not None:
             self.filecacheroot=rootdir
+
+        if self.filecacheroot is None:
+            self.filecacheroot=os.environ.get('DDA_DEFAULT_CACHE_ROOT',os.getcwd()+"/filecache")
 
     def __repr__(self):
         return "["+self.__class__.__name__+" of size %i at %s]"%(len(self.cache.keys()),self.filecacheroot)

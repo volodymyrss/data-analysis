@@ -84,8 +84,6 @@ def emerge_from_identity(identity):
 
         log_logstash("emergence exception",note="inconsistent_emergence",producable=producable_hashe_jsonified,expected_hashe=expected_hashe_jsonified)
 
-        raise Exception("HERE TOO")
-
         raise InconsitentEmergence(
             "unable to produce\n"+repr(producable_hashe_jsonified)+"\n while can produce"+repr(expected_hashe_jsonified),
             producable_hashe_jsonified,

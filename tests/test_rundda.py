@@ -39,7 +39,7 @@ def test_simple():
 
 
 def test_prompt_delegation():
-    queue_dir="tmp.queue"
+    queue_dir="/tmp/queue"
 
     randomized_version="v%i"%random.randint(1,10000)
 
@@ -128,10 +128,10 @@ def test_prompt_delegation():
     print(A.resource_stats)
 
 def test_delegation():
-    queue_dir="tmp.queue"
+    queue_dir="/tmp/queue"
 
     randomized_version="v%i"%random.randint(1,10000)
-    callback_file = "./callback"
+    callback_file = os.getcwd()+"/callback"
 
 
 
