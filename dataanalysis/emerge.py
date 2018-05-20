@@ -1,8 +1,13 @@
+import json
+import yaml
+import argparse
+
 import dataanalysis.importing as importing
 from dataanalysis.caches.resources import jsonify
 from dataanalysis.printhook import log, log_logstash
 import dataanalysis.graphtools
 from dataanalysis import hashtools
+import dataanalysis.core as da
 
 dd_module_names=[]
 
@@ -36,7 +41,6 @@ class InconsitentEmergence(Exception):
         return self.__class__.__name__+": "+repr(self.message)
 
 def emerge_from_identity(identity):
-    import dataanalysis.core as da
     da.reset()
 
     reload(dataanalysis.graphtools)
@@ -96,3 +100,30 @@ def emerge_from_identity(identity):
 
 def emerge_from_graph(graph):
     pass
+
+
+def main():
+    log('hello world')
+
+
+    parser = argparse.ArgumentParser(description='client to remote dda combinator')
+    parser.add_argument('target')
+    parser.add_argument('-F',dest='from_file',action='store_true',default=False)
+    parser.add_argument('-m',dest='modules',action='append',default=[])
+    parser.add_argument('-a',dest='assume',action='append',default=[])
+    parser.add_argument('-i',dest='inject',action='append',default=[])
+    parser.add_argument('-D',dest='prompt_delegate',action='store_true',default=False)
+
+    args = parser.parse_args()
+
+    if args.from_file:
+        identity=da.DataAnalysisIdentity.from_dict(yaml.load(open(args.target)))
+    else:
+        log("target:",args.target)
+        log("modules:",args.modules)
+
+    emerge_from_identity(identity).get()
+
+
+if __name__ == "__main__":
+    main()
