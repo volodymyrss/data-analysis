@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 import urllib
+import shutil
 
 import yaml
 
@@ -34,6 +35,7 @@ parser.add_argument('-d', dest='disable_run', metavar='ANALYSISNAME', type=str, 
 parser.add_argument('-Q', dest='delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 parser.add_argument('-I', dest='isolate',  help='...',action='store_true', default=False)
+parser.add_argument('-Ic', dest='isolate_cleanup',  help='...',action='store_true', default=False)
 parser.add_argument('--delegate-target', dest='delegate_target', action="store_true",  help='delegate target',default=False)
 parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
@@ -244,6 +246,12 @@ if args.delegate_to_queue is not None:
     A.cache.tail_parent(qcache)
     A.read_caches.append(qcache.__class__)
 
+
+if args.isolate or args.isolate_cleanup:
+    isolated_directory_key="command_line"
+else:
+    isolated_directory_key=None
+
 try:
     A._da_delegation_allowed=args.delegate_target
     #A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback)
@@ -322,5 +330,6 @@ if args.cachelink:
         open("object_url.txt","w").write("".join([args.object_name+" "+dcp+"\n" for dcp in A._da_cached_pathes]))
 
 
-
-
+if args.isolate_cleanup:
+    log("isolate cleanup:",A._da_isolated_directory,level='top')
+    shutil.rmtree(A._da_isolated_directory)
