@@ -1023,11 +1023,9 @@ class DataAnalysis(object):
             self.note_analysis_exception(ae)
             mr=None
             log(render("{RED}ANALYSIS EXCEPTION IN MAIN{/}: ")+render("{MAGENTA}"+repr(ae)+"{/}"+" in "+repr(self)),level='top')
-            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_failed")
+            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_analysis_exception")
         except Exception as ex:
-            #os.system("ls -ltor")
             self.stop_main_watchdog()
-
 
 
             try:
@@ -1036,7 +1034,7 @@ class DataAnalysis(object):
             except Exception:
                 log("unable to report exception!")
 
-            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="node_failed")
+            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="node_unhandled_exception")
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
@@ -1379,6 +1377,7 @@ class DataAnalysis(object):
                             self.analysis_exceptions=[]
                         self.analysis_exceptions+=analysis_exceptions
                         log(render("{RED}ANALYSIS EXCEPTIONS:{/}"),analysis_exceptions,level='top')
+                        self.process_hooks("top",self,message="analysis exception",exception=repr(analysis_exceptions),state="node_analysis_exception")
                     else:
                         analysis_exceptions=[]
                 # exceptions
