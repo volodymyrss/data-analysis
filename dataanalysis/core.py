@@ -834,6 +834,8 @@ class DataAnalysis(object):
 
         log('isolated directory key:',isolated_directory_key)
 
+        self._da_isolated_directory=wd
+
         try:
             try:
                 os.makedirs(wd)
