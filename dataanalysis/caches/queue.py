@@ -110,7 +110,7 @@ class QueueCacheWorker(object):
             final_state = "task_done"
 
         try:
-            result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key)
+            result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key,isolated_directory_cleanup=True)
         except da.AnalysisDelegatedException as delegation_exception:
             final_state = "task_done"
             A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated",delegation_exception=repr(delegation_exception))
