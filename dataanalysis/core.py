@@ -11,7 +11,6 @@ import gzip
 import json
 import os
 import errno
-import shutil
 import tempfile
 import re
 import shutil
@@ -825,16 +824,18 @@ class DataAnalysis(object):
                         raise  # re-raise exception
 
         isolated_directory_key=aa.get('isolated_directory_key',None)
+        isolated_directory_cleanup=aa.get('isolated_directory_cleanup',False)
 
         cwd=os.getcwd()
         if isolated_directory_key is not None:
             wd=cwd+"/"+self.get_factory_name()+"_"+isolated_directory_key
+            self._da_isolated_directory=wd
         else:
             wd=cwd
+            self._da_isolated_directory=None
 
         log('isolated directory key:',isolated_directory_key)
 
-        self._da_isolated_directory=wd
 
         try:
             try:
@@ -852,6 +853,13 @@ class DataAnalysis(object):
             raise
         else:
             os.chdir(cwd)
+
+        if isolated_directory_cleanup and self._da_isolated_directory is not None:
+            log("isolate cleanup:",A._da_isolated_directory,level='top')
+            if A._da_isolated_directory == os.environ.get('HOME'):
+                raise Exception("should not clean home!")
+            shutil.rmtree(A._da_isolated_directory)
+
 
         return result
 
