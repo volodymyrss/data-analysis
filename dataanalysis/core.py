@@ -855,10 +855,10 @@ class DataAnalysis(object):
             os.chdir(cwd)
 
         if isolated_directory_cleanup and self._da_isolated_directory is not None:
-            log("isolate cleanup:",A._da_isolated_directory,level='top')
-            if A._da_isolated_directory == os.environ.get('HOME'):
+            log("isolate cleanup:",self._da_isolated_directory,level='top')
+            if self._da_isolated_directory == os.environ.get('HOME'):
                 raise Exception("should not clean home!")
-            shutil.rmtree(A._da_isolated_directory)
+            shutil.rmtree(self._da_isolated_directory)
 
 
         return result
