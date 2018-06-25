@@ -11,3 +11,4 @@ flask-restful
 pytest-flask
 psutil
 logstash_formatter
+requests
