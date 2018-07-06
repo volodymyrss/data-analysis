@@ -1031,7 +1031,7 @@ class DataAnalysis(object):
             self.note_analysis_exception(ae)
             mr=None
             log(render("{RED}ANALYSIS EXCEPTION IN MAIN{/}: ")+render("{MAGENTA}"+repr(ae)+"{/}"+" in "+repr(self)),level='top')
-            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_analysis_exception")
+            #self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_analysis_exception")
         except Exception as ex:
             self.stop_main_watchdog()
 

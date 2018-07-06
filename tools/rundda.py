@@ -255,7 +255,7 @@ else:
 try:
     A._da_delegation_allowed=args.delegate_target
     #A.process(output_required=True,requested_by=["command_line"],callback_url=args.callback)
-    A.get(requested_by=["command_line"],callback_url=args.callback,isolated_directory_key="command_line")
+    A.get(requested_by=["command_line"],callback_url=args.callback,isolated_directory_key=isolated_directory_key)
     A.raise_stored_exceptions()
 except dataanalysis.AnalysisException as e:
     yaml.dump(
