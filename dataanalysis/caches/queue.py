@@ -110,15 +110,21 @@ class QueueCacheWorker(object):
             final_state = "task_done"
 
         try:
+<<<<<<< HEAD
             result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key)
+=======
+            result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key,isolated_directory_cleanup=True)
+            A.raise_stored_exceptions()
+        except da.AnalysisException as e:
+            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
+            A.process_hooks("top", A, message="analysis exception", exception=repr(e),state="node_analysis_exception")
+>>>>>>> 8142533... allow to interpret structured exceptions
         except da.AnalysisDelegatedException as delegation_exception:
             final_state = "task_done"
+            log("delegated dependencies:",delegation_exception)
             A.process_hooks("top",A,message="task dependencies delegated",state=final_state, task_comment="task dependencies delegated",delegation_exception=repr(delegation_exception))
             raise
         except dqueue.TaskStolen:
-            raise
-        except da.AnalysisException as e:
-            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             raise
         except Exception as e:
             A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with unexpected failure "+repr(e))
@@ -174,7 +180,7 @@ class QueueCacheWorker(object):
             except dqueue.TaskStolen as e:
                 log("task stolen, whatever",e)
             except da.AnalysisDelegatedException as delegation_exception:
-                log("found delegated dependencies:", delegation_exception.delegation_states)
+                log("found delegated dependencies:", delegation_exception.delegation_states,level='top')
                 task_dependencies = [d['task_data'] for d in delegation_exception.delegation_states]
                 #locked_task=dqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
                 #assert task.filename_key == locked_task.filename_key
