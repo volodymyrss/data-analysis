@@ -11,6 +11,7 @@ before_install:
 - pip install codecov
 - pip install pytest-cov
 - pip install codacy-coverage
+- mysql -e 'CREATE DATABASE IF NOT EXISTS dqueue;'
 install:
 - pip install .
 - pip install -r requirements.txt
