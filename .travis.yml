@@ -17,7 +17,6 @@ install:
 - pip install -r requirements.txt
 - git clone http://git@github.com/volodymyrss/dqueue.git && cd dqueue && pip install -r requirements.txt && pip install .
 script:
-- python -m dqueue
 - py.test . --cov=./
 - PYTHONPATH=./ py.test . --cov=./
 after_success:
