@@ -25,6 +25,7 @@ parser.add_argument('-i', dest='inject', metavar='INJECT_JSON', type=str, help='
 parser.add_argument('-t', dest='tar',  help='...',action='store_true', default=False)
 parser.add_argument('-q', dest='quiet',  help='...',action='store_true', default=False)
 parser.add_argument('-s', dest='silent',  help='...',action='store_true', default=False)
+parser.add_argument('-S', dest='very_silent',  help='...',action='store_true', default=False)
 parser.add_argument('-v', dest='verbose',  help='...',action='store_true', default=False)
 parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
 parser.add_argument('-x', dest='failsafe',  help='...',action='store_true', default=False)
@@ -71,6 +72,12 @@ else:
 
 if args.very_verbose:
     dataanalysis.printhook.global_permissive_output=True
+
+if args.very_silent:
+    dataanalysis.printhook.global_suppress_output=True
+    dataanalysis.printhook.global_permissive_output=False
+    dataanalysis.printhook.global_log_enabled=False
+    dataanalysis.printhook.global_fancy_output=False
 
 modules=[m[0] for m in args.module]
 
