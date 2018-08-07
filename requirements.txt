@@ -1,4 +1,4 @@
-healpy
+healpy==1.11.0
 scipy
 pydot
 numpy
@@ -11,3 +11,4 @@ flask-restful
 pytest-flask
 psutil
 logstash_formatter
+requests
