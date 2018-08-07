@@ -93,7 +93,7 @@ def log(*args,**kwargs):
         my_pid = os.getpid()
         my_thread=threading.current_thread().ident
 
-        level = kwargs['level'] if 'level' in kwargs else "debug"
+        level = kwargs.get("level","debug")
 
         if graylog_logger is not None and ("net" in level or "top" in level):
             graylog_logger.debug(args)

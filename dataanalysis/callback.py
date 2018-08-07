@@ -53,10 +53,10 @@ class Callback(object):
         try:
             self.url_params=urlparse.parse_qs(urlparse.urlparse(self.url).query)
         except Exception as e:
-            log("failed extracting callback parameters:",e,level='callback')
+            log("failed extracting callback parameters:",e,level='callback-debug')
             self.url_params={}
-        log('created callback',self.url,level='callback')
-        log('extracted callback params',self.url_params,'from',self.url,level='callback')
+        log('created callback',self.url,level='callback-debug')
+        log('extracted callback params',self.url_params,'from',self.url,level='callback-debug')
 
     def __repr__(self):
         return "[%s: %s]"%(self.__class__.__name__,self.url)
@@ -77,8 +77,8 @@ class Callback(object):
                 log("unable to filter",obj,obj.__class__,accepted_class)
                 raise
 
-        log("callback NOT accepted:",message,repr(obj),level="callback")
-        log("accepted callbacks:",self.callback_accepted_classes,level="callback")
+        log("callback NOT accepted:",message,repr(obj),level="callback-debug")
+        log("accepted callbacks:",self.callback_accepted_classes,level="callback-debug")
         return False
 
     def process_callback(self,level,obj,message,data):

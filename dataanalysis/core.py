@@ -185,7 +185,17 @@ def map_nested_structure(structure, mapping, path=None):
 
 
 class AnalysisException(Exception):
-    pass
+    @classmethod
+    def from_list(cls,exceptions):
+        if len(exceptions)==1:
+            if isinstance(exceptions[0],Exception):
+                return exceptions[0]
+            else:
+                return AnalysisException(exceptions[0])
+
+        obj=cls(exceptions)
+
+        return obj
 
 class AnalysisDelegatedException(Exception):
     @property
@@ -701,10 +711,10 @@ class DataAnalysis(object):
 
     def store_cache(self,fih):
         """
-    store output with
+        store output with
         """
 
-        log(render("{MAGENTA}storing in cache{/}"))
+        log(render("{MAGENTA}storing in cache{/}"),level="top")
         log("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
@@ -1021,7 +1031,7 @@ class DataAnalysis(object):
             self.note_analysis_exception(ae)
             mr=None
             log(render("{RED}ANALYSIS EXCEPTION IN MAIN{/}: ")+render("{MAGENTA}"+repr(ae)+"{/}"+" in "+repr(self)),level='top')
-            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_analysis_exception")
+            #self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_analysis_exception")
         except Exception as ex:
             self.stop_main_watchdog()
 
@@ -1072,10 +1082,18 @@ class DataAnalysis(object):
         log("main DONE!",level='top')
  
         self.summarize_resource_stats()
-        self.process_hooks("top",self,message="main done",
-                        resource_stats=self.current_resource_stats,
-                        resource_summary=self.current_resource_summary,
-                        state="main_done")
+
+        if self.get_exceptions() == []:
+            self.process_hooks("top",self,message="main done",
+                            resource_stats=self.current_resource_stats,
+                            resource_summary=self.current_resource_summary,
+                            state="main_done")
+        else:
+            self.process_hooks("top",self,message="analysis exception",
+                            resource_stats=self.current_resource_stats,
+                            resource_summary=self.current_resource_summary,
+                            exceptions=repr(self.get_exceptions()),
+                            state="node_analysis_exception")
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1319,9 +1337,10 @@ class DataAnalysis(object):
             output_origin=None
             if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
                 log("cache found and retrieved",id(self),'{log:top}')
-                log(fih,'{log:top}')
+                log(fih,level='top')
                 output_origin = "cache"
                 self._da_output_origin=output_origin
+
             else:
                 log("no cache",'{log:top}')
                 log(fih,'{log:top}')
@@ -1396,11 +1415,14 @@ class DataAnalysis(object):
                     else:
                         log("disabled self.rename_output_unique",level='cache')
 
+                    log("object storing in the cache",level='top')
                     self.store_cache(fih)
                     #self.runtime_update("done")
                 else:
-                    log("object input had untreated exceptions, storing exception in the cache",level='cache')
+                    log("object input had untreated exceptions, storing exception in the cache",level='top')
                     self.store_cache(fih)
+
+                    #raise AnalysisException.from_list(analysis_exceptions)
 
 
             output_objects=self.process_find_output_objects()
@@ -1475,6 +1497,17 @@ class DataAnalysis(object):
 
         log("PROCESS done",fih,return_object)
         return fih,return_object
+                
+    def raise_stored_exceptions(self):
+        exceptions=self.get_exceptions()
+
+        if exceptions!=[]:
+            log('found exceptions in',self,':',exceptions,level='top')
+            to_raise=AnalysisException.from_list(exceptions)
+            log('will raise',to_raise,level='top')
+            raise to_raise
+
+        log('no exceptions found in state',level='top')
 
     def register_alias(self,hash1,hash2):
         log("alias:",hash1)
@@ -1596,7 +1629,7 @@ class DataAnalysis(object):
                     inputs.append(l)
 
             if delegated != []:
-                log("delegated:",len(delegated),delegated)
+                log("delegated:",len(delegated),delegated,level="top")
                 log("still implemented:", len(inputhashes),inputs)
 
                 raise AnalysisDelegatedException.from_list(delegated)
