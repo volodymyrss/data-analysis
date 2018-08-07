@@ -275,12 +275,13 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             log("promoting", i, 'assumptions', o.assumptions)
             # if o.is_virtual():
             #    log("virtual object, constructing empty copy")
+            #log('whatifcopy for',description,'will serialize',i,o,level='top')
             serialization=o.serialize(verify_jsonifiable=False)
             if hasattr(o, '_da_obscure_origin_hashe'):
                 serialization[1]['_da_obscure_origin_hashe']=o._da_obscure_origin_hashe
 
             o.__class__(dynamic=False).promote(origins=["what_if_copy"])  # assume??
-            self.inject_serialization(serialization) # conditional reality contains pale copies of the fundamentals
+            self.inject_serialization(serialization) # conditional reality contains shallow copies of the fundamentals
 
         for assumptions in self.cache_assumptions:
             log("assumption group:", assumptions)
