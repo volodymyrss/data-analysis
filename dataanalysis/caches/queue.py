@@ -110,15 +110,11 @@ class QueueCacheWorker(object):
             final_state = "task_done"
 
         try:
-<<<<<<< HEAD
-            result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key)
-=======
             result=A.get(requested_by=[repr(self)],isolated_directory_key=task.key,isolated_directory_cleanup=True)
             A.raise_stored_exceptions()
         except da.AnalysisException as e:
             A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with failure "+repr(e))
             A.process_hooks("top", A, message="analysis exception", exception=repr(e),state="node_analysis_exception")
->>>>>>> 8142533... allow to interpret structured exceptions
         except da.AnalysisDelegatedException as delegation_exception:
             final_state = "task_done"
             log("delegated dependencies:",delegation_exception)
