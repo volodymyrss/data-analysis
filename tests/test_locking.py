@@ -1,3 +1,5 @@
+import pytest
+
 import glob
 import json
 import os
@@ -6,6 +8,7 @@ import subprocess
 import sys
 
 import yaml
+
 
 package_root=os.path.dirname(os.path.dirname(__file__))
 
@@ -19,14 +22,13 @@ rundda_path=package_root+"/tools/rundda.py"
 env = os.environ
 env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
+@pytest.mark.skip(reason="this hangs in travis")
 def test_delegation():
     from dataanalysis.caches.queue import QueueCacheWorker
     queue_name="/tmp/queue"
     qw=QueueCacheWorker(queue_name)
     qw.queue.purge()
     print("cache worker:",qw)
-
-    return
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
