@@ -24,6 +24,7 @@ def test_delegation():
     queue_name="/tmp/queue"
     qw=QueueCacheWorker(queue_name)
     qw.queue.purge()
+    print("cache worker:",qw)
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
@@ -38,7 +39,6 @@ def test_delegation():
         '--delegate-target',
     ]
 
-    qw.queue.wipe()
 
     if os.path.exists(callback_file):
         os.remove(callback_file)
