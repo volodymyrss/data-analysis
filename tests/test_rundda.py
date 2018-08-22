@@ -38,6 +38,7 @@ def test_simple():
     print(p.stdout.read())
 
 
+@pytest.mark.skip(reason="this hangs in travis")
 def test_prompt_delegation():
     queue_dir="/tmp/queue"
 
@@ -127,6 +128,7 @@ def test_prompt_delegation():
     assert A.data=="dataAadded"
     print(A.resource_stats)
 
+@pytest.mark.skip(reason="this hangs in travis")
 def test_delegation():
     queue_dir="/tmp/queue"
 
