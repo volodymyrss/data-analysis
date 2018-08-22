@@ -26,6 +26,8 @@ def test_delegation():
     qw.queue.purge()
     print("cache worker:",qw)
 
+    return
+
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
 
