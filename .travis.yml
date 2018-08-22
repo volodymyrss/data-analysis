@@ -17,8 +17,8 @@ install:
 - pip install -r requirements.txt
 - git clone http://git@github.com/volodymyrss/dqueue.git /tmp/dqueue && (cd /tmp/dqueue && pip install -r requirements.txt && pip install .)
 script:
-- py.test tests/test_locking.py --cov=./ -sv
-- PYTHONPATH=./ py.test tests/test_locking.py --cov=./ -sv 
+- py.test ./ --cov=./ -sv
+- PYTHONPATH=./ py.test ./ --cov=./ -sv 
 after_success:
 - coverage xml
 - python-codacy-coverage -r coverage.xml
