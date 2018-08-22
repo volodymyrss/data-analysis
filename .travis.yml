@@ -19,8 +19,8 @@ install:
 - pip install -r ./dqueue/requirements.txt
 - pip install --upgrade ./dqueue
 script:
-- py.test tests/test_locking.py --cov=./ -sv
-- PYTHONPATH=./ py.test tests/test_locking.py --cov=./ -sv 
+- py.test ./ --cov=./ -sv
+- PYTHONPATH=./ py.test ./ --cov=./ -sv 
 after_success:
 - coverage xml
 - python-codacy-coverage -r coverage.xml
