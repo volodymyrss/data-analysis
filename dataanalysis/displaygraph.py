@@ -7,8 +7,9 @@ import pydot
 import hashtools
 
 
-def dotify_hashe(hashe,assign_nuids=False,filtered_nodes=None,wait=None):
-    graph = pydot.Dot(graph_type='digraph', splines='ortho' )
+def dotify_hashe(hashe,assign_nuids=False,filtered_nodes=None,wait=None,graph=None,return_root=False):
+    if graph is None:
+        graph = pydot.Dot(graph_type='digraph', splines='ortho' )
 
     def node_filter(node_label):
         if filtered_nodes is None:
@@ -57,7 +58,10 @@ def dotify_hashe(hashe,assign_nuids=False,filtered_nodes=None,wait=None):
 
     process_hashe(hashe,graph,None)
 
-    return graph
+    if return_root:
+        return graph,str(hashe[-1]).replace(":","")
+    else:
+        return graph
 
 
 def plot_hashe(hashe,pngfn,dotfn=None,show=True,assign_nuids=False,filtered_nodes=None,wait=None):
