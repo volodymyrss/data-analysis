@@ -8,6 +8,6 @@ persist-queue
 pyyaml
 flask
 flask-restful
-pytest-flask
+pytest-flask==0.11.0
 psutil
 logstash_formatter
