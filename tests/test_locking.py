@@ -36,6 +36,8 @@ def test_delegation():
         '--callback','file://'+callback_file,
     ]
 
+    print(" ".join(cmd))
+
     for fn in glob.glob(queue_dir+"/waiting/*"):
         os.remove(fn)
 
