@@ -62,6 +62,9 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
 
     log(name,module_file,level="importing")
     m=imp.load_source(name,module_file)
+    if os.path.exists(local_module_dir+"/dir_to_pythonpath"):
+        if sys.path[0]!=local_module_dir:
+            sys.path.insert(0,local_module_dir)
     return m
 
 
