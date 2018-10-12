@@ -21,8 +21,9 @@ env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 def test_delegation():
     from dataanalysis.caches.queue import QueueCacheWorker
-    queue_name="test-queue"
+    queue_name="/tmp/queue"
     qw=QueueCacheWorker(queue_name)
+    qw.queue.purge()
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
@@ -32,7 +33,7 @@ def test_delegation():
         'Mosaic',
         '-m','ddmoduletest',
         '-a','ddmoduletest.RandomModifier(use_version="%s")'%randomized_version,
-        '-Q',queue_name,
+#        '-Q',queue_name,
         '--callback','file://'+callback_file,
         '--delegate-target',
     ]
@@ -70,17 +71,9 @@ def test_delegation():
     print(recovered_exception)
 
 
-    jobs=(glob.glob(queue_dir+"/waiting/*"))
-    assert len(jobs)==1
-
-    job=yaml.load(open(jobs[0]))
-
-    print("\n\nJOB",job)
-
-
     print(qw.queue.info)
 
-    assert qw.queue.info['waiting'] == 1
+    assert qw.queue.info['waiting'] == 1, qw.queue.info
     assert qw.queue.info['locked'] == 0
     assert qw.queue.info['done'] == 0
 
@@ -115,7 +108,11 @@ def test_delegation():
 
     print("\n\nWORKER run to unlock")
     qw.run_once()
+    assert qw.queue.info['waiting'] == 1
+    assert qw.queue.info['locked'] == 0
+    assert qw.queue.info['done'] == 2
 
+    qw.run_once()
     assert qw.queue.info['waiting'] == 0
     assert qw.queue.info['locked'] == 0
     assert qw.queue.info['done'] == 3
