@@ -18,7 +18,7 @@ def test_queue_cache():
     da.reset()
 
     q_cache=caches.queue.QueueCache()
-    q_cache.wipe_queue(["waiting","done","running","failed"])
+    q_cache.queue.purge()
 
     define_analysis()
 
@@ -61,7 +61,7 @@ def test_queue_cache_generative():
     da.reset()
 
     q_cache=caches.queue.QueueCache("./queue_test")
-    q_cache.wipe_queue(["waiting", "done", "running"])
+    q_cache.queue.purge()
 
     assert len(q_cache.queue.list())==0
 
