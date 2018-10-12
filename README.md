@@ -5,18 +5,19 @@ data-analysis
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&utm_medium=referral&utm_content=volodymyrss/data-analysis&utm_campaign=Badge_Coverage)
 [![Requirements Status](https://requires.io/github/volodymyrss/data-analysis/requirements.svg?branch=master)](https://requires.io/github/volodymyrss/data-analysis/requirements/?branch=master)
 
-Framework to facilitate development of the (scientific) data analysis
-pipelines.  Originally designed to handle organized processing and
+Framework facilitating declarative expression of reproducible (scientific) data analysis
+workflows.  
+
+Originally designed to handle organized processing and
 storing results of different stages of analysis for moderate-scale 
 (tens of Tb) archive of very diverse data.  It is intended for ingesting and processing new
-data that are appended to existing data rather than overwriting
-them. State is determined from the natural ordering of the data.
+data in a append-only database.
 
 The principal idea is to organize the pipeline in analysis units
 (classes, inheriting from DataAnalysis) without side effects. Result
 of a DataAnalysis is some Data. Data is transofrmed by analysis to
 other data. Any Data is identified by a tree of connected DataAnalysis
-that where used to produce it.
+that where used to produce it, i.e. by the Data Provenance.
 
 Many (but not all) Data is cached: it will not be recomputed if
 requested, instead it will be retrieved from a storage backend
