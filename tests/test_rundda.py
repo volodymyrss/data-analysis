@@ -63,8 +63,13 @@ def test_prompt_delegation():
         '--callback', 'http://test/callback',
     ]
 
-    for fn in glob.glob(queue_dir+"/waiting/*"):
-        os.remove(fn)
+    #for fn in glob.glob(queue_dir+"/waiting/*"):
+    #    os.remove(fn)
+    from dataanalysis.caches.queue import QueueCacheWorker
+    qw=QueueCacheWorker(queue_dir)
+    qw.queue.wipe()
+    print(qw.queue.info)
+
 
     exception_report="exception.yaml"
     if os.path.exists(exception_report):
@@ -80,15 +85,14 @@ def test_prompt_delegation():
 
     print(recovered_exception)
 
-    jobs=(glob.glob(queue_dir+"/waiting/*"))
-    assert len(jobs)==1
+    #jobs=(glob.glob(queue_dir+"/waiting/*"))
+    #assert len(jobs)==1
 
-    job=yaml.load(open(jobs[0]))
+    #job=yaml.load(open(jobs[0]))
 
-    print(job)
+    #print(job)
 
 
-    from dataanalysis.caches.queue import QueueCacheWorker
     qw=QueueCacheWorker(queue_dir)
     print(qw.queue.info)
     assert qw.queue.info['waiting']==1
@@ -102,8 +106,8 @@ def test_prompt_delegation():
 
     print("recovered object:", A)
 
-    jobs = (glob.glob(queue_dir + "/waiting/*"))
-    assert len(jobs) == 0
+    #jobs = (glob.glob(queue_dir + "/waiting/*"))
+    #assert len(jobs) == 0
 
     # run again, expecting from cache
     exception_report = "exception.yaml"
@@ -169,12 +173,12 @@ def test_delegation():
     print(recovered_exception)
 
 
-    jobs=(glob.glob(queue_dir+"/waiting/*"))
-    assert len(jobs)==1
+    #jobs=(glob.glob(queue_dir+"/waiting/*"))
+    #assert len(jobs)==1
 
-    job=yaml.load(open(jobs[0]))
+    #job=yaml.load(open(jobs[0]))
 
-    print("\n\nJOB",job)
+    #print("\n\nJOB",job)
 
 
     from dataanalysis.caches.queue import QueueCacheWorker
@@ -191,8 +195,8 @@ def test_delegation():
     assert len(callback_info) == 6
 
 
-    jobs = (glob.glob(queue_dir + "/waiting/*"))
-    assert len(jobs) == 0
+    #jobs = (glob.glob(queue_dir + "/waiting/*"))
+    #assert len(jobs) == 0
 
 
     # run again, expecting from cache

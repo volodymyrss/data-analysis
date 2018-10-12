@@ -36,8 +36,8 @@ def test_delegation():
         '--callback','file://'+callback_file,
     ]
 
-    for fn in glob.glob(queue_dir+"/waiting/*"):
-        os.remove(fn)
+    #for fn in glob.glob(queue_dir+"/waiting/*"):
+    #    os.remove(fn)
 
     if os.path.exists(callback_file):
         os.remove(callback_file)
@@ -62,12 +62,12 @@ def test_delegation():
     print(recovered_exception)
 
 
-    jobs=(glob.glob(queue_dir+"/waiting/*"))
-    assert len(jobs)==1
+    #jobs=(glob.glob(queue_dir+"/waiting/*"))
+    #assert len(jobs)==1
 
-    job=yaml.load(open(jobs[0]))
+    #job=yaml.load(open(jobs[0]))
 
-    print("\n\nJOB",job)
+    #print("\n\nJOB",job)
 
 
     print(qw.queue.info)
@@ -108,6 +108,7 @@ def test_delegation():
     print("\n\nWORKER run to unlock")
     qw.run_once()
 
+    print(qw.queue.info['waiting'])
     assert qw.queue.info['waiting'] == 0
     assert qw.queue.info['locked'] == 0
     assert qw.queue.info['done'] == 3
