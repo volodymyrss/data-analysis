@@ -84,9 +84,6 @@ def test_prompt_delegation():
 
     print(recovered_exception)
 
-
-
-
     print(qw.queue.info)
     assert qw.queue.info['waiting']==1
 
