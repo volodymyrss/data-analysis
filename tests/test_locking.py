@@ -21,8 +21,8 @@ env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 def test_delegation():
     from dataanalysis.caches.queue import QueueCacheWorker
-    queue_dir="/tmp/queue"
-    qw=QueueCacheWorker(queue_dir)
+    queue_name="test-queue"
+    qw=QueueCacheWorker(queue_name)
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
@@ -32,12 +32,12 @@ def test_delegation():
         'Mosaic',
         '-m','ddmoduletest',
         '-a','ddmoduletest.RandomModifier(use_version="%s")'%randomized_version,
-        '-Q',queue_dir,
+        '-Q',queue_name,
         '--callback','file://'+callback_file,
+        '--delegate-target',
     ]
 
-    for fn in glob.glob(queue_dir+"/waiting/*"):
-        os.remove(fn)
+    qw.queue.wipe()
 
     if os.path.exists(callback_file):
         os.remove(callback_file)
@@ -51,10 +51,18 @@ def test_delegation():
     qw.queue.wipe(["waiting","locked","done","failed","running"])
 
     # run it
-    print("CMD:",cmd)
-    p=subprocess.Popen(cmd+['--delegate-target'],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
-    p.wait()
-    print(p.stdout.read())
+    print("CMD:"," ".join(cmd))
+
+    try:
+        subprocess.check_call(cmd,stderr=subprocess.STDOUT,env=env)
+    except subprocess.CalledProcessError as e:
+        pass
+    else:
+        raise Exception("expected AnalysisDelegatedException")
+
+    #p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
+    #p.wait()
+    #print(p.stdout.read())
 
     assert os.path.exists(exception_report)
     recovered_exception = yaml.load(open(exception_report))
