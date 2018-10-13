@@ -53,17 +53,10 @@ class Callback(object):
         try:
             self.url_params=urlparse.parse_qs(urlparse.urlparse(self.url).query)
         except Exception as e:
-<<<<<<< c1b9c508555d022cc1ab941de2052aa653cac549
-            log("failed extracting callback parameters:",e,level='callback')
-            self.url_params={}
-        log('created callback',self.url,level='callback')
-        log('extracted callback params',self.url_params,'from',self.url,level='callback')
-=======
             log("failed extracting callback parameters:",e,level='callback-debug')
             self.url_params={}
         log('created callback',self.url,level='callback-debug')
         log('extracted callback params',self.url_params,'from',self.url,level='callback-debug')
->>>>>>> allow to interpret structured exceptions
 
     def __repr__(self):
         return "[%s: %s]"%(self.__class__.__name__,self.url)
