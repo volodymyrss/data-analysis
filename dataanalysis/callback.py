@@ -18,7 +18,7 @@ class CallbackHook(object):
                 callback_filter=globals()[callback_filter_name]
 
             callback_class=callback_filter
-            log("callback class:",callback_class,level='top')
+            log("callback class:",callback_class,level='callback')
             callback=callback_class(callback_url)
             log("processing callback url", callback_url, callback)
             r=callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
@@ -27,7 +27,7 @@ class CallbackHook(object):
                 object_data['request_root_node']=getattr(obj,'request_root_node',False)
                 if 'hashe' in object_data:
                     object_data.pop('hashe')
-                log("loghook from callback",level='top')
+                log("loghook from callback",level='callback')
                 log_hook("callback",obj,level_orig=level,callback_params=callback.url_params, callback_response=r[0], callback_response_content=r[1],**kwargs)
 
 
@@ -41,7 +41,7 @@ class Callback(object):
 
         for c in classes:
             if c not in cls.callback_accepted_classes:
-                log("adding accepted class",c)
+                log("adding accepted class",c,level="callback")
                 cls.callback_accepted_classes.append(c)
 
         log("callback currently accepts classes",cls.callback_accepted_classes)
@@ -52,10 +52,10 @@ class Callback(object):
         try:
             self.url_params=urlparse.parse_qs(urlparse.urlparse(self.url).query)
         except Exception as e:
-            log("failed extracting callback parameters:",e,level='top')
+            log("failed extracting callback parameters:",e,level='callback-debug')
             self.url_params={}
-        log('created callback',self.url,level='top')
-        log('extracted callback params',self.url_params,'from',self.url,level='top')
+        log('created callback',self.url,level='callback-debug')
+        log('extracted callback params',self.url_params,'from',self.url,level='callback-debug')
 
     def __repr__(self):
         return "[%s: %s]"%(self.__class__.__name__,self.url)
@@ -65,7 +65,7 @@ class Callback(object):
             return True
 
         if self.callback_accepted_classes is None:
-            log("callback  accepted:",message,level="top")
+            log("callback  accepted:",message,level="callback")
             return True
 
         for accepted_class in self.callback_accepted_classes:
@@ -78,8 +78,8 @@ class Callback(object):
                 log("unable to filter",obj,obj.__class__,accepted_class)
                 raise
 
-        log("callback NOT accepted:",message,repr(obj),"class:",obj.__class__,level="top")
-        log("accepted callbacks:",self.callback_accepted_classes,level="top")
+        log("callback NOT accepted:",message,repr(obj),level="callback-debug")
+        log("accepted callbacks:",self.callback_accepted_classes,level="callback-debug")
         return False
 
     def process_callback(self,level,obj,message,data):
@@ -118,13 +118,15 @@ class Callback(object):
         elif self.url.startswith("http://"):
 
             try:
-                r=requests.get(self.url,
+                session = requests.Session()
+                session.trust_env = False
+                r=session.get(self.url,
                              params=params)
-                log("callback succeeded",self.url,params,r,level="top")
+                log("callback succeeded",self.url,params,r,level="callback")
                 log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r.content)
                 return r,r.content
             except requests.ConnectionError as e:
-                log("callback failed",self.url,params,":",e,level="top")
+                log("callback failed",self.url,params,":",e,level="callback")
                 log_hook("callback",obj,message="callback failed!",callback_exception=repr(e),callback_url=self.url,callback_params=self.url_params,action_params=params)
                 return "callback failed",repr(e)
         else:

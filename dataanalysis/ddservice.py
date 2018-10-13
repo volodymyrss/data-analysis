@@ -110,7 +110,7 @@ class Produce(Resource):
         except emerge.InconsitentEmergence as e:
             return Response(
                 status='error',
-                data=dict(comment="mismatch between expected hashe and producable",
+                data=dict(comment="found mismatch between expected hashe and producable",
                           expected_hashe=args['expected_hashe'],
                           producable_hashe=e.cando,
                           ),
@@ -131,10 +131,10 @@ class Produce(Resource):
         try:
             hashe, obj=emerged_object.process(output_required=True,requested_by=requested_by)
 
-            if expected_hashe_str is not None and expected_hashe != jsonify(hashe):
+            if expected_hashe_str is not None and jsonify(expected_hashe) != jsonify(hashe):
                 return Response(
                     status='error',
-                    data=dict(comment="mismatch between expected hashe and produced",
+                    data=dict(comment="mismatch between expected hashe and produced", # TODO why repeat?
                               expected_hashe=args['expected_hashe'],
                               producable_hashe=hashe,
                               ),
@@ -164,6 +164,13 @@ class Produce(Resource):
                 ),
             ).jsonify()
 
+class Callback(Resource):
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('target', type=str, help='')
+        args = parser.parse_args()
+
+
 
 def create_app():
     app = Flask(__name__)
@@ -172,6 +179,8 @@ def create_app():
     api.add_resource(List, '/api/%s/list'%api_version)
     api.add_resource(Produce, '/api/%s/produce'%api_version)
     api.add_resource(Status, '/api/%s/status'%api_version)
+    api.add_resource(Callback, '/api/%s/callback' % api_version)
+
     return app
 
 if __name__ == '__main__':

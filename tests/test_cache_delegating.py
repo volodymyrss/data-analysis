@@ -18,9 +18,11 @@ def test_queue_cache():
     da.reset()
 
     q_cache=caches.queue.QueueCache()
-    q_cache.wipe_queue(["waiting","done","running"])
+    q_cache.wipe_queue(["waiting","done","running","failed"])
 
     define_analysis()
+
+    assert len(da.AnalysisFactory.dda_modules_used)==1
 
     A=dataanalysis.core.AnalysisFactory['AAnalysis']
     A.produce_disabled=True
@@ -45,9 +47,11 @@ def test_queue_cache():
     A.cache = f_cache
     A.cached = True
 
-    worker=caches.queue.QueueCacheWorker()
+    worker=caches.queue.QueueCacheWorker("/tmp/queue")
+    print(q_cache.queue.info)
+    print("with worker",worker)
 
-    print(worker.run_once())
+    print(worker.run_all())
 
 def test_queue_cache_generative():
     from dataanalysis import caches

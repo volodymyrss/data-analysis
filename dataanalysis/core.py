@@ -10,6 +10,8 @@ import threading
 import gzip
 import json
 import os
+import errno
+import tempfile
 import re
 import shutil
 import socket
@@ -17,7 +19,7 @@ import sys
 import traceback
 import time
 import base64
-from collections import Mapping, Set, Sequence
+from collections import Mapping, Set, Sequence, OrderedDict
 
 from dataanalysis import hashtools
 from dataanalysis import jsonify
@@ -27,7 +29,10 @@ from dataanalysis.caches import cache_core
 from dataanalysis.analysisfactory import AnalysisFactory
 
 from dataanalysis import printhook
-from dataanalysis.printhook import decorate_method_log,log,debug_print,log_hook
+from dataanalysis.printhook import decorate_method_log,debug_print,log_hook
+
+from dataanalysis.printhook import get_local_log
+log=get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
 
@@ -80,8 +85,12 @@ iteritems = lambda mapping: getattr(mapping, 'iteritems', mapping.items)()
 #class DataHandle:
 #    trivial = True
 
+def named(name):
+    return NamedAnalysis(name)
+
 class NoAnalysis():
     pass
+
 
 def isdataanalysis(obj,alsofile=False):
     if isinstance(obj,DataFile) and not alsofile:
@@ -133,7 +142,7 @@ class UnhandledAnalysisException(Exception):
         )
 
     def __repr__(self):
-        print(self.argdict)
+        log(self.argdict)
         return  "\n\n>>> main log\n" + \
                 "\n".join([">>> "+l for l in self.argdict['main_log'].split("\n")])+ "\n\n" + \
                 self.argdict['tb']+"\n"+ \
@@ -176,7 +185,17 @@ def map_nested_structure(structure, mapping, path=None):
 
 
 class AnalysisException(Exception):
-    pass
+    @classmethod
+    def from_list(cls,exceptions):
+        if len(exceptions)==1:
+            if isinstance(exceptions[0],Exception):
+                return exceptions[0]
+            else:
+                return AnalysisException(exceptions[0])
+
+        obj=cls(exceptions)
+
+        return obj
 
 class AnalysisDelegatedException(Exception):
     @property
@@ -188,7 +207,7 @@ class AnalysisDelegatedException(Exception):
             return self.hashe[-1]
 
         if self.hashe[0] == "list":
-            return "; ".join([repr(k) for k in self.hashe[1:]])
+            return "; ".join([repr(k[-1]) for k in self.hashe[1:]])
 
     def __init__(self,hashe,resources=None,comment=None,origin=None, delegation_state=None):
         self.hashe=hashe
@@ -204,6 +223,13 @@ class AnalysisDelegatedException(Exception):
             return self._comment
         return ""
 
+    @property
+    def delegation_states(self):
+        if isinstance(self.delegation_state,list):
+            return self.delegation_state
+        else:
+            return [self.delegation_state]
+
     @classmethod
     def from_list(cls,exceptions):
         if len(exceptions)==1:
@@ -214,8 +240,10 @@ class AnalysisDelegatedException(Exception):
         obj.source_exceptions=exceptions
 
         obj.resources=[]
+        obj.delegation_state=[]
         for ex in exceptions:
             obj.resources+=ex.resources
+            obj.delegation_state.append(ex.delegation_state)
 
         obj.hashe=tuple(['list']+[ex.hashe for ex in exceptions])
 
@@ -247,10 +275,11 @@ class decorate_all_methods(type):
         if not c.trivial:
             log("declaring analysis class",name,)
             log("   constructing object...")
-            o=c(update=True)
+            o=c(update=True,origins=["from_class","with_metaclass"])
             log("   registered",o)
 
         return c
+
 
 class DataAnalysisIdentity(object):
     def __init__(self,
@@ -263,7 +292,7 @@ class DataAnalysisIdentity(object):
         self.full_name=full_name
         self.modules=modules
         self.assumptions=assumptions
-        self.expected_hashe=expected_hashe
+        self.expected_hashe=hashtools.hashe_replace_object(expected_hashe,None,'None')
 
     def get_modules_loadable(self):
         return [m[1] for m in self.modules]
@@ -274,7 +303,20 @@ class DataAnalysisIdentity(object):
                                ",".join([a if a is not None else "custom eval" for a,b in self.assumptions]))
 
     def serialize(self):
-        return self.__dict__
+        result=self.__dict__
+
+        serialized_assumptions=[]
+        for assumption in result['assumptions']:
+            if isinstance(assumption,tuple) and isinstance(assumption[1],dict):
+                for k,v in assumption[1].items():
+                    if v is None:
+                        assumption[1][k]='None'
+                serialized_assumptions.append((assumption[0],OrderedDict(sorted(assumption[1].items()))))
+            else:
+                serialized_assumptions.append((assumption[0], assumption[1]))
+
+        result['assumptions']=sorted(serialized_assumptions)
+        return OrderedDict(sorted(result.items()))
 
     @classmethod
     def from_dict(cls,d):
@@ -381,7 +423,7 @@ class DataAnalysis(object):
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
-            assumptions=[a.serialize() for a in ([x[0] for x in self.factory.cache_assumptions] + self.assumptions)],
+            assumptions=[a.serialize() for a in (self.factory.factory_assumptions_stacked + self.assumptions)],
             expected_hashe=self.expected_hashe,
         )
 
@@ -389,6 +431,11 @@ class DataAnalysis(object):
         self=object.__new__(self)
 
         # otherwise construct object, test if already there
+
+        if "origins" in args:
+            origins=args.pop("origins")
+        else:
+            origins=[]
 
         self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_") and not a.startswith("set_")]) # exclude registered
 
@@ -434,7 +481,7 @@ class DataAnalysis(object):
             r=self
         else:
             log("dynamic object, from",self,level='dynamic')
-            r=AnalysisFactory.get(self,update=update)
+            r=AnalysisFactory.get(self,update=update,origins=["from_new_constructor"]+origins)
             log("dynamic object, to",r,level='dynamic')
 
         if 'assume' in args and args['assume']!=[]:
@@ -452,9 +499,11 @@ class DataAnalysis(object):
 
         return r
 
-    def promote(self):
+    def promote(self,origins=None):
+        if origins is None:
+            origins=[]
         log("promoting to the factory",self)
-        return AnalysisFactory.put(self)
+        return AnalysisFactory.put(self,origins=["self_promote"])
 
     def verify_content(self):
         return True
@@ -487,7 +536,7 @@ class DataAnalysis(object):
     def jsonify(self,embed_datafiles=False,verify_jsonifiable=False):
         return self.cache.adopt_datafiles(self.export_data(embed_datafiles,verify_jsonifiable))
 
-    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False):
+    def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False,export_caches=False):
         log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
         empty_copy=self.__class__
         log("my keys:", self.__dict__.keys())
@@ -540,15 +589,44 @@ class DataAnalysis(object):
             r=dict(res)
 
         for k in dir(self):
+            if k == "cache":
+                v = getattr(self, k)
+                if isinstance(v, cache_core.Cache) and export_caches:
+                    log("trying to preserve linked cache", k, v)
+                    r[k] = v
+
             if k.startswith("input"):
                 v=getattr(self,k)
                 log("trying to preserve linked input", k, v)
 
                 if isinstance(v, str):
                     r['_da_stored_string_' + k] = v
+                    continue
 
                 if isinstance(v, DataHandle):
                     r['_da_stored_string_' + k] = v.str()
+                    continue
+
+                if isinstance(v, DataAnalysis):
+                    m_k='_da_stored_link_' + k
+                    log("storing link to",v.get_factory_name(),"as",m_k)
+                    r[m_k] = v.get_factory_name() # discarding deep inputs!
+                    continue
+
+                if isinstance(v, NamedAnalysis):
+                    m_k='_da_stored_link_' + k
+                    log("storing link to named",v.analysis_name,"as",m_k)
+                    r[m_k] = v.analysis_name# discarding deep inputs!
+                    continue
+
+                if not isinstance(v,type):
+                    log("WARNING, what is this:"+repr(v)+"; "+repr(type(v)))
+                else:
+                    if issubclass(v, DataAnalysis):
+                        m_k='_da_stored_link_' + k
+                        log("storing class link to",v.__name__,"as",m_k)
+                        r[m_k] = v.__name__ # discarding deep inputs!
+
 
         log("resulting output:",r)
         return r
@@ -559,14 +637,25 @@ class DataAnalysis(object):
 
         for k, i in c.items():
             log("restoring", k, i)
+
+            if i=="None":
+                i=None
+
             setattr(self, k, i)
 
             if k.startswith("_da_stored_string_input"):
                 nk=k.replace("_da_stored_string_input","input")
+                log("restoring string input",k,nk,i)
                 setattr(self,nk,i)
 
+            if k.startswith("_da_stored_link_input"):
+                nk=k.replace("_da_stored_link_input","input")
+                log("restoring linked input", k, nk, i)
+                setattr(self,nk,named(i))
+
+
     def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
-        log("serialize as",embed_datafiles,verify_jsonifiable,include_class_attributes)
+        log("serialize",self,"as",embed_datafiles,verify_jsonifiable,include_class_attributes)
         return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
@@ -622,10 +711,10 @@ class DataAnalysis(object):
 
     def store_cache(self,fih):
         """
-    store output with
+        store output with
         """
 
-        log(render("{MAGENTA}storing in cache{/}"))
+        log(render("{MAGENTA}storing in cache{/}"),level="top")
         log("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
@@ -681,7 +770,9 @@ class DataAnalysis(object):
             self._da_locally_complete=fih # info save
             return r
 
-        if not self.cached:
+        if self.cached:
+            log(render("{MAGENTA}cached, proceeding to restore{/}"))
+        else:
             log(render("{MAGENTA}not cached restore only from transient{/}"))
             return None # only transient!
         # discover through different caches
@@ -723,15 +814,11 @@ class DataAnalysis(object):
 
     def get(self,**aa):
         if 'saveonly' in aa and aa['saveonly'] is not None:
-            import errno
-            import shutil
-            import tempfile
-
             aax=dict(aa.items()+[['saveonly',None]])
 
             try:
                 tmp_dir = tempfile.mkdtemp()  # create dir
-                print("tempdir:",tmp_dir)
+                log("tempdir:",tmp_dir)
                 olddir=os.getcwd()
                 os.chdir(tmp_dir)
                 self.get(**aax)
@@ -746,14 +833,52 @@ class DataAnalysis(object):
                     if exc.errno != errno.ENOENT:  # ENOENT - no such file or directory
                         raise  # re-raise exception
 
-        return self.process(output_required=True,**aa)[1]
+        isolated_directory_key=aa.get('isolated_directory_key',None)
+        isolated_directory_cleanup=aa.get('isolated_directory_cleanup',False)
+
+        cwd=os.getcwd()
+        if isolated_directory_key is not None:
+            wd=cwd+"/"+self.get_factory_name()+"_"+isolated_directory_key
+            self._da_isolated_directory=wd
+        else:
+            wd=cwd
+            self._da_isolated_directory=None
+
+        log('isolated directory key:',isolated_directory_key)
+
+
+        try:
+            try:
+                os.makedirs(wd)
+            except OSError as exc:  # Python >2.5
+                if exc.errno == errno.EEXIST and os.path.isdir(wd):
+                    pass
+                else:
+                    raise
+            os.chdir(wd)
+            log("object will be processed in",wd)
+            result=self.process(output_required=True,**aa)[1]
+        except:
+            os.chdir(cwd)
+            raise
+        else:
+            os.chdir(cwd)
+
+        if isolated_directory_cleanup and self._da_isolated_directory is not None:
+            log("isolate cleanup:",self._da_isolated_directory,level='top')
+            if self._da_isolated_directory == os.environ.get('HOME'):
+                raise Exception("should not clean home!")
+            shutil.rmtree(self._da_isolated_directory)
+
+
+        return result
 
     def load(self,**aa):
         fih=self._da_locally_complete
         if fih is None:
             fih=self.process(output_required=False,**aa)[0]
 
-        print("restoring as",fih)
+        log("restoring as",fih)
         self.retrieve_cache(fih)
         return self.get(**aa)
 
@@ -766,13 +891,14 @@ class DataAnalysis(object):
         if fih is None:
             fih=self.process(output_required=False,**aa)[0]
 
-        print("storing as",fih)
+        log("storing as",fih)
         return self.store_cache(fih)
 
     def process_checkin_assumptions(self):
         if self.assumptions!=[]:
-            log("cache assumptions:",AnalysisFactory.cache_assumptions)
-            log("assumptions:",self.assumptions)
+            log("assumptions checkin for",self)
+            log("factory assumptions for run:",AnalysisFactory.cache_assumptions)
+            log("object assumptions:",self.assumptions)
             log("non-trivial assumptions require copy of the analysis tree")
             AnalysisFactory.WhatIfCopy("requested by "+repr(self),self.assumptions)
             for a in self.assumptions:
@@ -781,7 +907,7 @@ class DataAnalysis(object):
             log("no special assumptions")
 
     def process_checkout_assumptions(self):
-        log("assumptions checkout")
+        log("assumptions checkout",self)
         if self.assumptions!=[]:
             AnalysisFactory.WhatIfNot()
 
@@ -831,7 +957,7 @@ class DataAnalysis(object):
 
 
     def process_timespent_interpret(self):
-        tspent=self.time_spent_in_main
+        tspent=self._da_time_spent_in_main
         if tspent<self.min_timespent_tocache and self.cached:
             log(render("{RED}requested to cache fast analysis!{/} {MAGENTA}%.5lg seconds < %.5lg{/}"%(tspent,self.min_timespent_tocache)))
             if self.allow_timespent_adjustment:
@@ -904,20 +1030,19 @@ class DataAnalysis(object):
         except AnalysisException as ae:
             self.note_analysis_exception(ae)
             mr=None
-            self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="failed")
+            log(render("{RED}ANALYSIS EXCEPTION IN MAIN{/}: ")+render("{MAGENTA}"+repr(ae)+"{/}"+" in "+repr(self)),level='top')
+            #self.process_hooks("top",self,message="analysis exception",exception=repr(ae),state="node_analysis_exception")
         except Exception as ex:
-            #os.system("ls -ltor")
             self.stop_main_watchdog()
-
 
 
             try:
                 self.cache.report_exception(self,ex)
                 self.report_runtime("failed "+repr(ex))
             except Exception:
-                print("unable to report exception!")
+                log("unable to report exception!")
 
-            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="failed")
+            self.process_hooks("top",self,message="unhandled exception",exception=repr(ex),mainlog=main_log.getvalue(),state="node_unhandled_exception")
 
             raise UnhandledAnalysisException(
                 analysis_node=self,
@@ -934,7 +1059,7 @@ class DataAnalysis(object):
         log("closing main log stream",main_log,main_logstream,level="logstreams")
 
         tspent=time.time()-t0
-        self.time_spent_in_main=tspent
+        self._da_time_spent_in_main=tspent
         log(render("{RED}finished main{/} in {MAGENTA}%.5lg seconds{/}"%tspent),'{log:resources}')
         self.report_runtime("done in %g seconds"%tspent)
         self.note_resource_stats({'resource_type':'runtime','seconds':tspent})
@@ -957,10 +1082,17 @@ class DataAnalysis(object):
         log("main DONE!",level='top')
  
         self.summarize_resource_stats()
-        self.process_hooks("top",self,message="main done",
-                        resource_stats=self.current_resource_stats,
-                        resource_summary=self.current_resource_summary,
-                        state="main_done")
+        if self.get_exceptions() == []:
+            self.process_hooks("top",self,message="main done",
+                            resource_stats=self.current_resource_stats,
+                            resource_summary=self.current_resource_summary,
+                            state="main_done")
+        else:
+            self.process_hooks("top",self,message="analysis exception",
+                            resource_stats=self.current_resource_stats,
+                            resource_summary=self.current_resource_summary,
+                            exceptions=repr(self.get_exceptions()),
+                            state="node_analysis_exception")
 
     def process_find_output_objects(self):
         if self._da_ignore_output_objects:
@@ -1079,7 +1211,7 @@ class DataAnalysis(object):
         try:
             if not self.report_runtime_destination.startswith("mysql://"): return
             dbname,table=self.report_runtime_destination[8:].split(".")
-            print("state goes to",dbname,table)
+            log("state goes to",dbname,table)
 
             import MySQLdb
             db = MySQLdb.connect(host="apcclwn12",
@@ -1102,7 +1234,7 @@ class DataAnalysis(object):
             db.close()
 
         except Exception as e:
-            print("failed:",e)
+            log("failed:",e)
 
     _da_output_origin=None
 
@@ -1204,9 +1336,10 @@ class DataAnalysis(object):
             output_origin=None
             if self.retrieve_cache(fih,restore_config): # will not happen with self.run_for_hashe
                 log("cache found and retrieved",id(self),'{log:top}')
-                log(fih,'{log:top}')
+                log(fih,level='top')
                 output_origin = "cache"
                 self._da_output_origin=output_origin
+
             else:
                 log("no cache",'{log:top}')
                 log(fih,'{log:top}')
@@ -1251,6 +1384,7 @@ class DataAnalysis(object):
                             self.analysis_exceptions=[]
                         self.analysis_exceptions+=analysis_exceptions
                         log(render("{RED}ANALYSIS EXCEPTIONS:{/}"),analysis_exceptions,level='top')
+                        self.process_hooks("top",self,message="analysis exception",exception=repr(analysis_exceptions),state="node_analysis_exception")
                     else:
                         analysis_exceptions=[]
                 # exceptions
@@ -1280,8 +1414,15 @@ class DataAnalysis(object):
                     else:
                         log("disabled self.rename_output_unique",level='cache')
 
+                    log("object storing in the cache",level='top')
                     self.store_cache(fih)
                     #self.runtime_update("done")
+                else:
+                    log("object input had untreated exceptions, storing exception in the cache",level='top')
+                    self.store_cache(fih)
+
+                    #raise AnalysisException.from_list(analysis_exceptions)
+
 
             output_objects=self.process_find_output_objects()
             if output_objects!=[]:
@@ -1310,7 +1451,7 @@ class DataAnalysis(object):
                     das=da
 
                 for _output_object,_substitute_object in zip(das,ros):
-                    print("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache)
+                    log("output object",_output_object,"cache",_output_object.cache,"substitute object",_substitute_object,"cache",_substitute_object.cache,level="generative")
 
 
                 log("--- old input hash:",fih)
@@ -1355,6 +1496,17 @@ class DataAnalysis(object):
 
         log("PROCESS done",fih,return_object)
         return fih,return_object
+                
+    def raise_stored_exceptions(self):
+        exceptions=self.get_exceptions()
+
+        if exceptions!=[]:
+            log('found exceptions in',self,':',exceptions,level='top')
+            to_raise=AnalysisException.from_list(exceptions)
+            log('will raise',to_raise,level='top')
+            raise to_raise
+
+        log('no exceptions found in state',level='top')
 
     def register_alias(self,hash1,hash2):
         log("alias:",hash1)
@@ -1410,8 +1562,8 @@ class DataAnalysis(object):
 
     def list_inputs(self):
         hashe, inputs_dda = self.process_input()
-        print("\n\ncalling REQUIRES for", self, "\n\n")
-        print(inputs_dda)
+        log("\n\ncalling REQUIRES for", self, "\n\n")
+        log(inputs_dda)
 
         if inputs_dda is None:
             inputs_dda = []
@@ -1476,8 +1628,9 @@ class DataAnalysis(object):
                     inputs.append(l)
 
             if delegated != []:
-                log("delegated:",len(delegated),delegated)
+                log("delegated:",len(delegated),delegated,level="top")
                 log("still implemented:", len(inputhashes),inputs)
+
                 raise AnalysisDelegatedException.from_list(delegated)
 
             if len(inputhashes)>1:
@@ -1685,7 +1838,7 @@ class DataAnalysis(object):
 
         if data is not None:
             #obj._da_locally_complete = hashe
-            print("storing obscure to the TransientCache:")
+            log("storing obscure to the TransientCache:")
             TransientCacheInstance.store(hashe, obj)
 
         return obj
@@ -1693,6 +1846,13 @@ class DataAnalysis(object):
     @classmethod
     def from_hashe(cls, hashe, cached=True):
         return cls.from_hashe_and_data(hashe, data=None, cached=cached)
+
+class NamedAnalysis(object):
+    def __init__(self,name):
+        self.analysis_name=name
+
+    def resolve(self):
+        return AnalysisFactory.byname(self.analysis_name)
 
 class FileHashed(DataAnalysis):
     input_filename=None
@@ -1780,7 +1940,7 @@ class DataFile(DataAnalysis):
         #log("get path:",self,self.cached_path,self.cached_path_valid_url) #,self.restored_mode)
 
         if hasattr(self,'cached_path'):
-            print("have cached path",self.cached_path)
+            log("have cached path",self.cached_path)
 
         if hasattr(self,'cached_path') and self.cached_path_valid_url:
             return self.cached_path
@@ -1824,7 +1984,7 @@ class DataFile(DataAnalysis):
                 from astropy.io import fits
                 return jsonify.jsonify_fits(fits.open())
             except Exception as e:
-                print("can not interpret as fits:",e)
+                log("can not interpret as fits:",e)
             
             try:
                 json.dumps(content)
@@ -1919,6 +2079,7 @@ def debug_output():
 
 AnalysisFactory.blueprint_class=DataAnalysis
 AnalysisFactory.blueprint_DataHandle=DataHandle
+AnalysisFactory.named_blueprint_class=NamedAnalysis
 
 byname = lambda x: AnalysisFactory.byname(x)
 

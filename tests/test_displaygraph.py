@@ -24,4 +24,7 @@ def test_plot():
 
     b=FAnalysis().get()
 
-    displaygraph.plot_hashe(b._da_locally_complete,"test.png",show=os.environ.get("DISPLAY","")!="")
+    try:
+        displaygraph.plot_hashe(b._da_locally_complete,"test.png",show=os.environ.get("DISPLAY","")!="")
+    except:
+        pass

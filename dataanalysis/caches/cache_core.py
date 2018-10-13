@@ -49,7 +49,7 @@ class Cache(object):
    # __metaclass__ = decorate_all_methods
 
     cache={}
-    filecacheroot="./filecache"
+    filecacheroot=None
 
     parent=None
 
@@ -101,6 +101,9 @@ class Cache(object):
         if rootdir is not None:
             self.filecacheroot=rootdir
 
+        if self.filecacheroot is None:
+            self.filecacheroot=os.environ.get('DDA_DEFAULT_CACHE_ROOT',os.getcwd()+"/filecache")
+
     def __repr__(self):
         return "["+self.__class__.__name__+" of size %i at %s]"%(len(self.cache.keys()),self.filecacheroot)
 
@@ -115,7 +118,7 @@ class Cache(object):
             log("{log:cache}","cache found!",fi)
             return fi
             
-        log("found no cache for",hashe)
+        log("found no cache for",hashe,"in",self)
 
         return None
     
@@ -126,7 +129,7 @@ class Cache(object):
     
     def restore_from_parent(self,hashe,obj,rc=None):
         if self.parent is None:
-            log("no parent available to call for")
+            log("no parent available to call for in",self)
             return None
         
         log(self,"there is a parent available to call for:",self.parent)
@@ -456,7 +459,7 @@ class Cache(object):
             map_nested_structure(c, datafile_restore_mapper)
 
             for k, i in add_keys:
-                print("adding key:",k,i)
+                log("adding key:",k,i,level=__name__)
 
                 sub_c=c
                 for ck in k[:-1]:
@@ -468,12 +471,12 @@ class Cache(object):
             #    del c[k]
 
             for k,i in c.items():
-                print("setting",obj,k,i)
+                log("setting",obj,k,i,level=__name__)
 
                 try:
                     setattr(obj,k,i)
                 except Exception as e:
-                    print("can not set: assuming blueprint class upgrade (might be incomplete update!)")
+                    log("can not set: assuming blueprint class upgrade (might be incomplete update!)",level="core")
 
 
             obj._da_recovered_restore_config=copy.copy(restore_config)
@@ -573,6 +576,8 @@ class Cache(object):
 
         self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
         self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)
+        
+        yaml.dump(obj.get_identity().serialize(), self.filebackend.open(cached_path + "object_identity.yaml.gz","wt",gz=True),default_flow_style=False)
 
         aliases = obj.factory.list_relevant_aliases(obj)
 
@@ -916,14 +921,6 @@ class TransientCache(Cache): #d
 
         log("stored in transient",obj,hashe)
 
-        #self.list()
-
-#        self.guarantee_unique_names(obj)
-        
- #   def guarantee_unique_names(self,obj):
-  #      pass
-
-        #self.store_to_parent(hashe,obj)
 
 class CacheIndex(Cache):
     def __init__(self,*a,**aa):

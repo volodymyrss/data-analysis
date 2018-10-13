@@ -20,6 +20,7 @@ def jsonify(item):
 
     if isinstance(item, np.ndarray):
         return jsonify_array(item)
+    
 
     return totype(item)
 
@@ -45,6 +46,15 @@ def totype(v):
 
     if isinstance(v, list):
         return [totype(b) for b in v]
+
+    if isinstance(v, tuple):
+        return tuple([totype(b) for b in v])
+    
+    if isinstance(v, Exception):
+        if str(v)!="":
+            return str(v)
+        else:
+            return repr(v)
 
     try:
         return float(v)
