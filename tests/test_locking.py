@@ -22,7 +22,7 @@ rundda_path=package_root+"/tools/rundda.py"
 env = os.environ
 env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
-@pytest.mark.skip(reason="this hangs in travis")
+#@pytest.mark.skip(reason="this hangs in travis")
 def test_delegation():
     from dataanalysis.caches.queue import QueueCacheWorker
     queue_name="/tmp/queue"
