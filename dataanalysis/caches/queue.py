@@ -11,6 +11,7 @@ import dataanalysis.graphtools
 from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
+import dqueue
 
 
 
@@ -26,13 +27,6 @@ else:
 from dataanalysis.printhook import get_local_log
 log=get_local_log("queue")
 
-try:
-    import dqueue
-except ImportError:
-    try:
-        import fsqueue as dqueue
-    except ImportError:
-        log("WARNING: now queue module")
 
 class QueueCache(SelectivelyDelegatingCache):
     delegate_by_default=True
