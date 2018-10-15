@@ -6,16 +6,22 @@ data-analysis
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/a84b843c73fd4395b72ac00c8738a46c)](https://www.codacy.com/app/vladimir.savchenko/data-analysis?utm_source=github.com&utm_medium=referral&utm_content=volodymyrss/data-analysis&utm_campaign=Badge_Coverage)
 [![Requirements Status](https://requires.io/github/volodymyrss/data-analysis/requirements.svg?branch=master)](https://requires.io/github/volodymyrss/data-analysis/requirements/?branch=master)
 
-Framework facilitating semantic declarative expression of reproducible (scientific) data analysis
+Framework facilitating semantic declarative expression of reproducible data analysis
 workflows.  
 
+Workflow is expressed as collection of "pure function" Analysis Nodes, represented as __DataAnalysis__ classes.
+Python class inheritance is used to define __rdfs:subClassOf__ relations, and the class attributes induce __rdf:Property__ defining OWL-compatible ontology.
+
+The workflow definition is compatible with __CWL__ workflow expression (complete implementation of the integration is in progress).
+
+Below is an example of a workflow definition:
+
 ```python
-import numpy as np
-import pandas as pd
+class Events(da.DataAnalysis):
+    pass
 
-import dataanalysis.core as da
-from dataanalysis import displaygraph
-
+class H1D(da.DataAnalysis):
+    pass
 
 class DataUnit(da.DataAnalysis):
     def main(self):
@@ -28,7 +34,7 @@ class EnergyCalibrationDB(da.DataAnalysis):
     def main(self):
         self.gain=2.
 
-class RawEvents(da.DataAnalysis):
+class RawEvents(Events):
     input_dataunit=DataUnit
 
     cached=True
@@ -41,7 +47,7 @@ class RawEvents(da.DataAnalysis):
         self.events.to_csv(fn)
         self.event_file=da.DataFile(fn)
 
-class CalibratedEvents(da.DataAnalysis):
+class CalibratedEvents(Events):
     input_rawevents=RawEvents
     input_ecaldb=EnergyCalibrationDB
 
@@ -49,7 +55,7 @@ class CalibratedEvents(da.DataAnalysis):
         self.events=pd.DataFrame()
         self.events['energy']=self.input_rawevents.events['channel']/self.input_ecaldb.gain
 
-class BinnedEvents(da.DataAnalysis):
+class BinnedEvents(H1D):
     input_events=CalibratedEvents
 
     binsize=2
@@ -57,6 +63,8 @@ class BinnedEvents(da.DataAnalysis):
     def main(self):
         self.histogram=np.histogram(self.input_events.events['energy'])
 ```
+
+
 
 Originally designed to handle organized processing and
 storing results of different stages of analysis for moderate-scale 
