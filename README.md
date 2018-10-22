@@ -9,7 +9,7 @@ data-analysis
 Framework facilitating semantic declarative expression of reproducible data analysis
 workflows.  
 
-Workflow is expressed as collection of "pure function" Analysis Nodes, represented as __DataAnalysis__ classes.
+Workflow is expressed as collection of "pure function" single-valued Analysis Nodes, represented as __DataAnalysis__ classes.
 Python class inheritance is used to define __rdfs:subClassOf__ relations, and the class attributes induce __rdf:Property__ defining OWL-compatible ontology.
 
 The workflow definition is compatible with __CWL__ workflow expression (complete implementation of the integration is in progress). 
@@ -67,6 +67,8 @@ class BinnedEvents(H1D):
 ```
 
 
+The framework also provides different possibilities for retrieving values of the function: evaluating, restoring from cache, delegating in a queue (with a simple example queue implementation) or to a remote resource (e.g. http service).
+The Analysis Nodes may be also deployed in a Function-as-a-Service infrastructure (and then queried as remote resources).
 
 The framework was originally designed to handle organized processing and
 storing results of different stages [INTEGRAL](http://sci.esa.int/integral/) scientific data analysis workflow. The archive is moderate scale (tens of Tb), but contains highly diverse data, complicating archiving in relatinal databases.
