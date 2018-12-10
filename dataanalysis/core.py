@@ -980,7 +980,7 @@ class DataAnalysis(object):
 
         new_note = (self.get_signature(),ae)
 
-        if new_node not in self.analysis_exceptions:
+        if new_note not in self.analysis_exceptions:
             self.analysis_exceptions.append(new_note)
 
     watched_analysis=False
