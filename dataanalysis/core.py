@@ -977,7 +977,11 @@ class DataAnalysis(object):
     def note_analysis_exception(self,ae):
         if not hasattr(self,'analysis_exceptions'):
             self.analysis_exceptions=[]
-        self.analysis_exceptions.append((self.get_signature(),ae))
+
+        new_note = (self.get_signature(),ae)
+
+        if new_node not in self.analysis_exceptions:
+            self.analysis_exceptions.append(new_note)
 
     watched_analysis=False
 
