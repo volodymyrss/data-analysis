@@ -982,7 +982,7 @@ class DataAnalysis(object):
         
         note_serial = lambda x:(x[0],str(x[1]))
 
-        if any([note_serial(new_note) == note_serial(note) for note in self.analysis_exceptions]):
+        if not any([note_serial(new_note) == note_serial(note) for note in self.analysis_exceptions]):
             self.analysis_exceptions.append(new_note)
 
     watched_analysis=False
