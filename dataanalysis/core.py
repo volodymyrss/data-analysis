@@ -979,8 +979,10 @@ class DataAnalysis(object):
             self.analysis_exceptions=[]
 
         new_note = (self.get_signature(),ae)
+        
+        note_serial = lambda x:(x[0],str(x[1]))
 
-        if new_note not in self.analysis_exceptions:
+        if any([note_serial(new_note) == note_serial(note) for note in self.analysis_exceptions]):
             self.analysis_exceptions.append(new_note)
 
     watched_analysis=False
