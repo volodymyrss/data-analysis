@@ -321,9 +321,9 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
 
     def byname(self, name):
         if name not in self.cache:
-            raise Exception("name is not known, can not get this: " + name + "\n\n" +
+            raise Exception("name is not known, can not get this: " + repr(name) + "\n\n" +
                             "available names:\n" +
-                            "; ".join(self.cache.keys())
+                            "; ".join(map(repr,self.cache.keys()))
                             )
         return self.cache[name]
 
