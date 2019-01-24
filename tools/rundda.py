@@ -177,8 +177,12 @@ if args.callback and args.callback.startswith("http://"):
         message="loading modules",
         action="progress",
     )
-    requests.get(args.callback,
-                 params=params)
+
+    try:
+        requests.get(args.callback,
+                     params=params)
+    except requests.ConnectionError as e:
+        print("callback failed",e)
 
 for m in modules:
     print "importing",m
@@ -194,9 +198,12 @@ if args.callback and args.callback.startswith("http://"):
         message="done loading modules",
         action="progress",
     )
-    requests.get(args.callback,
-                 params=params)
 
+    try:
+        requests.get(args.callback,
+                     params=params)
+    except requests.ConnectionError as e:
+        print("callback failed",e)
 
 
 if len(args.assume)>0:
