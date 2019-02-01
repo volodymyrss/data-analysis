@@ -27,7 +27,7 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
                 log("failed to import",e)
                 exceptions.append(e)
 
-        raise Exception("failed to import from git",exceptions)
+        raise Exception("failed to import",remote_git_root,name,version,"from git",exceptions)
 
 
     if local_gitroot is None:
