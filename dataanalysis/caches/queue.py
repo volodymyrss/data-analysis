@@ -11,10 +11,9 @@ import dataanalysis.graphtools
 from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
-try:
-    import dqueue
-except ImportError:
-    import fsqueue as dqueue
+import dqueue
+
+
 
 try:
     import sentryclient
@@ -52,7 +51,7 @@ class QueueCache(SelectivelyDelegatingCache):
 
         if r['state'] == "done":
             #todo
-            obj.process_hooks("top",obj,message="task dependencies done while deletating, strange",state="locked?", task_comment="dependencies done before task")
+            obj.process_hooks("top",obj,message="task dependencies done while delegating, strange",state="locked?", task_comment="dependencies done before task")
             #self.queue.remember(task_data) # really is a race condit: retry
             #raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested: ",task_data['object_identity']['factory_name'])#
             #,task_data['object_identity']['assumptions'])

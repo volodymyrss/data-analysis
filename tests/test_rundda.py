@@ -1,3 +1,5 @@
+import pytest
+
 import glob
 import json
 import os
@@ -38,8 +40,11 @@ def test_simple():
     print(p.stdout.read())
 
 
+#@pytest.mark.skip(reason="this hangs in travis")
 def test_prompt_delegation():
+    from dataanalysis.caches.queue import QueueCacheWorker
     queue_dir="/tmp/queue"
+    qw=QueueCacheWorker(queue_dir)
 
     randomized_version="v%i"%random.randint(1,10000)
 
@@ -63,8 +68,7 @@ def test_prompt_delegation():
         '--callback', 'http://test/callback',
     ]
 
-    for fn in glob.glob(queue_dir+"/waiting/*"):
-        os.remove(fn)
+    qw.queue.purge()
 
     exception_report="exception.yaml"
     if os.path.exists(exception_report):
@@ -80,16 +84,6 @@ def test_prompt_delegation():
 
     print(recovered_exception)
 
-    jobs=(glob.glob(queue_dir+"/waiting/*"))
-    assert len(jobs)==1
-
-    job=yaml.load(open(jobs[0]))
-
-    print(job)
-
-
-    from dataanalysis.caches.queue import QueueCacheWorker
-    qw=QueueCacheWorker(queue_dir)
     print(qw.queue.info)
     assert qw.queue.info['waiting']==1
 
@@ -102,8 +96,6 @@ def test_prompt_delegation():
 
     print("recovered object:", A)
 
-    jobs = (glob.glob(queue_dir + "/waiting/*"))
-    assert len(jobs) == 0
 
     # run again, expecting from cache
     exception_report = "exception.yaml"
@@ -127,8 +119,12 @@ def test_prompt_delegation():
     assert A.data=="dataAadded"
     print(A.resource_stats)
 
+#@pytest.mark.skip(reason="this hangs in travis")
 def test_delegation():
+    from dataanalysis.caches.queue import QueueCacheWorker
     queue_dir="/tmp/queue"
+    qw=QueueCacheWorker(queue_dir)
+    qw.queue.purge()
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = os.getcwd()+"/callback"
@@ -146,8 +142,6 @@ def test_delegation():
         '--delegate-target',
     ]
 
-    for fn in glob.glob(queue_dir+"/waiting/*"):
-        os.remove(fn)
 
     if os.path.exists(callback_file):
         os.remove(callback_file)
@@ -169,16 +163,6 @@ def test_delegation():
     print(recovered_exception)
 
 
-    jobs=(glob.glob(queue_dir+"/waiting/*"))
-    assert len(jobs)==1
-
-    job=yaml.load(open(jobs[0]))
-
-    print("\n\nJOB",job)
-
-
-    from dataanalysis.caches.queue import QueueCacheWorker
-    qw=QueueCacheWorker(queue_dir)
     print(qw.queue.info)
     assert qw.queue.info['waiting']==1
 
@@ -189,10 +173,6 @@ def test_delegation():
     callback_info = open(callback_file).readlines()
     print("".join(callback_info))
     assert len(callback_info) == 6
-
-
-    jobs = (glob.glob(queue_dir + "/waiting/*"))
-    assert len(jobs) == 0
 
 
     # run again, expecting from cache

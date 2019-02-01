@@ -8,6 +8,7 @@ services:
 before_install:
 - sudo apt-get -qq update
 - sudo apt-get install graphviz
+- pip install --upgrade pytest
 - pip install codecov
 - pip install pytest-cov
 - pip install codacy-coverage
@@ -15,16 +16,17 @@ before_install:
 install:
 - pip install .
 - pip install -r requirements.txt
-- git clone http://git@github.com/volodymyrss/dqueue.git /tmp/dqueue && (cd /tmp/dqueue && pip install -r requirements.txt && pip install .)
+- pip install -r ./dqueue/requirements.txt
+- pip install --upgrade ./dqueue
 script:
-- py.test . --cov=./
-- PYTHONPATH=./ py.test . --cov=./
+- py.test ./ --cov=./
+- PYTHONPATH=./ py.test ./ --cov=./
 after_success:
 - coverage xml
 - python-codacy-coverage -r coverage.xml
 - codecov
 env:
   global:
-    - DDA_DEFAULT_CACHE_ROOT: /tmp/servercache  
-    - DQUEUE_DATABASE_URL=mysql+pool://root:@localhost/dqueue?max_connections=42&stale_timeout=8001.2
-    - secure: x5+c8IriljCAYTQJK+Dm50SqNLTCkI60B4/aoR7DynKxJsltS8dXMCK+AK1NSklr1jtiKfqAL3S3jqKKErXtTdOpObR7iCiVdv7sQC32kNcWO4rwo1tCH+nNtw73f2UPLjZ6BnETJ9pJsrULjbBRXod4bj6Xbv6AZ7wvjItzmA0z8LwAkK0diUxvj8bCMYkK4qwt2wRQ0J0V0n2G4FdsYEg40mBDvhMDFhvjb7Ad5bJhP/SwN9lYNIJaRByD4fqGncNq1Y8ua55mcqiffWKIqBSIRhkjS5iKm/3cHTarvWJmwWx1kvcBrzMqc9jn5tKaXjAjBiDTkRHqmSc/7hY5Asm4JSKnxQjQNa4T4vxlm6kpT+uhEmrz2cLke0FthmFqdHKahKfBXdmX+EYb9GVsyWvn/bRJjmTwVhPVixFl0LBJdYOd3sRKHIzAJEOhPVJw96MdRP+7InVIjV6reAzwkF1sR6Zxf8qK6ELWiVDBh7BqP4o3v5YgF4Ethte2fmXqk2mWeD/sN1zHNAYLzuUqnXTCCy6SxckQ79P/s7kpEOaz8+nLz98m1mpeeHYgWtXIWsmxW3SZy24A2UceXQQM481Q+NW4zFzvGleDfzSZ/idt64WUulfWjqKsp0d802oaZhXGbAbm/MMzStgAPk0o4wzXazfK9OIwxtkh/yzRcV0=
+  - DDA_DEFAULT_CACHE_ROOT: "/tmp/servercache"
+  - DQUEUE_DATABASE_URL: mysql+pool://root:@localhost/dqueue?max_connections=42&stale_timeout=8001.2
+  - secure: n2NL4kR9NNjFfNXruFae1ImWDWSq/JleaceRH139Kd7zvdVhvDJNqcZQvugX66rs+GY9TxNfAmcIGCFzZ8KqqFWwd4ShHMwCueuZpMg3CL9kxdhtJj6FBQmoYkhLYE5gK+St8Ll+s9sxBho33d+PqC8Wk9skO6D3OcJzcR3KkK4KIJxqJWpy1uTl8MK8iZmnB2mJalfPAt9EQ0bezRiX9L0QpGnInLT6WMs/mchI3uc1bGmUhpLv4fc4ZnReUaxXAMrqLzkI+iRG5Ii10RDxuzI8lfS+V4XskbBCxK8YYRffl1ihwiHa+Hg4FwuTzedGMTEyKXfjA3hlpPTFbMZJI2JTQmSHeoDzXE+VQEWUMbrCF7Y87CEcboJF9wdC3jVle+k8rkKvRWvgD/eKTVDhVWZkN61kIi69CrkJDVnoPjBT0+wTJu4fnZJbKaPCgrMS/NPmohJ2Ygs8LMaGLqiOMlrc3a9mlV+sJPu4qGbRVYoAADo8PkwE2A12Vtnu+pD+K7BFtlDAZyqzzZtNfF7VJDQ61VUma5jnZM3XRsqwrxXBwQdQu7FyCIwecDy0rv+rYtqAcqqGm3b7eAKtN9JyPmQj0CFNgncNJ/dvLOyei45eT+yHPGUJO3sBBtCI8PgKcs84o0lcE/0umHIZjo2Bm/zkYhKS7GV+V3gL5EHtakc=

@@ -1,0 +1,3 @@
+[submodule "dqueue"]
+	path = dqueue
+	url = https://github.com/volodymyrss/dqueue.git

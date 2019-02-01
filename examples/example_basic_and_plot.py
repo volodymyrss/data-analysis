@@ -4,6 +4,11 @@ import pandas as pd
 import dataanalysis.core as da
 from dataanalysis import displaygraph
 
+class Events(da.DataAnalysis):
+    pass
+
+class H1D(da.DataAnalysis):
+    pass
 
 class DataUnit(da.DataAnalysis):
     def main(self):
@@ -16,7 +21,7 @@ class EnergyCalibrationDB(da.DataAnalysis):
     def main(self):
         self.gain=2.
 
-class RawEvents(da.DataAnalysis):
+class RawEvents(Events):
     input_dataunit=DataUnit
 
     cached=True
@@ -29,7 +34,7 @@ class RawEvents(da.DataAnalysis):
         self.events.to_csv(fn)
         self.event_file=da.DataFile(fn)
 
-class CalibratedEvents(da.DataAnalysis):
+class CalibratedEvents(Events):
     input_rawevents=RawEvents
     input_ecaldb=EnergyCalibrationDB
 
@@ -37,7 +42,7 @@ class CalibratedEvents(da.DataAnalysis):
         self.events=pd.DataFrame()
         self.events['energy']=self.input_rawevents.events['channel']/self.input_ecaldb.gain
 
-class BinnedEvents(da.DataAnalysis):
+class BinnedEvents(H1D):
     input_events=CalibratedEvents
 
     binsize=2
