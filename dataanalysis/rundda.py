@@ -343,6 +343,3 @@ def main():
         log("isolate cleanup:",A._da_isolated_directory,level='top')
         shutil.rmtree(A._da_isolated_directory)
 
-
-if __name__ == "__main__":
-    main()

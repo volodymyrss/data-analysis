@@ -4,8 +4,8 @@ import argparse
 import ast
 
 from dataanalysis.displaygraph import plot_hashe
-
-if __name__ == '__main__':
+    
+def main():
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('hashefiles', metavar='hashefiles', type=str, nargs='+',help='an')
     parser.add_argument('--outpng', metavar='hashefiles', type=str, help='an', default="graph.png")
@@ -26,3 +26,4 @@ if __name__ == '__main__':
     for hashefile in args.hashefiles:
         hashe=ast.literal_eval(open(hashefile).read())
         plot_hashe(hashe,args.outpng,dotfn=args.outdot,assign_nuids=args.nuid,filtered_nodes=filtered_nodes,wait=args.wait)
+
