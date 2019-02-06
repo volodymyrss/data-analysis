@@ -17,7 +17,7 @@ sys.path.insert(0,package_root+"/tests")
 
 import dataanalysis.core as da
 
-rundda_path=package_root+"/tools/rundda.py"
+rundda_path="-m dataanalysis.rundda"
 
 env = os.environ
 env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
@@ -34,7 +34,7 @@ def test_delegation():
     callback_file = "./callback"
 
     cmd=[
-        'python',rundda_path,
+        'dda-run',
         'Mosaic',
         '-m','ddmoduletest',
         '-a','ddmoduletest.RandomModifier(use_version="%s")'%randomized_version,

@@ -59,20 +59,22 @@ import os
 import re
 
 def extract_logstash_levels():
+    default_logstash_level = os.environ.get('LOGSTASH_OUTPUT_LEVEL', 'ERROR')
+
     if "LOGSTASH_LEVELS" in os.environ:
         logstash_levels=os.environ.get("LOGSTASH_LEVELS").split(",")
         logstash_levels_patterns=map(re.compile,logstash_levels)
-        return logstash_levels, logstash_levels_patterns
-    return None,[]
+        return logstash_levels, logstash_levels_patterns, default_logstash_level
+    return None, [], default_logstash_level
 
-def setup_logstash():
+def setup_logstash(default_logstash_level):
     import os
     import sys
     import logging
     from logstash_formatter import LogstashFormatterV1
 
     my_logger = logging.getLogger('logstash_logger')
-    my_logger.setLevel(logging.DEBUG)
+    my_logger.setLevel(default_logstash_level)
 
     handler = logging.StreamHandler(stream=sys.stdout)
     formatter = LogstashFormatterV1()
@@ -83,8 +85,9 @@ def setup_logstash():
     return my_logger
 
 
-logstash_levels,logstash_levels_patterns=extract_logstash_levels()
-logstash_logger=setup_logstash()
+logstash_levels, logstash_levels_patterns, default_logstash_level = extract_logstash_levels()
+
+logstash_logger=setup_logstash(default_logstash_level = default_logstash_level)
 
 def log(*args,**kwargs):
     if global_suppress_output:

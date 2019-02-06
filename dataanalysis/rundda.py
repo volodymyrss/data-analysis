@@ -249,7 +249,6 @@ def main():
         core.AnalysisFactory.WhatIfCopy('commandline_injection_%i' % i, assumption_from_injection)
 
     if args.delegate_to_queue is not None:
-        from dataanalysis.caches.queue import QueueCache
         log("delegate to queue:",args.delegate_to_queue)
         qcache=QueueCache(args.delegate_to_queue)
         A.cache.tail_parent(qcache)

@@ -711,16 +711,19 @@ class DataAnalysis(object):
 
     def store_cache(self,fih):
         """
-        store output with
+        store output 
         """
 
         log(render("{MAGENTA}storing in cache{/}"),level="top")
         log("hashe:",fih)
 
-     #   c=MemCacheLocal.store(fih,self.export_data())
+        #c=MemCacheLocal.store(fih,self.export_data())
         #log(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
 
+        log("transient cache", TransientCacheInstance, "storing", self)
         TransientCacheInstance.store(fih,self)
+
+        log("further cache", self.cache, "storing", self, level="top")
         self.cache.store(fih,self)
 
         #c=MemCacheLocal.store(oh,self.export_data())

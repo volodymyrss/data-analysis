@@ -16,7 +16,7 @@ sys.path.insert(0,package_root+"/tests")
 
 import dataanalysis.core as da
 
-rundda_path=package_root+"/tools/rundda.py"
+rundda_command="dda-run"
 
 env = os.environ
 env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
@@ -25,7 +25,7 @@ env['PYTHONPATH'] = package_root + "/tests:" + env.get('PYTHONPATH','')
 
 def test_simple():
     cmd=[
-        'python',rundda_path,
+        rundda_command,
         'ClientDelegatableAnalysisA',
         '-m','ddmoduletest',
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache)',
@@ -58,7 +58,7 @@ def test_prompt_delegation():
               )
 
     cmd=[
-        'python',rundda_path,
+        rundda_command,
         'ClientDelegatableAnalysisA',
         '-m','ddmoduletest',
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache,use_version="%s")'%randomized_version,
@@ -133,7 +133,7 @@ def test_delegation():
 
 
     cmd=[
-        'python',rundda_path,
+        rundda_command,
         'ClientDelegatableAnalysisA',
         '-m','ddmoduletest',
         '-a','ddmoduletest.ClientDelegatableAnalysisA(use_sleep=0.2,use_cache=ddmoduletest.server_local_cache,use_version="%s")'%randomized_version,
