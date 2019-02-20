@@ -186,5 +186,5 @@ def create_app():
 if __name__ == '__main__':
     import dataanalysis as da
     da.debug_output()
-    create_app().run(debug=True,port=6767)
+    create_app().run(debug=False,port=6767)
 
