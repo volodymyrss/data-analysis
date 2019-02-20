@@ -261,8 +261,6 @@ class decorate_all_methods(type):
     def __new__(cls, name, bases, local):
         # also store in the dict
 
-        raise Exception()
-
         # decorate
         if printhook.global_fancy_output:
             for attr in local:

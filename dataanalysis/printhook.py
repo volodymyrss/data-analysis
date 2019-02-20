@@ -122,7 +122,7 @@ def log_in_context(level,obj,**aa):
     else:
         aa['graph']={}
 
-    aa['graph']=base64.b64encode(json.dumps(aa['graph']))
+    aa['graph']=base64.b64encode(json.dumps(aa['graph']).encode('utf-8'))
     if 'hashe' in aa:
         aa.pop("hashe")
 
