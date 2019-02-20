@@ -21,6 +21,8 @@ import time
 import base64
 from collections import Mapping, Set, Sequence, OrderedDict
 
+from future.utils import with_metaclass
+
 from dataanalysis import hashtools
 from dataanalysis import jsonify
 from dataanalysis.bcolors import render
@@ -259,6 +261,8 @@ class decorate_all_methods(type):
     def __new__(cls, name, bases, local):
         # also store in the dict
 
+        raise Exception()
+
         # decorate
         if printhook.global_fancy_output:
             for attr in local:
@@ -330,8 +334,9 @@ class DataAnalysisIdentity(object):
         return obj
 
 
-class DataAnalysis(object):
-    __metaclass__ = decorate_all_methods
+class DataAnalysis(with_metaclass(decorate_all_methods, object)):
+#class DataAnalysis(object):
+    #__metaclass__ = decorate_all_methods
 
     infactory=True
     trivial=False # those that do not need to be computed
