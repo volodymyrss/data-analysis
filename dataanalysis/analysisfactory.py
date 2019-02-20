@@ -3,7 +3,7 @@ import sys
 from dataanalysis import printhook
 from dataanalysis.bcolors import render
 from dataanalysis.printhook import log, decorate_method_log, debug_print
-import hashtools
+import dataanalysis.hashtools as hashtools
 
 #from dataanalysis import core
 #print(core.__file__)

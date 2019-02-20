@@ -2,7 +2,8 @@ from __future__ import print_function
 
 import dataanalysis
 import dataanalysis.core as da
-from hashtools import shhash
+
+from dataanalysis.hashtools import shhash
 
 
 class AnyAnalysis(da.DataAnalysis):

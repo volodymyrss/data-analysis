@@ -1,3 +1,6 @@
 [submodule "dqueue"]
 	path = dqueue
 	url = https://github.com/volodymyrss/dqueue.git
+[submodule "pilton"]
+	path = pilton
+	url = https://github.com/volodymyrss/pilton.git

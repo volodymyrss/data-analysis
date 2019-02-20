@@ -549,7 +549,7 @@ class DataAnalysis(object):
 
         if include_class_attributes:
             log("using class attributes",self.__dict__.keys())
-            updates=self.__dict__.keys()+empty_copy.__dict__.keys()
+            updates=list(self.__dict__.keys())+list(empty_copy.__dict__.keys())
 
         # revise as follows:
         #  - need to be able to retore DataAnalysis references, as currently known
