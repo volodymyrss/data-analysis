@@ -28,7 +28,7 @@ def test_delegation():
     queue_name="/tmp/queue"
     qw=QueueCacheWorker(queue_name)
     qw.queue.purge()
-    print("cache worker:",qw)
+    print(("cache worker:",qw))
 
     randomized_version="v%i"%random.randint(1,10000)
     callback_file = "./callback"
@@ -56,7 +56,7 @@ def test_delegation():
     qw.queue.wipe(["waiting","locked","done","failed","running"])
 
     # run it
-    print("CMD:"," ".join(cmd))
+    print(("CMD:"," ".join(cmd)))
 
     try:
         subprocess.check_call(cmd,stderr=subprocess.STDOUT,env=env)
@@ -74,7 +74,7 @@ def test_delegation():
 
     print(recovered_exception)
 
-    print(qw.queue.info)
+    print((qw.queue.info))
 
     assert qw.queue.info['waiting'] == 1, qw.queue.info
     assert qw.queue.info['locked'] == 0
@@ -83,14 +83,14 @@ def test_delegation():
     print("\n\nWORKER")
     qw.run_once()
 
-    print(qw.queue.info)
+    print((qw.queue.info))
     assert qw.queue.info['waiting'] == 2
     assert qw.queue.info['locked'] == 1
     assert qw.queue.info['done'] == 0
 
     assert os.path.exists(callback_file)
     callback_info = open(callback_file).readlines()
-    print("".join(callback_info))
+    print(("".join(callback_info)))
     assert len(callback_info) == 1
 
 
@@ -126,10 +126,10 @@ def test_delegation():
         os.remove(exception_report)
 
     print("\n\nAGAIN")
-    print("cmd:"," ".join(cmd+["-V",'--delegate-target']))
+    print(("cmd:"," ".join(cmd+["-V",'--delegate-target'])))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
-    print(p.stdout.read())
+    print((p.stdout.read()))
 
     assert not os.path.exists(exception_report)
 
@@ -144,4 +144,4 @@ def test_delegation():
     A.run_if_haveto=False
     A.get()
     assert A._da_output_origin=="cache"
-    print(A.resource_stats)
+    print((A.resource_stats))

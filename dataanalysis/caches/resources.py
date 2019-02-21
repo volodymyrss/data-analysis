@@ -1,5 +1,5 @@
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import requests
 
@@ -121,7 +121,7 @@ class WebResource(Resource):
             api_version=self.api_version
         )
 
-        url=url_root + "?" + urllib.urlencode(params)
+        url=url_root + "?" + urllib.parse.urlencode(params)
 
         log("url:",url)
         return url

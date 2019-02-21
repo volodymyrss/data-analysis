@@ -12,6 +12,7 @@ from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
 import dqueue
+import imp
 
 
 
@@ -87,7 +88,7 @@ class QueueCacheWorker(object):
         object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
         da.reset()
 
-        reload(dataanalysis.graphtools)
+        imp.reload(dataanalysis.graphtools)
         log("fresh factory knows",da.AnalysisFactory.cache)
 
         log(object_identity)

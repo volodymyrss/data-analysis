@@ -1,7 +1,7 @@
 import datetime
 
 try:
-    import urlparse
+    import urllib.parse
 except ImportError:
     import urllib.parse as urlparse
 
@@ -55,7 +55,7 @@ class Callback(object):
         self.url=url
 
         try:
-            self.url_params=urlparse.parse_qs(urlparse.urlparse(self.url).query)
+            self.url_params=urllib.parse.parse_qs(urllib.parse.urlparse(self.url).query)
         except Exception as e:
             log("failed extracting callback parameters:",e,level='callback-debug')
             self.url_params={}

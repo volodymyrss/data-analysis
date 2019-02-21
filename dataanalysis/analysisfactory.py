@@ -28,10 +28,8 @@ class decorate_factory(type):
         c=type.__new__(cls, name, bases, local)
         return c
 
-class AnalysisFactoryClass:  # how to unify this with caches?..
+class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this with caches?..
     # handles all object equivalence
-    __metaclass__ = decorate_factory
-    # dictionary of current object names, aliases?..
     cache = {}
     dda_modules_used = []
 
@@ -231,7 +229,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
             log("considering string data handle")
             return self.blueprint_DataHandle(item)
 
-        if isinstance(item, unicode):
+        if isinstance(item, str):
             log("considering unicode string data handle")
             return self.blueprint_DataHandle(str(item))
 
@@ -271,7 +269,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         log("cache stack of size", len(self.cache_stack))
         log("cache stack last entry:", self.cache_stack[-1])
 
-        for i, o in self.cache_stack[-1].items():
+        for i, o in list(self.cache_stack[-1].items()):
             log("promoting", i, 'assumptions', o.assumptions)
             # if o.is_virtual():
             #    log("virtual object, constructing empty copy")
@@ -324,7 +322,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         if name not in self.cache:
             raise Exception("name is not known, can not get this: " + repr(name) + "\n\n" +
                             "available names:\n" +
-                            "; ".join(map(repr,self.cache.keys()))
+                            "; ".join(map(repr,list(self.cache.keys())))
                             )
         return self.cache[name]
 
@@ -335,7 +333,7 @@ class AnalysisFactoryClass:  # how to unify this with caches?..
         return self.byname(name)
 
     def __iter__(self):
-        for i in self.cache.keys():
+        for i in list(self.cache.keys()):
             yield i
 
     aliases = []

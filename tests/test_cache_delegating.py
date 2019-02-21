@@ -1,13 +1,14 @@
-from __future__ import print_function
+
 
 import pytest
 
 import dataanalysis.core as da
+import imp
 
 
 def define_analysis():
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
 
 
 def test_queue_cache():

@@ -1,7 +1,7 @@
-from __future__ import print_function
+
 
 try:
-    import cPickle
+    import pickle
 except ImportError:
     import pickle as cPickle
 
@@ -40,7 +40,7 @@ def is_datafile(b):
     return isinstance(b,DataFile)
 
 def update_dict(a,b):
-    return dict(a.items()+b.items())
+    return dict(list(a.items())+list(b.items()))
 
 
 
@@ -105,7 +105,7 @@ class Cache(object):
             self.filecacheroot=os.environ.get('DDA_DEFAULT_CACHE_ROOT',os.getcwd()+"/filecache")
 
     def __repr__(self):
-        return "["+self.__class__.__name__+" of size %i at %s]"%(len(self.cache.keys()),self.filecacheroot)
+        return "["+self.__class__.__name__+" of size %i at %s]"%(len(list(self.cache.keys())),self.filecacheroot)
 
     def find_content_hash_obj(self,hashe, obj):
         return
@@ -158,13 +158,13 @@ class Cache(object):
 
         try:
             log("loading from pickle")
-            content=cPickle.load(self.filebackend.open(cached_path+"/cache.pickle.gz",gz=True))
+            content=pickle.load(self.filebackend.open(cached_path+"/cache.pickle.gz",gz=True))
             log("done loading from pickle")
             return content
         except TypeError as e:
             log("typeerror! "+repr(e))
             raise
-        except (IOError,cPickle.UnpicklingError) as e:
+        except (IOError,pickle.UnpicklingError) as e:
             log("problem loading cache! corrupt cache!")
             raise
         except Exception:
@@ -470,7 +470,7 @@ class Cache(object):
             #    print("removing key:", k, i)
             #    del c[k]
 
-            for k,i in c.items():
+            for k,i in list(c.items()):
                 log("setting",obj,k,i,level=__name__)
 
                 try:
@@ -530,9 +530,9 @@ class Cache(object):
         if len(extra_content)>0:
             log("extra content:",extra_content)
 
-        content=dict(content.items() + extra_content.items())
+        content=dict(list(content.items()) + list(extra_content.items()))
 
-        log("after adoption, keys",content.keys())
+        log("after adoption, keys",list(content.keys()))
 
         return content
 
@@ -559,9 +559,9 @@ class Cache(object):
         content=self.adopt_datafiles(content)
 
         try:
-            cPickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
-            cPickle.dump(hashe, self.filebackend.open(cached_path + "hash.pickle.gz", "w", gz=True))
-        except cPickle.PicklingError as pe:
+            pickle.dump(content, self.filebackend.open(cached_path + "cache.pickle.gz", "w", gz=True))
+            pickle.dump(hashe, self.filebackend.open(cached_path + "hash.pickle.gz", "w", gz=True))
+        except pickle.PicklingError as pe:
             log("pickling issue",pe)
             log("was pickling content",content)
             raise
@@ -608,7 +608,7 @@ class Cache(object):
         ftext=""
         for factorization in obj.factory.factorizations:
             ftext+=("=" * 80)+"\n"
-            for k,v in factorization.items():
+            for k,v in list(factorization.items()):
                 ftext += "|" + k + "\n"
                 ftext += ("-" * 80) + "\n"
                 ftext += pprint.pformat(v)+"\n\n"
@@ -734,14 +734,14 @@ class Cache(object):
     def save(self,target=None):
         if target is None:
             target=self.filecacheroot+"/index.pickle.gz"
-        cPickle.dump(self.cache,gzip.open(target,"w"))
+        pickle.dump(self.cache,gzip.open(target,"w"))
 
     def load(self,target=None):
         if target is None:
             target=self.filecacheroot+"/index.pickle.gz"
 
         if os.path.exists(target):
-            self.cache=cPickle.load(gzip.open(target))
+            self.cache=pickle.load(gzip.open(target))
         else:
             log("file to load does not exist:",target)
 
@@ -856,10 +856,10 @@ class TransientCache(Cache): #d
         pass
 
     def __repr__(self):
-        return "[TransientCache of size %i at %s]"%(len(self.cache.keys()),str(id(self)))
+        return "[TransientCache of size %i at %s]"%(len(list(self.cache.keys())),str(id(self)))
 
     def list(self):
-        for a,b in self.cache.items():
+        for a,b in list(self.cache.items()):
             log(a,":",b)
 
     def reset(self):

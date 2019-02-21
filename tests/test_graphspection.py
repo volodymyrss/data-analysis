@@ -1,13 +1,14 @@
-from __future__ import print_function
+
 
 import os
+import imp
 
 
 def test_clone():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
     da.reset()
-    reload(gt)
+    imp.reload(gt)
 
     class AAnalysis(da.DataAnalysis):
         def main(self):
@@ -23,14 +24,14 @@ def test_clone():
     assert 'c' in aa.export_data()
 
     assert aa is not ab
-    assert aa.export_data().keys() == ab.export_data().keys()
+    assert list(aa.export_data().keys()) == list(ab.export_data().keys())
 
 
 def test_factorize():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
     da.reset()
-    reload(gt)
+    imp.reload(gt)
 
     class AAnalysis(da.DataAnalysis):
         pass
@@ -61,7 +62,7 @@ def test_factorize_run_for_hashe_analysis():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
     da.reset()
-    reload(gt)
+    imp.reload(gt)
 
     class AAnalysis(da.DataAnalysis):
         pass

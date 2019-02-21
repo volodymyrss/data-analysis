@@ -1,4 +1,5 @@
 import pytest
+import imp
 
 def test_object_export_import():
     from dataanalysis import core as da
@@ -18,7 +19,7 @@ def test_object_export_import():
     A=Analysis()
     A.get()
 
-    print(A.data)
+    print((A.data))
 
     assert A.data == "data1"
 
@@ -29,7 +30,7 @@ def test_object_export_import():
     B=Analysis()
 
     with pytest.raises(AttributeError):
-        print(B.data)
+        print((B.data))
 
     B.import_data(object_data)
     assert B.data == "data1"
@@ -42,7 +43,7 @@ def test_object_injection_identity():
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
 
     da.AnalysisFactory.assume_serialization(("AAnalysis",{'assumed_data':"bdata1"}))
 
@@ -54,7 +55,7 @@ def test_object_injection_identity():
     ident=B.get_identity()
 
     assert len(ident.assumptions)==1
-    print(ident.assumptions)
+    print((ident.assumptions))
     assert ident.assumptions[0][1]['assumed_data']=="bdata1"
 
     da.reset()
@@ -110,7 +111,7 @@ def test_object_input_injection():
 
     assert  A1.arg == "arg1"
     d1 = A1.export_data()
-    print("has data:", d1)
+    print(("has data:", d1))
     assert d1['arg'] == 'arg1'
 
     A2 = AAnalysis(use_arg="arg2")
@@ -121,7 +122,7 @@ def test_object_input_injection():
 
     da.AnalysisFactory.inject_serialization(a1)
 
-    print("factory has",da.AnalysisFactory.cache['AAnalysis'])
+    print(("factory has",da.AnalysisFactory.cache['AAnalysis']))
 
     aanalysis=da.AnalysisFactory['AAnalysis']
     assert aanalysis.arg == "arg1"
@@ -138,7 +139,7 @@ def test_object_input_injection():
     A=Analysis()
     A.get()
 
-    print(A.data)
+    print((A.data))
 
     assert A.data == "data_arg1"
 
@@ -201,17 +202,17 @@ def test_object_injection_external():
 
     assert  A1.arg == "arg1"
     d1 = A1.export_data()
-    print("has data:", d1)
+    print(("has data:", d1))
     assert d1['arg'] == 'arg1'
 
 
     a1 = A1.serialize()
 
-    print("serilization:",a1)
+    print(("serilization:",a1))
 
     da.AnalysisFactory.inject_serialization(a1)
 
-    print("factory has",da.AnalysisFactory.cache['AAnalysis'])
+    print(("factory has",da.AnalysisFactory.cache['AAnalysis']))
 
     aanalysis=da.AnalysisFactory['AAnalysis']
     assert aanalysis.arg == "arg1"
@@ -228,7 +229,7 @@ def test_object_injection_external():
     A=Analysis()
     A.get()
 
-    print(A.data)
+    print((A.data))
 
     assert A.data == "data_arg1"
 
@@ -245,12 +246,12 @@ def test_object_injection_reset():
 
     assert  A1.arg == "arg1"
     d1 = A1.export_data()
-    print("has data:", d1)
+    print(("has data:", d1))
     assert d1['arg'] == 'arg1'
 
     a1 = A1.serialize()
 
-    print("serilization:",a1)
+    print(("serilization:",a1))
 
     da.reset()
     da.debug_output()
@@ -261,7 +262,7 @@ def test_object_injection_reset():
     da.AnalysisFactory.inject_serialization(a1)
 
 
-    print("factory has",da.AnalysisFactory.cache['AAnalysis'])
+    print(("factory has",da.AnalysisFactory.cache['AAnalysis']))
 
     aanalysis=da.AnalysisFactory['AAnalysis']
     assert aanalysis.arg == "arg1"
@@ -278,7 +279,7 @@ def test_object_injection_reset():
     A=Analysis()
     A.get()
 
-    print(A.data)
+    print((A.data))
 
     assert A.data == "data_arg1"
 

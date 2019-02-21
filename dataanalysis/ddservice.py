@@ -27,7 +27,7 @@ class List(Resource):
         da.reset()
         emerge.import_ddmodules(args['modules'].split(","))
 
-        return da.AnalysisFactory.cache.keys()
+        return list(da.AnalysisFactory.cache.keys())
 
 def interpret_simple_assume(assume_strings):
     r={}
@@ -51,7 +51,7 @@ def interpret_simple_assume(assume_strings):
         except Exception as e:
             raise Exception("unable to decode: "+value)
 
-    return r.items()
+    return list(r.items())
 
 
 class Produce(Resource):
@@ -68,8 +68,8 @@ class Produce(Resource):
         parser.add_argument('request_comment', type=str, help='')
         args = parser.parse_args()
 
-        print("ddservice request:",args['request_comment'],args['request_id'])
-        print("ddservice produce args",args)
+        print(("ddservice request:",args['request_comment'],args['request_id']))
+        print(("ddservice produce args",args))
 
         expected_hashe_str = args['expected_hashe']
 

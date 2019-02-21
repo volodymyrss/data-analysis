@@ -42,7 +42,7 @@ def totype(v):
             return float(v)
 
     if isinstance(v, dict):
-        return dict([[a, totype(b)] for a, b in v.items()])
+        return dict([[a, totype(b)] for a, b in list(v.items())])
 
     if isinstance(v, list):
         return [totype(b) for b in v]
@@ -63,7 +63,7 @@ def totype(v):
 
 
 def jsonify_fits_header(h):
-    return dict([(k, str(h[k])) for k in h.keys()])
+    return dict([(k, str(h[k])) for k in list(h.keys())])
 
 
 def jsonify_array(arr):
@@ -77,7 +77,7 @@ def jsonify_fits_table(d):
             arr = jsonify_array(c.array[:])
             r.append([c.name, arr])
         except:
-            print(c, arr)
+            print((c, arr))
             raise
     return r
 

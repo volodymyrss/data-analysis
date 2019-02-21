@@ -1,9 +1,10 @@
+import imp
 def test_simple():
     import dataanalysis.core as da
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     A=ddmoduletest.AAnalysis()
     A.get()
 
@@ -24,7 +25,7 @@ def test_simple_chain():
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     B=ddmoduletest.BAnalysis()
     B.get()
 
@@ -44,7 +45,7 @@ def test_simple_assumption():
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     B=ddmoduletest.BAnalysis(assume=[ddmoduletest.AAnalysis(use_assumed_data="_assumedthis")])
     B.get()
 
@@ -66,7 +67,7 @@ def test_serialize():
     da.debug_output()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     S = ddmoduletest.SAnalysis(input_s="inputassumedthis").get()
 
     ed=S.export_data()
@@ -79,7 +80,7 @@ def test_input_assumption():
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     C=ddmoduletest.SAAnalysis(assume=[ddmoduletest.SAnalysis(input_s="inputassumedthis")])
     C.get()
 
@@ -87,7 +88,7 @@ def test_input_assumption():
 
     assert len(ident.assumptions)==1
 
-    print("assumption",ident.assumptions[0])
+    print(("assumption",ident.assumptions[0]))
 
     import dataanalysis.emerge as emerge
     da.reset()
@@ -102,18 +103,18 @@ def test_input_assumption_version():
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     C=ddmoduletest.BAnalysis(assume=[ddmoduletest.AAnalysis(use_version="xxx_version")])
     C.get()
 
-    print C.data
+    print(C.data)
 
     ident=C.get_identity()
 
     assert len(ident.assumptions)==1
 
-    print "assumption",ident.assumptions[0]
-    print "assumption data",ident.assumptions[0][1]['assumed_data'],type(ident.assumptions[0][1]['assumed_data'])
+    print("assumption",ident.assumptions[0])
+    print("assumption data",ident.assumptions[0][1]['assumed_data'],type(ident.assumptions[0][1]['assumed_data']))
 
     import dataanalysis.emerge as emerge
     da.reset()
@@ -125,7 +126,7 @@ def test_input_assumption_version():
 
     assert C.data == eC.data
 
-    print C._da_locally_complete
+    print(C._da_locally_complete)
     assert C._da_locally_complete[1][2]=='AAnalysis.xxx_version'
 
 def test_used_modules_stacking():
@@ -133,16 +134,16 @@ def test_used_modules_stacking():
     da.reset()
 
     import ddmoduletest
-    reload(ddmoduletest)
+    imp.reload(ddmoduletest)
     import ddmoduletest2
-    reload(ddmoduletest)
-    reload(ddmoduletest2)
-    reload(ddmoduletest)
-    reload(ddmoduletest2)
+    imp.reload(ddmoduletest)
+    imp.reload(ddmoduletest2)
+    imp.reload(ddmoduletest)
+    imp.reload(ddmoduletest2)
 
     print()
     for i,m in enumerate(da.AnalysisFactory.dda_modules_used):
-        print(i,m)
+        print((i,m))
 
     assert len(da.AnalysisFactory.dda_modules_used) == 2
 
@@ -152,7 +153,7 @@ def test_used_modules_stacking():
 
     ident=C.get_identity()
 
-    print("identity",ident)
+    print(("identity",ident))
 
     import dataanalysis.emerge as emerge
     da.reset()

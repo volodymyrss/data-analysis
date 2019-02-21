@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import re
 import sys
@@ -63,7 +63,7 @@ def extract_logstash_levels():
 
     if "LOGSTASH_LEVELS" in os.environ:
         logstash_levels=os.environ.get("LOGSTASH_LEVELS").split(",")
-        logstash_levels_patterns=map(re.compile,logstash_levels)
+        logstash_levels_patterns=list(map(re.compile,logstash_levels))
         return logstash_levels, logstash_levels_patterns, default_logstash_level
     return None, [], default_logstash_level
 
@@ -142,7 +142,7 @@ def log_logstash(a,**aa):
             if 'origin' not in aa:
                 aa['origin']="dda"
 
-            for k,v in os.environ.items():
+            for k,v in list(os.environ.items()):
                 if len(v)<20:
                     aa['env_'+k]=v
 
@@ -198,7 +198,7 @@ class PrintHook:
     #override write of stdout        
     def write(self,text,last=False):
         try:
-            raise "Dummy"
+            raise Exception("Dummy")
         except:
             lineText =  str(sys.exc_info()[2].tb_frame.f_back.f_lineno)
             codeObject = sys.exc_info()[2].tb_frame.f_back.f_code

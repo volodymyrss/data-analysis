@@ -74,14 +74,14 @@ def test_cache_blob():
     A._da_locally_complete
     assert  A._da_locally_complete == A._da_expected_full_hashe
 
-    print(glob.glob(A._da_cached_path+"/*"))
+    print((glob.glob(A._da_cached_path+"/*")))
     assert len(glob.glob(A._da_cached_path+"/*"))>2
 
     da.debug_output()
 
     cache.store_to_directory(A._da_locally_complete,A,"/tmp/blob/")
 
-    print(glob.glob("/tmp/blob/*"))
+    print((glob.glob("/tmp/blob/*")))
     assert len(glob.glob("/tmp/blob/*")) > 2
 
     blob=cache.assemble_blob(A._da_locally_complete, A).read()

@@ -1,6 +1,6 @@
 # il n'y a pas de hors-texte
 
-from __future__ import print_function
+
 
 import dataanalysis.core as da
 
@@ -17,7 +17,7 @@ class InContext(da.DataAnalysis):
         if len(self.input_leaves)!=0:
             leaves=self.input_leaves
         else:
-            leaves=da.AnalysisFactory.cache.keys() # no
+            leaves=list(da.AnalysisFactory.cache.keys()) # no
 
 
         root=da.AnalysisFactory.get_by_name(self.input_root.get_signature())
