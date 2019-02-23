@@ -20,7 +20,7 @@ install:
 - pip install --upgrade ./dqueue
 script:
 - py.test ./tests --cov=./
-- PYTHONPATH=./tests py.test ./ --cov=./
+- PYTHONPATH=./ py.test ./tests --cov=./
 after_success:
 - coverage xml
 - python-codacy-coverage -r coverage.xml
