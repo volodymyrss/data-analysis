@@ -19,8 +19,8 @@ install:
 - pip install -r ./dqueue/requirements.txt
 - pip install --upgrade ./dqueue
 script:
-- py.test ./ --cov=./
-- PYTHONPATH=./ py.test ./ --cov=./
+- py.test ./tests --cov=./
+- PYTHONPATH=./tests py.test ./ --cov=./
 after_success:
 - coverage xml
 - python-codacy-coverage -r coverage.xml
