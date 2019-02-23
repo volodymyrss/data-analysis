@@ -45,7 +45,7 @@ def test_live_delegation(ddservice_fixture,app):
     da.reset()
     da.debug_output()
 
-    r=requests.get(ddservice_fixture+url_for('produce', target="BAnalysis", modules="ddmoduletest"))
+    r=requests.get(ddservice_fixture.decode("utf-8") + url_for('produce', target="BAnalysis", modules="ddmoduletest"))
 
     print((r.content))
 
@@ -63,7 +63,7 @@ def test_live_delegation_assumptions(ddservice_fixture,app):
     da.reset()
     da.debug_output()
 
-    r=requests.get(ddservice_fixture+url_for('produce', target="BAnalysis", modules="ddmoduletest", assume="AAnalysis.assumed_data=\"clients\""))
+    r=requests.get(ddservice_fixture.decode("utf-8")+url_for('produce', target="BAnalysis", modules="ddmoduletest", assume="AAnalysis.assumed_data=\"clients\""))
 
     print((r.content))
 
