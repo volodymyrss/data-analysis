@@ -318,7 +318,7 @@ class DataAnalysisIdentity(object):
             else:
                 serialized_assumptions.append((assumption[0], assumption[1]))
 
-        result['assumptions']=sorted(serialized_assumptions)
+        result['assumptions']=sorted(serialized_assumptions, key=lambda x:x[0])
         return OrderedDict(sorted(result.items()))
 
     @classmethod

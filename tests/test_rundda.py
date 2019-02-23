@@ -181,10 +181,12 @@ def test_delegation():
         os.remove(exception_report)
 
     print("\n\nAGAIN")
-    print(("cmd:"," ".join(cmd+["-v"])))
+    print(("cmd:"," ".join(cmd+["-v", "-d ClientDelegatableAnalysisA"])))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,env=env)
     p.wait()
     print((p.stdout.read()))
+    
+    print("queue after again:", qw.queue.info)
 
     assert not os.path.exists(exception_report)
 
