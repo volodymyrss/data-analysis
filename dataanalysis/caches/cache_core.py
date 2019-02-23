@@ -506,7 +506,7 @@ class Cache(object):
                 tar.add(name)
 
         tar.close()
-        return open("tmp.tgz")
+        return open("tmp.tgz", encoding="latin-1")
 
     def adopt_datafiles(self,content):
         from dataanalysis.core import DataFile, map_nested_structure  # very delayed import
@@ -572,7 +572,14 @@ class Cache(object):
 
             jsonified=self.adopt_datafiles(obj.jsonify())
 
-            yaml.dump(jsonified, self.filebackend.open(yamlfn,"w",gz=True),default_flow_style=False)
+            log("to dump preview yaml",jsonified)
+
+            yaml.dump(
+                jsonified,
+                self.filebackend.open(yamlfn,"w",gz=False),
+                default_flow_style=False
+            )
+
 
         self.filebackend.open(cached_path + "hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
         self.filebackend.open(cached_path + "log.txt.gz", "wt", gz=True).write(obj._da_main_log_content)

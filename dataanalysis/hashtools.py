@@ -1,6 +1,7 @@
 import hashlib
 from hashlib import sha224
 from dataanalysis.printhook import log
+import json
 
 def hash_for_file(f, block_size=2**20):
     md5 = hashlib.md5()
@@ -22,7 +23,8 @@ def shhash(x):
     except Exception as e:
         log("error while hash_map",e,level="hashe")
 
-    return sha224(str(hash(x)).encode('utf-8')).hexdigest()
+    return sha224(str(x).encode('utf-8')).hexdigest()
+
 
 def hashe_map(hashe,f):
     if isinstance(hashe,tuple):

@@ -3,7 +3,7 @@
 import dataanalysis
 import dataanalysis.core as da
 
-from dataanalysis.hashtools import shhash
+from dataanalysis.hashtools import shhash, hashe_replace_object, hashe_map
 
 
 class AnyAnalysis(da.DataAnalysis):
@@ -50,7 +50,9 @@ class Factorize(da.DataAnalysis):
         ahash = mf.process(output_required=False, run_if_haveto=False)[0]
 
         print("generalized hash:", ahash)
+        print("replaced None hash:",hashe_replace_object(ahash, None, 'None') )
         rh = shhash(ahash)
+        print("hashmapped:", hashe_map(rh, str))
         print("reduced hash", rh)
         handle = dataanalysis.DataHandle(self.get_version()+'.processing_definition.' + rh[:8])
 

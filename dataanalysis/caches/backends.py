@@ -27,7 +27,7 @@ class FileBackend:
     def get(self,orig,dest,gz=False):
         log(self,orig,"to",dest)
         if gz:
-            open(dest,"w").write(gzip.open(orig).read())
+            open(dest,"wb").write(gzip.open(orig,"rb").read())
         else:
             shutil.copy(orig,dest)
     

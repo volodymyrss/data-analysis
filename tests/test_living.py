@@ -20,8 +20,10 @@ def test_api_ping(client):
 def test_api_ping_separate(ddservice_fixture,app):
     url=url_for('status')
     import requests
-    print(("full url",ddservice_fixture+url))
-    res = requests.get(ddservice_fixture+url)
+
+    full_url = ddservice_fixture.decode("utf-8")+ url
+    print("full url", full_url)
+    res = requests.get(full_url)
     assert res.json()['ping']== 'pong'
     assert res.json()['pid'] != os.getpid()
     print((res.json()['thread'], threading.current_thread().ident))
