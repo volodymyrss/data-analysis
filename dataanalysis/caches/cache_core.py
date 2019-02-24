@@ -18,7 +18,7 @@ import shutil
 import subprocess
 import time
 import socket
-import yaml
+import ruamel.yaml as yaml
 
 
 import dataanalysis

@@ -5,7 +5,6 @@ numpy
 pandas
 astropy
 persist-queue
-pyyaml
 flask
 flask-restful
 pytest
@@ -13,3 +12,4 @@ pytest-flask==0.11.0
 psutil
 logstash_formatter
 requests
+ruamel.yaml
