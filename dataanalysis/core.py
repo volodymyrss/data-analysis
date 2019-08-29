@@ -642,7 +642,11 @@ class DataAnalysis(object):
             if i=="None":
                 i=None
 
-            setattr(self, k, i)
+            try:
+                setattr(self, k, i)
+            except Exception as e:
+                print("print unable to set attribute:",self,k,i)
+                raise
 
             if k.startswith("_da_stored_string_input"):
                 nk=k.replace("_da_stored_string_input","input")
