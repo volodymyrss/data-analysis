@@ -13,6 +13,8 @@ workflows.
 Workflow is expressed as collection of "pure function" single-valued Analysis Nodes, represented as __DataAnalysis__ classes.
 Python class inheritance is used to define __rdfs:subClassOf__ relations, and the class attributes induce __rdf:Property__ defining OWL-compatible ontology.
 
+Consequnently, requests for execution can be expressed as __SPARQL__ queries, defining a workflow as an __RDF graph__. 
+
 The workflow definition is compatible with __CWL__ workflow expression (complete implementation of the integration is in progress). 
 
 The results are stored in an __append-only database__ indexed with the data __provenance__, derived directly from the workflow definition.
