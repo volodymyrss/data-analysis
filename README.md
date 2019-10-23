@@ -19,6 +19,8 @@ The workflow definition is compatible with __CWL__ workflow expression (complete
 
 The results are stored in an __append-only database__ indexed with the data __provenance__, derived directly from the workflow definition.
 
+## Example
+
 Below is an example of a workflow definition:
 
 ```python
@@ -69,6 +71,44 @@ class BinnedEvents(H1D):
         self.histogram=np.histogram(self.input_events.events['energy'])
 ```
 
+## Live Example
+
+A live example of the analysis can be invoked as so:
+
+```bash
+docker run  volodymyrsavchenko/docker-integral-osa \
+            sh run.sh ii_skyimage -j -m ddosa -m ddosadm -m onlybright \
+            -a "ddosadm.ScWData(input_scwid=\"023900270010.001\")" \
+            -a "ddosa.ImageBins(use_ebins=[(25,60)],use_version=\"single2560\")"
+```
+
+where 
+
+* _ii_skyimage_ is the query target, which needs to be retrieved.
+* `-m ddosa -m ddosadm -m onlybright` specifies the _modules_ (like https://github.com/volodymyrss/ddosa.git) listing python definitions of the _DataAnalysis_ nodes and relations between them.
+* `-a "ddosadm.ScWData(input_scwid=\"023900270010.001\")"` arguments define additional _assumptions_, specify additional edges in the workflow graph.
+
+the bulk of the graph is specificed in universal modules (e.g. _ddosa_) while the specific request is refined with the assumptions. The modules themselves consist of a large number of assumptions.
+
+as the workflow definition can be treated as a graph, it can be expressed in rdf. For example, in SPARQL:
+
+```sparql
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+PREFIX dda: <http://ddahub.io/ontology#>
+
+PREFIX this: <http://ddahub.io/ontology#this>
+
+SELECT target WHERE {
+    ?target rdfs:subClassOf dda:ddosa.ii_skyimage .
+    
+    this:ddosadm.ScWData rdfs:subClassOf dda:ddosadm.ScWData;
+         dda:input_scwid "023900270010.001" .
+}
+```
+
+
+# Background
 
 The framework also provides different possibilities for retrieving values of the function: evaluating, restoring from cache, delegating in a queue (with a simple example queue implementation) or to a remote resource (e.g. http service).
 The Analysis Nodes may be also deployed in a __Function-as-a-Service__ infrastructure (and then queried as remote resources).
