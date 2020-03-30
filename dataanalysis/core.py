@@ -1972,7 +1972,7 @@ class DataFile(DataAnalysis):
             else:
                 raise Exception("unable to construct full path!")
 
-    def open(self, f=None):
+    def open(self, f="r"):
         return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path, f)
 
     def __repr__(self):
