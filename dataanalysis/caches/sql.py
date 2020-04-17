@@ -1,4 +1,4 @@
-import cPickle
+import pickle
 import os
 import sqlite3 as lite
 import time
@@ -55,7 +55,7 @@ class CacheSqlite(Cache):
             log("found rows", len(rows))
             for h, c in rows:
                 try:
-                    c = cPickle.loads(str(c))
+                    c = pickle.loads(str(c))
                     log(str(h), str(c))
                 except Exception as e:
                     log("exception while loading:", e)
@@ -107,7 +107,7 @@ class CacheSqlite(Cache):
             log("confused cache will run it again", "{log:reflections}")
             return None
 
-        return cPickle.loads(str(rows[0][0]))
+        return pickle.loads(str(rows[0][0]))
 
     def make_record(self, hashe, content):
 
@@ -116,7 +116,7 @@ class CacheSqlite(Cache):
         # con = lite.connect(self.filecacheroot+'/index.db')
         con = self.connect()
 
-        c = cPickle.dumps(content)
+        c = pickle.dumps(content)
         log("content as", c)
 
         with con:
@@ -193,7 +193,7 @@ class CacheMySQL(CacheSqlite):
             log("found rows", len(rows))
             for h, fh, c in rows:
                 try:
-                    c = cPickle.loads(str(c))
+                    c = pickle.loads(str(c))
                     log(str(h), str(c))
                 except Exception as e:
                     log("exception while loading:", e)
@@ -247,7 +247,7 @@ class CacheMySQL(CacheSqlite):
             return None
             # raise Exception("confused cache! mupltile entries!")
 
-        return cPickle.loads(str(rows[0][0]))
+        return pickle.loads(str(rows[0][0]))
 
     def make_record(self, hashe, content):
         import json
@@ -257,7 +257,7 @@ class CacheMySQL(CacheSqlite):
         # con = lite.connect(self.filecacheroot+'/index.db')
         db = self.connect()
 
-        c = cPickle.dumps(content)
+        c = pickle.dumps(content)
         log("content as", c)
 
         if "_da_cached_path" in content:

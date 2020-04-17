@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 def test_create_datanode():
     from dataanalysis import core as da

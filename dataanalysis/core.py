@@ -1,7 +1,7 @@
-from __future__ import print_function
+
 
 try:
-    from StringIO import StringIO
+    from io import StringIO
 except ImportError:
     from io import StringIO
 
@@ -21,6 +21,8 @@ import time
 import base64
 from collections import Mapping, Set, Sequence, OrderedDict
 
+from future.utils import with_metaclass
+
 from dataanalysis import hashtools
 from dataanalysis import jsonify
 from dataanalysis.bcolors import render
@@ -32,6 +34,7 @@ from dataanalysis import printhook
 from dataanalysis.printhook import decorate_method_log,debug_print,log_hook
 
 from dataanalysis.printhook import get_local_log
+from functools import reduce
 log=get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
@@ -79,7 +82,7 @@ TransientCacheInstance = cache_core.TransientCache()
 
 
 # dual python 2/3 compatability, inspired by the "six" library
-string_types = (str, unicode) if str is bytes else (str, bytes)
+string_types = (str, str) if str is bytes else (str, bytes)
 iteritems = lambda mapping: getattr(mapping, 'iteritems', mapping.items)()
 
 #class DataHandle:
@@ -165,7 +168,7 @@ def flatten_nested_structure(structure, mapping, path=[]):
         return reduce(lambda x, y: x + y, r) if len(r) > 0 else r
 
     if isinstance(structure, dict):
-        r=[flatten_nested_structure(a, mapping, path=path + [k]) for k, a in structure.items()]
+        r=[flatten_nested_structure(a, mapping, path=path + [k]) for k, a in list(structure.items())]
         return reduce(lambda x,y:x+y,r) if len(r)>0 else r
 
     return [mapping(path, structure)]
@@ -179,7 +182,7 @@ def map_nested_structure(structure, mapping, path=None):
         return [map_nested_structure(a, mapping, path=path + [i]) for i, a in enumerate(structure)]
 
     if isinstance(structure, dict):
-        return dict([(k, map_nested_structure(a, mapping, path=path + [k])) for k, a in structure.items()])
+        return dict([(k, map_nested_structure(a, mapping, path=path + [k])) for k, a in list(structure.items())])
 
     return mapping(path, structure)
 
@@ -308,14 +311,14 @@ class DataAnalysisIdentity(object):
         serialized_assumptions=[]
         for assumption in result['assumptions']:
             if isinstance(assumption,tuple) and isinstance(assumption[1],dict):
-                for k,v in assumption[1].items():
+                for k,v in list(assumption[1].items()):
                     if v is None:
                         assumption[1][k]='None'
                 serialized_assumptions.append((assumption[0],OrderedDict(sorted(assumption[1].items()))))
             else:
                 serialized_assumptions.append((assumption[0], assumption[1]))
 
-        result['assumptions']=sorted(serialized_assumptions)
+        result['assumptions']=sorted(serialized_assumptions, key=lambda x:x[0])
         return OrderedDict(sorted(result.items()))
 
     @classmethod
@@ -330,8 +333,9 @@ class DataAnalysisIdentity(object):
         return obj
 
 
-class DataAnalysis(object):
-    __metaclass__ = decorate_all_methods
+class DataAnalysis(with_metaclass(decorate_all_methods, object)):
+#class DataAnalysis(object):
+    #__metaclass__ = decorate_all_methods
 
     infactory=True
     trivial=False # those that do not need to be computed
@@ -437,7 +441,7 @@ class DataAnalysis(object):
         else:
             origins=[]
 
-        self._da_attributes=dict([(a,b) for a,b in args.items() if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_") and not a.startswith("set_")]) # exclude registered
+        self._da_attributes=dict([(a,b) for a,b in list(args.items()) if a!="assume" and not a.startswith("input") and a!="update" and a!="dynamic" and not a.startswith("use_") and not a.startswith("set_")]) # exclude registered
 
 
         update=False
@@ -446,7 +450,7 @@ class DataAnalysis(object):
             log("update in the args:",update)
             update=args['update']
 
-        for a,b in args.items():
+        for a,b in list(args.items()):
             if a.startswith("input"):
                 log("input in the constructor:",a,b)
                 setattr(self,a,b)
@@ -539,17 +543,17 @@ class DataAnalysis(object):
     def export_data(self,embed_datafiles=False,verify_jsonifiable=False,include_class_attributes=False,deep_export=False,export_caches=False):
         log("export_data with",embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
         empty_copy=self.__class__
-        log("my keys:", self.__dict__.keys())
+        log("my keys:", list(self.__dict__.keys()))
         log("my class is",self.__class__)
-        log("class keys:", empty_copy.__dict__.keys())
+        log("class keys:", list(empty_copy.__dict__.keys()))
 
         updates=set(self.__dict__.keys())-set(empty_copy.__dict__.keys())
         log("new keys:",updates)
         # or state of old keys??
 
         if include_class_attributes:
-            log("using class attributes",self.__dict__.keys())
-            updates=self.__dict__.keys()+empty_copy.__dict__.keys()
+            log("using class attributes",list(self.__dict__.keys()))
+            updates=list(self.__dict__.keys())+list(empty_copy.__dict__.keys())
 
         # revise as follows:
         #  - need to be able to retore DataAnalysis references, as currently known
@@ -584,7 +588,7 @@ class DataAnalysis(object):
 
         if verify_jsonifiable:
             res=[]
-            for a,b in r.items():
+            for a,b in list(r.items()):
                 res.append([a,jsonify.jsonify(b)])
             r=dict(res)
 
@@ -635,7 +639,7 @@ class DataAnalysis(object):
         # todo: check that the object is fresh
         log("updating analysis with data")
 
-        for k, i in c.items():
+        for k, i in list(c.items()):
             log("restoring", k, i)
 
             if i=="None":
@@ -665,7 +669,7 @@ class DataAnalysis(object):
 
     def get_formatted_attributes(self):
         if hasattr(self,'_da_attributes'): #not like that
-            return "_".join(["%s.%s"%(str(a),repr(b).replace("'","")) for a,b in self._da_attributes.items()])
+            return "_".join(["%s.%s"%(str(a),repr(b).replace("'","")) for a,b in list(self._da_attributes.items())])
         else:
             return ""
 
@@ -702,7 +706,7 @@ class DataAnalysis(object):
 
         content=self.export_data()
         if isinstance(content,dict):
-            for a,b in content.items():
+            for a,b in list(content.items()):
                 if isinstance(b,DataFile):
                     dest_unique=b.path+"."+self.cache.hashe2signature(hashe) # will it always?
                     b._da_unique_local_path=dest_unique
@@ -817,7 +821,7 @@ class DataAnalysis(object):
 
     def get(self,**aa):
         if 'saveonly' in aa and aa['saveonly'] is not None:
-            aax=dict(aa.items()+[['saveonly',None]])
+            aax=dict(list(aa.items())+[['saveonly',None]])
 
             try:
                 tmp_dir = tempfile.mkdtemp()  # create dir
@@ -931,7 +935,7 @@ class DataAnalysis(object):
                     force_complete_input=True)
         restore_rules=dict(list(restore_rules_default.items())+(list(restore_rules.items()) if restore_rules is not None else []))
         # to simplify input
-        for k in extra.keys():
+        for k in list(extra.keys()):
             if k in restore_rules:
                 restore_rules[k]=extra[k]
 
@@ -1131,7 +1135,7 @@ class DataAnalysis(object):
             #for key in newobj.export_data().keys(): # or all??
             obj._da_locally_complete = newobj._da_locally_complete
             exported_data=newobj.export_data(include_class_attributes=True, deep_export=True)
-            for key in exported_data.keys():  # or all??
+            for key in list(exported_data.keys()):  # or all??
                 log("key to",obj,"from newobj",newobj,key)
                 if hasattr(newobj,key):
                     v=getattr(newobj,key)
@@ -1297,7 +1301,7 @@ class DataAnalysis(object):
         else:
             self.process_checkin_assumptions()
 
-            rr= list(dict(restore_rules.items())) + list(dict(output_required=False).items()) # no need to request input results unless see below
+            rr= list(dict(list(restore_rules.items()))) + list(dict(output_required=False).items()) # no need to request input results unless see below
 
             #### process input
 
@@ -1552,7 +1556,7 @@ class DataAnalysis(object):
             list(restore_rules_default.items()) + list(restore_rules.items()) if restore_rules is not None else [])
 
         # to simplify input
-        for k in extra.keys():
+        for k in list(extra.keys()):
             if k in restore_rules:
                 restore_rules[k] = extra[k]
 
@@ -1775,11 +1779,11 @@ class DataAnalysis(object):
         c = type(cls)
         newcls = c(name, (cls,), dict(cls.__dict__))()
 
-        for k,v in data.items():
+        for k,v in list(data.items()):
             setattr(newcls,k,v)
 
         extradata={}
-        for arg_k,arg_v in kwargs.items():
+        for arg_k,arg_v in list(kwargs.items()):
             if arg_k.startswith("input_"):
                 setattr(newcls,arg_k,arg_v)
             elif arg_k.startswith("use_"):
@@ -1788,7 +1792,7 @@ class DataAnalysis(object):
             else:
                 raise RuntimeError("unrecognized arguement: "+arg_k)
 
-        newcls.version=hashtools.shhash(tuple(map(tuple,sorted(data.items()+extradata.items()))))[:8]
+        newcls.version=hashtools.shhash(tuple(map(tuple,sorted(list(data.items())+list(extradata.items())))))[:8]
 
         obj=newcls()
 
@@ -1799,11 +1803,11 @@ class DataAnalysis(object):
         c = type(cls)
         newcls = c(name, (cls,), dict(cls.__dict__))()
 
-        for k,v in data.items():
+        for k,v in list(data.items()):
             setattr(newcls,k,v)
 
         extradata={}
-        for arg_k,arg_v in kwargs.items():
+        for arg_k,arg_v in list(kwargs.items()):
             if arg_k.startswith("input_"):
                 setattr(newcls,arg_k,arg_v)
             elif arg_k.startswith("use_"):
@@ -1812,7 +1816,7 @@ class DataAnalysis(object):
             else:
                 raise RuntimeError("unrecognized arguement: "+arg_k)
 
-        newcls.version=hashtools.shhash(tuple(map(tuple,sorted(data.items()+extradata.items()))))[:8]
+        newcls.version=hashtools.shhash(tuple(map(tuple,sorted(list(data.items())+list(extradata.items())))))[:8]
 
         obj=newcls()
 
@@ -1830,7 +1834,7 @@ class DataAnalysis(object):
         newcls = c(name, (cls,), dict(cls.__dict__))()
 
         if data is not None:
-            for k,v in data.items():
+            for k,v in list(data.items()):
                 setattr(newcls,k,v)
 
         newcls.version=version
@@ -1968,8 +1972,8 @@ class DataFile(DataAnalysis):
             else:
                 raise Exception("unable to construct full path!")
 
-    def open(self):
-        return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
+    def open(self, f="r"):
+        return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path, f)
 
     def __repr__(self):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
@@ -1982,7 +1986,10 @@ class DataFile(DataAnalysis):
             try:
                 return json.load(self.open())
             except:    
-                content=self.open().read()
+                try:
+                    content=self.open().read()
+                except UnicodeDecodeError:
+                    content=self.open("rb").read().decode('utf-8', 'ignore') #??
 
             try:
                 from astropy.io import fits

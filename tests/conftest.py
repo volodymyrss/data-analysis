@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import pytest
 
@@ -49,14 +49,14 @@ def ddservice_fixture(pytestconfig):
     url_store=[None]
     def follow_output():
         url_store[0] = None
-        for line in iter(p.stdout.readline, ''):
+        for line in iter(p.stdout):
             print("following server:", line.rstrip())
-            m = re.search("Running on (.*?) \(Press CTRL\+C to quit\)", line)
+            m = re.search(b"Running on (.*?) \(Press CTRL\+C to quit\)", line)
             if m:
                 url_store[0] = m.group(1)[:-1]  # alaternatively get from configenv
                 print("found url:", url_store[0])
 
-            if re.search("\* Debugger PIN:.*?", line):
+            if re.search(b"\* Debugger PIN:.*?", line):
                 url_store[0] = url_store[0].replace("0.0.0.0", "127.0.0.1")
                 print("server ready, url", url_store[0])
 

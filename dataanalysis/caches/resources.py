@@ -1,5 +1,5 @@
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import requests
 
@@ -117,11 +117,17 @@ class WebResource(Resource):
 
         log("params",params)
 
-        url_root=self.url_base+"/api/%(api_version)s/produce"%dict(
-            api_version=self.api_version
+        url_root = self.url_base
+        url_path = "/api/%(api_version)s/produce"%dict(
+            api_version = self.api_version
         )
 
-        url=url_root + "?" + urllib.urlencode(params)
+        if isinstance(url_root,bytes):
+            url_root = url_root.decode('utf-8')
+
+        url_root+=url_path
+
+        url=url_root + "?" + urllib.parse.urlencode(params)
 
         log("url:",url)
         return url

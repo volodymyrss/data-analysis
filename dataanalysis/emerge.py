@@ -8,6 +8,7 @@ from dataanalysis.printhook import log, log_logstash
 import dataanalysis.graphtools
 from dataanalysis import hashtools
 import dataanalysis.core as da
+import imp
 
 dd_module_names=[]
 
@@ -43,8 +44,8 @@ class InconsitentEmergence(Exception):
 def emerge_from_identity(identity):
     da.reset()
 
-    reload(dataanalysis.graphtools)
-    print("fresh factory knows",da.AnalysisFactory.cache)
+    imp.reload(dataanalysis.graphtools)
+    print(("fresh factory knows",da.AnalysisFactory.cache))
 
 
     import_ddmodules(identity.modules)
@@ -65,7 +66,7 @@ def emerge_from_identity(identity):
             a.import_data(assumption[1])
             da.AnalysisFactory.WhatIfCopy('queue emergence %i'%i, a)
 
-            print(a, "from", assumption)
+            print((a, "from", assumption))
 
     A = da.AnalysisFactory.byname(identity.factory_name)
     producable_hashe=A.get_hashe()

@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 
 import gzip
 import os
@@ -11,11 +11,11 @@ global_readonly_caches=False
 
 def is_datafile(b):
 # delayed import
-    from cache_core import DataFile
+    from .cache_core import DataFile
     return isinstance(b,DataFile)
 
 def update_dict(a,b):
-    return dict(a.items()+b.items())
+    return dict(list(a.items())+list(b.items()))
 
 class FileBackend:
     def exists(self,fn):
@@ -27,7 +27,7 @@ class FileBackend:
     def get(self,orig,dest,gz=False):
         log(self,orig,"to",dest)
         if gz:
-            open(dest,"w").write(gzip.open(orig).read())
+            open(dest,"wb").write(gzip.open(orig,"rb").read())
         else:
             shutil.copy(orig,dest)
     

@@ -5,7 +5,7 @@
 import argparse
 import json
 import sys
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import shutil
 
 import ruamel.yaml as yaml

@@ -2,7 +2,7 @@
 
 def test_import():
     from dataanalysis import core as da
-    print(da.__file__)
+    print((da.__file__))
 
 
 def test_one_object():
@@ -68,17 +68,17 @@ def test_constructor_input():
     assert hasattr(A,'input_b')
 
     da.debug_output()
-    print("*" * 80)
+    print(("*" * 80))
     A.promote()
-    print("/" * 80)
+    print(("/" * 80))
 
     A_fn=analysisfactory.AnalysisFactory.get_by_name(A.get_signature()).get()
-    print(A, A_fn)
+    print((A, A_fn))
     assert A == A_fn
 
     A_f = analysisfactory.AnalysisFactory.get(A).get()
 
-    print(A,A_f)
+    print((A,A_f))
     assert A == A_f
 
     A.get()
@@ -143,7 +143,7 @@ def test_optional_object():
         aA.get()
 
 
-        print(analysisfactory.AnalysisFactory.get("aAnalysis"), aA)
+        print((analysisfactory.AnalysisFactory.get("aAnalysis"), aA))
         #assert analysisfactory.AnalysisFactory.get("aAnalysis") == aA
 
         class gAnalysis(da.DataAnalysis):
@@ -207,7 +207,7 @@ def test_caching():
         
     assert tspent<1
     assert hasattr(A1,'data')
-    print(A1.data)
+    print((A1.data))
     assert A1.data == 'data'
 
 
@@ -234,7 +234,7 @@ def test_factory():
     assert len(A.factory.cache_assumptions) == 1
 
     iden=A.get_identity()
-    print iden.assumptions
+    print(iden.assumptions)
 
 
 

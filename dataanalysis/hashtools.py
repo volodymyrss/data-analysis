@@ -1,6 +1,7 @@
 import hashlib
 from hashlib import sha224
 from dataanalysis.printhook import log
+import json
 
 def hash_for_file(f, block_size=2**20):
     md5 = hashlib.md5()
@@ -22,7 +23,8 @@ def shhash(x):
     except Exception as e:
         log("error while hash_map",e,level="hashe")
 
-    return sha224(str(hash(x)).encode('utf-8')).hexdigest()
+    return sha224(str(x).encode('utf-8')).hexdigest()
+
 
 def hashe_map(hashe,f):
     if isinstance(hashe,tuple):
@@ -74,7 +76,7 @@ def hashe_list_objects(hashe):
 
 def remove_repeating_stacks(input_stack):
     exclude_mask=[False]*len(input_stack)
-    for stack_length in range(1,len(input_stack)/2):
+    for stack_length in range(1,int(len(input_stack)/2)):
         for stack_start in range(0,len(input_stack)-stack_length):
             if input_stack[stack_start:stack_start+stack_length] == input_stack[stack_start+stack_length:stack_start+stack_length+stack_length]:
                 log("found repetition of ",stack_start,stack_length,":",input_stack[stack_start:stack_start+stack_length*2],level="top")

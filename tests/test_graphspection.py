@@ -1,13 +1,20 @@
-from __future__ import print_function
+
 
 import os
+import imp
+
+def test_hashe_stability():
+    c=('analysis', ('analysis', ('analysis', ('analysis', 'None', 'AnyAnalysis.v0'), 'BAnalysis.v0'), 'CAnalysis.v0'), 'DAnalysis.v0')
+    from dataanalysis import hashtools as ht
+
+    print(c,ht.shhash(c))
 
 
 def test_clone():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
     da.reset()
-    reload(gt)
+    imp.reload(gt)
 
     class AAnalysis(da.DataAnalysis):
         def main(self):
@@ -23,14 +30,23 @@ def test_clone():
     assert 'c' in aa.export_data()
 
     assert aa is not ab
-    assert aa.export_data().keys() == ab.export_data().keys()
+
+    aakeys = sorted(list(aa.export_data().keys()))
+    abkeys = sorted(list(ab.export_data().keys()))
+    print("aakeys",aakeys)
+    print("abkeys",abkeys)
+
+    assert aakeys == abkeys
 
 
 def test_factorize():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
     da.reset()
-    reload(gt)
+    imp.reload(gt)
+    
+    da.debug_output()
+
 
     class AAnalysis(da.DataAnalysis):
         pass
@@ -54,14 +70,17 @@ def test_factorize():
     print(fct)
 
     assert isinstance(fct, da.DataHandle)
-    assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.1fa218f1"
+
+    
+    print("got this",fct.str())
+    assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.8609173b"
 
 
 def test_factorize_run_for_hashe_analysis():
     import dataanalysis.core as da
     import dataanalysis.graphtools as gt
     da.reset()
-    reload(gt)
+    imp.reload(gt)
 
     class AAnalysis(da.DataAnalysis):
         pass
@@ -86,7 +105,7 @@ def test_factorize_run_for_hashe_analysis():
     print(fct)
 
     assert isinstance(fct, da.DataHandle)
-    assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.1fa218f1"
+    assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.8609173b"
 
 
 def test_factorize_note():

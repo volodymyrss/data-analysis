@@ -1,8 +1,9 @@
-from __future__ import print_function
+
 
 import dataanalysis
 import dataanalysis.core as da
-from hashtools import shhash
+
+from dataanalysis.hashtools import shhash, hashe_replace_object, hashe_map
 
 
 class AnyAnalysis(da.DataAnalysis):
@@ -36,7 +37,7 @@ class Factorize(da.DataAnalysis):
 
             for k in dir(aa):
                 if k.startswith("input_"):
-                    print("replacing input",aa,getattr(aa,k),"with AnyAnalysis")
+                    print(("replacing input",aa,getattr(aa,k),"with AnyAnalysis"))
                     setattr(aa,k,AnyAnalysis)
 
             print(aa)
@@ -48,9 +49,11 @@ class Factorize(da.DataAnalysis):
 
         ahash = mf.process(output_required=False, run_if_haveto=False)[0]
 
-        print("generalized hash:", ahash)
+        print(("generalized hash:", ahash))
+        print(("replaced None hash:",hashe_replace_object(ahash, None, 'None') ))
         rh = shhash(ahash)
-        print("reduced hash", rh)
+        print(("hashmapped:", hashe_map(rh, str)))
+        print(("reduced hash", rh))
         handle = dataanalysis.DataHandle(self.get_version()+'.processing_definition.' + rh[:8])
 
         self.factory.note_factorization(dict(

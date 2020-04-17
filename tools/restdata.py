@@ -5,7 +5,7 @@ import pylru
 import requests
 import json
 
-import StringIO
+import io
 import numpy as np
 
 app = Flask(__name__)
@@ -23,8 +23,8 @@ def run_da(object,modules,assumptions):
     command="export UENV_ACTIVE=\"\"; source /home/savchenk/.uenv/bin/uenv.sh ddosa; cd %s; pwd; ls -lotr;"%td
     #runcommand="rundda.py %s -j %s %s "%(object,modules,assumptions)
     runcommand="rundda.py %s -j %s %s > /home/savchenk/spool/logs/jobs/%s_%i_${HOSTNAME}_`date +%%s` 2>&1"%(object,modules,assumptions,object,app.port)
-    print "command:",command
-    print "run command:",runcommand
+    print("command:",command)
+    print("run command:",runcommand)
 
     
     open("/home/savchenk/spool/logs/log_%i"%app.port,"a").write(str(time.time())+" "+socket.gethostname()+" "+runcommand+"\n")
@@ -39,13 +39,13 @@ def run_da(object,modules,assumptions):
 
 @app.route('/analysis/api/v1.0/<string:object>', methods=['GET'])
 def get_analysis(object):
-    print request.args
+    print(request.args)
 
     modules=request.args['modules'] if 'modules' in request.args else ""
     assumptions=request.args['assume'] if 'assume' in request.args else ""
 
-    print "modules",modules
-    print "assumptions",assumptions
+    print("modules",modules)
+    print("assumptions",assumptions)
 
     return jsonify(run_da(object,modules,assumptions))
 

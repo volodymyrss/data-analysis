@@ -17,7 +17,7 @@ def test_whatif():
     aa1 = AAnalysis()
     assert aa1.arg == "arg1"
     serial=aa1.serialize(verify_jsonifiable=False)
-    print serial
+    print(serial)
 
     assert serial[1]['arg'] == "arg1"
     assert serial[1]['nonearg'] != str(None)
@@ -31,7 +31,7 @@ def test_whatif():
     assert hasattr(aa1,'nonearg')
 
 
-    print "NoneArg:",aa1.nonearg,type(aa1.nonearg)
+    print("NoneArg:",aa1.nonearg,type(aa1.nonearg))
 
     assert aa1.nonearg is None
 

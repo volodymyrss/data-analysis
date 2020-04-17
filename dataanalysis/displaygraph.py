@@ -4,7 +4,7 @@ import subprocess
 
 import pydot
 
-import hashtools
+from . import hashtools
 
 
 def dotify_hashe(hashe,assign_nuids=False,filtered_nodes=None,wait=None,graph=None,return_root=False):

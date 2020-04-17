@@ -12,6 +12,7 @@ from dataanalysis.printhook import log,log_logstash
 from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
 import dqueue
+import imp
 
 
 
@@ -87,7 +88,7 @@ class QueueCacheWorker(object):
         object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
         da.reset()
 
-        reload(dataanalysis.graphtools)
+        imp.reload(dataanalysis.graphtools)
         log("fresh factory knows",da.AnalysisFactory.cache)
 
         log(object_identity)
@@ -152,7 +153,7 @@ class QueueCacheWorker(object):
                 log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_age)
             worker_age+=1
 
-            if limited_burst>0 and worker_age>limited_burst:
+            if limited_burst is not None and limited_burst>0 and worker_age>limited_burst:
                 break
 
             try:

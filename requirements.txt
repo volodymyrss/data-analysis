@@ -13,3 +13,4 @@ psutil
 logstash_formatter
 requests
 ruamel.yaml==0.16.5
+future

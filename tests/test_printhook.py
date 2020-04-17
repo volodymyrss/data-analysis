@@ -1,12 +1,12 @@
 import dataanalysis
 
 def test_print():
-    print("permissive:",dataanalysis.printhook.global_permissive_output)
+    print(("permissive:",dataanalysis.printhook.global_permissive_output))
 
     import sys
 
     try:
-        from StringIO import StringIO
+        from io import StringIO
     except ImportError:
         from io import StringIO
 
@@ -23,7 +23,7 @@ def test_print():
 
     class Analysis(dataanalysis.core.DataAnalysis):
         def main(self):
-            print("testoutput\n"*100)
+            print(("testoutput\n"*100))
 
             for ls in dataanalysis.printhook.LogStreams:
                 raw_stdout.write("\n- logstream now:"+repr(ls))
@@ -55,7 +55,7 @@ def test_print():
 def test_standard_output():
     import sys
     try:
-        from StringIO import StringIO
+        from io import StringIO
     except ImportError:
         from io import StringIO
 
@@ -74,7 +74,7 @@ def test_standard_output():
 
     class Analysis(dataanalysis.core.DataAnalysis):
         def main(self):
-            print("testoutput\n"*10)
+            print(("testoutput\n"*10))
             raw_stdout.write("\n")
             for ls in dataanalysis.printhook.LogStreams:
                 raw_stdout.write("- logstream now:"+repr(ls)+"\n")
@@ -89,7 +89,7 @@ def test_standard_output():
 
 #    assert 'running main' not in pipe.getvalue()
 
-    print("A._da_main_log_content:",A._da_main_log_content)
+    print(("A._da_main_log_content:",A._da_main_log_content))
 
     assert 'testoutput' in A._da_main_log_content
 
