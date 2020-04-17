@@ -16,7 +16,7 @@ before_install:
 install:
 - pip install -r ./dqueue/requirements.txt
 - pip install --upgrade ./dqueue
-- pip install -r requirements.txt
+- pip install -r requirements.txt --ignore-installed
 - pip install .
 script:
 - py.test ./tests --cov=./
