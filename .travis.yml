@@ -14,7 +14,7 @@ before_install:
 - pip install codacy-coverage
 - mysql -e 'CREATE DATABASE IF NOT EXISTS dqueue;'
 install:
-- pip uninstall numpy
+- pip uninstall numpy -y
 - pip install -r ./dqueue/requirements.txt
 - pip install --upgrade ./dqueue
 - pip install -r requirements.txt --ignore-installed
