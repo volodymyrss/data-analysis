@@ -12,5 +12,5 @@ pytest-flask
 psutil
 logstash_formatter
 requests
-PyYAML==3.12
+PyYAML==5.1
 future
