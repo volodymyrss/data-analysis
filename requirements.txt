@@ -1,7 +1,7 @@
 healpy==1.11.0
 scipy
 pydot
-numpy
+numpy==1.18.2
 pandas
 astropy
 persist-queue
