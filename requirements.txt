@@ -8,8 +8,8 @@ persist-queue
 flask
 flask-restful
 pytest
-pytest-flask==0.11.0
+pytest-flask 
 psutil
 logstash_formatter
 requests
-ruamel.yaml
+ruamel.yaml==0.16.5
