@@ -1,5 +1,5 @@
 import json
-import ruamel.yaml as yaml
+import yaml as yaml
 import argparse
 
 import dataanalysis.importing as importing

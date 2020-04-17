@@ -8,7 +8,7 @@ import sys
 import urllib.request, urllib.parse, urllib.error
 import shutil
 
-import ruamel.yaml as yaml
+import yaml as yaml
 
 from dataanalysis.caches.queue import QueueCache
 from dataanalysis.printhook import get_local_log
