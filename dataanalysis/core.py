@@ -1972,8 +1972,8 @@ class DataFile(DataAnalysis):
             else:
                 raise Exception("unable to construct full path!")
 
-    def open(self):
-        return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path)
+    def open(self, f="r"):
+        return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path, f)
 
     def __repr__(self):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
@@ -1986,7 +1986,10 @@ class DataFile(DataAnalysis):
             try:
                 return json.load(self.open())
             except:    
-                content=self.open().read()
+                try:
+                    content=self.open().read()
+                except UnicodeDecodeError:
+                    content=self.open("rb").read().decode('utf-8', 'ignore') #??
 
             try:
                 from astropy.io import fits

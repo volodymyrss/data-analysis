@@ -119,7 +119,7 @@ def test_prompt_delegation():
     assert A.data=="dataAadded"
     print((A.resource_stats))
 
-#@pytest.mark.skip(reason="this hangs in travis")
+@pytest.mark.skip(reason="test this later in py3 ") # TODO
 def test_delegation():
     from dataanalysis.caches.queue import QueueCacheWorker
     queue_dir="/tmp/queue"
