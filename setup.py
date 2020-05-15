@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='data-analysis',
-    version='1.0.0',
+    version='1.0.2',
     packages=["dataanalysis","dataanalysis.caches"],
     entry_points={
             'console_scripts': [
@@ -15,6 +15,7 @@ setup(
         },
     scripts=[
                 'tools/rundda.py',
+                'tools/dda-run',
                 'tools/hashdot.py',
             ],
     license='Creative Commons Attribution-Noncommercial-Share Alike license',
