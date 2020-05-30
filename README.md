@@ -7,8 +7,20 @@ data-analysis
 [![Requirements Status](https://requires.io/github/volodymyrss/data-analysis/requirements.svg?branch=master)](https://requires.io/github/volodymyrss/data-analysis/requirements/?branch=master)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/volodymyrss/data-analysis.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/volodymyrss/data-analysis/alerts/)
 
-Framework facilitating semantic declarative expression of reproducible data analysis
-workflows.  
+*Framework facilitating semantic declarative expression of reproducible data analysis
+workflows.*
+
+## Why?
+
+## What, another one?
+
+Don't we have many frameworks like this already?
+
+Not quite. Leverage the python expressivness:
+
+* use class inheritance to build new workflow nodes
+* understandable to pylint
+
 
 Workflow is expressed as collection of "pure function" single-valued Analysis Nodes, represented as __DataAnalysis__ classes.
 Python class inheritance is used to define __rdfs:subClassOf__ relations, and the class attributes induce __rdf:Property__ defining OWL-compatible ontology.
