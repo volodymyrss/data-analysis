@@ -12,11 +12,13 @@ workflows.*
 
 ## Why?
 
+We had large linear redundant analysis pipeline (INTEGRAL [OSA](https://www.isdc.unige.ch/integral/analysis)). We needed to understand it and make a lot of improvements, try many things - this made the pipeline much more complex.
+
 ## What, another one?
 
 Don't we have many frameworks like this already?
 
-Not quite. Leverage the python expressivness:
+Not quite. Here we leverage the python expressivness:
 
 * use class inheritance to build new workflow nodes
 * understandable to pylint
