@@ -958,11 +958,11 @@ class CacheNoIndex(Cache):
 
         cached_path=self.construct_cached_file_path(hashe,None)
         if self.filebackend.exists(cached_path+"/cache.pickle.gz"):
-            log("found cache file:",cached_path+"/cache.pickle.gz")
+            log("found cache file:", cached_path+"/cache.pickle.gz", level='top')
             try:
                 return self.load_content(hashe,None)
             except Exception as e:
-                log("faild to load content! :"+repr(e))
+                log("failed to load content! :"+repr(e), level='top')
                 return None
 
         log("no file found in",cached_path)

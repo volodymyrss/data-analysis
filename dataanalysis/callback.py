@@ -18,7 +18,7 @@ class CallbackHook(object):
                 callback_filter=globals()[callback_filter_name]
 
             callback_class=callback_filter
-            log("callback class:",callback_class,level='top')
+            log("callback class:",callback_class,level='callback')
             callback=callback_class(callback_url)
             log("processing callback url", callback_url, callback)
 
@@ -42,10 +42,10 @@ class Callback(object):
 
         for c in classes:
             if c not in cls.callback_accepted_classes:
-                log("adding accepted class",c,level="top")
+                log("adding callback-accepted class",c,level="callback")
                 cls.callback_accepted_classes.append(c)
 
-        log("callback currently accepts classes",cls.callback_accepted_classes)
+        log("callback currently accepts classes",cls.callback_accepted_classes, level='callback')
 
     def __init__(self,url):
         self.url=url
