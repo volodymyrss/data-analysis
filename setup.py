@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='data-analysis',
-    version='1.0.2',
+    version='1.0.3',
     packages=["dataanalysis","dataanalysis.caches"],
     entry_points={
             'console_scripts': [

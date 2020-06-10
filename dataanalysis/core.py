@@ -719,7 +719,7 @@ class DataAnalysis(object):
         store output with
         """
 
-        log(render("{MAGENTA}storing in cache{/}"),level="top")
+        log(render("{MAGENTA}storing in cache{/} object: %s, next cache %s"%(repr(self), repr(self.cache))),level="top")
         log("hashe:",fih)
 
      #   c=MemCacheLocal.store(fih,self.export_data())
@@ -736,7 +736,8 @@ class DataAnalysis(object):
     _da_cache_retrieve_requests=None
 
     def retrieve_cache(self,fih,rc=None):
-        log("requested cache for",fih)
+        log(render("{CYAN}requested cache{/} for"), repr(self), level='top')
+
 
         if self._da_cache_retrieve_requests is None:
             self._da_cache_retrieve_requests=[]
@@ -776,16 +777,16 @@ class DataAnalysis(object):
             return r
 
         if self.cached:
-            log(render("{MAGENTA}cached, proceeding to restore{/}"))
+            log(render("{MAGENTA}cached, proceeding to restore{/}"), level='top')
         else:
             log(render("{MAGENTA}not cached restore only from transient{/}"))
             return None # only transient!
         # discover through different caches
         #c=MemCacheLocal.find(fih)
 
-        log("searching for cache starting from",self.cache)
+        log("searching for cache starting from",self.cache, level='top')
         r=self.cache.restore(fih,self,rc)
-        log("cache",self.cache,"returns",r)
+        log("cache",self.cache,"returns",r, level='top')
 
         if r and r is not None:
             log("this object will be considered restored and complete: will not do again",self)
@@ -1081,7 +1082,7 @@ class DataAnalysis(object):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
 
-        log("main DONE!",level='top')
+        log(render("node %s main {GREEN}DONE{/}!"%repr(self)),level='top')
  
         self.summarize_resource_stats()
 
@@ -1416,7 +1417,7 @@ class DataAnalysis(object):
                     else:
                         log("disabled self.rename_output_unique",level='cache')
 
-                    log("object storing in the cache",level='top')
+                    #log("object storing in the cache",level='top')
                     self.store_cache(fih)
                     #self.runtime_update("done")
                 else:
