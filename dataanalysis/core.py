@@ -645,7 +645,11 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
             if i=="None":
                 i=None
 
-            setattr(self, k, i)
+            try:
+                setattr(self, k, i)
+            except Exception as e:
+                print("print unable to set attribute:",self,k,i)
+                raise
 
             if k.startswith("_da_stored_string_input"):
                 nk=k.replace("_da_stored_string_input","input")
@@ -718,7 +722,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         store output 
         """
 
-        log(render("{MAGENTA}storing in cache{/}"),level="top")
+        log(render("{MAGENTA}storing in cache{/} object: %s, next cache %s"%(repr(self), repr(self.cache))),level="top")
         log("hashe:",fih)
 
         #c=MemCacheLocal.store(fih,self.export_data())
@@ -738,7 +742,8 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     _da_cache_retrieve_requests=None
 
     def retrieve_cache(self,fih,rc=None):
-        log("requested cache for",fih)
+        log(render("{CYAN}requested cache{/} for"), repr(self), level='top')
+
 
         if self._da_cache_retrieve_requests is None:
             self._da_cache_retrieve_requests=[]
@@ -778,16 +783,16 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
             return r
 
         if self.cached:
-            log(render("{MAGENTA}cached, proceeding to restore{/}"))
+            log(render("{MAGENTA}cached, proceeding to restore{/}"), level='top')
         else:
             log(render("{MAGENTA}not cached restore only from transient{/}"))
             return None # only transient!
         # discover through different caches
         #c=MemCacheLocal.find(fih)
 
-        log("searching for cache starting from",self.cache)
+        log("searching for cache starting from",self.cache, level='top')
         r=self.cache.restore(fih,self,rc)
-        log("cache",self.cache,"returns",r)
+        log("cache",self.cache,"returns",r, level='top')
 
         if r and r is not None:
             log("this object will be considered restored and complete: will not do again",self)
@@ -994,7 +999,13 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     def note_analysis_exception(self,ae):
         if not hasattr(self,'analysis_exceptions'):
             self.analysis_exceptions=[]
-        self.analysis_exceptions.append((self.get_signature(),ae))
+
+        new_note = (self.get_signature(),ae)
+        
+        note_serial = lambda x:(x[0],str(x[1]))
+
+        if not any([note_serial(new_note) == note_serial(note) for note in self.analysis_exceptions]):
+            self.analysis_exceptions.append(new_note)
 
     watched_analysis=False
 
@@ -1086,7 +1097,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                     log("returned dataanalysis:",r,"assumptions:",r.assumptions)
             setattr(self,'output',mr)
 
-        log("main DONE!",level='top')
+        log(render("node %s main {GREEN}DONE{/}!"%repr(self)),level='top')
  
         self.summarize_resource_stats()
 
@@ -1422,7 +1433,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                     else:
                         log("disabled self.rename_output_unique",level='cache')
 
-                    log("object storing in the cache",level='top')
+                    #log("object storing in the cache",level='top')
                     self.store_cache(fih)
                     #self.runtime_update("done")
                 else:

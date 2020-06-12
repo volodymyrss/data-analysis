@@ -1,8 +1,8 @@
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='data-analysis',
-    version='1.0',
+    version='1.0.3',
     packages=["dataanalysis","dataanalysis.caches"],
     entry_points={
             'console_scripts': [
@@ -13,6 +13,11 @@ setup(
                     'hashdot.py = dataanalysis.rundda:main',
                 ]
         },
+    scripts=[
+                'tools/rundda.py',
+                'tools/dda-run',
+                'tools/hashdot.py',
+            ],
     license='Creative Commons Attribution-Noncommercial-Share Alike license',
     long_description=open('README.md').read(),
 )
