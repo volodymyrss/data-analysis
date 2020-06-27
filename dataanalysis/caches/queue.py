@@ -73,7 +73,7 @@ class QueueCacheWorker(object):
     def __repr__(self):
         return "[%s: %i]"%(self.__class__.__name__,id(self))
 
-    def __init__(self,queue_directory="/tmp/queue"):
+    def __init__(self,queue_directory=None):
         self.queue_directory = queue_directory
 
         self.load_queue()
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("queue",default="./queue")
+    parser.add_argument("queue",nargs="*", default=None)
     parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
     parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
     parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
