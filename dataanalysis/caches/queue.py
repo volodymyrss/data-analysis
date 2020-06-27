@@ -35,7 +35,7 @@ class QueueCache(SelectivelyDelegatingCache):
     def __init__(self,queue_directory="/tmp/queue"):
         super(QueueCache, self).__init__()
         self.queue_directory=queue_directory
-        self.queue = dqueue.Queue(self.queue_directory)
+        self.queue = dqueue.from_uri(self.queue_directory)
 
     def delegate(self, hashe, obj):
         log(self,"will delegate",obj,"as",hashe)
