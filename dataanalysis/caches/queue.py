@@ -37,6 +37,8 @@ class QueueCache(SelectivelyDelegatingCache):
         self.queue_directory=queue_directory
         self.queue = dqueue.from_uri(self.queue_directory)
 
+        print("initialized dqueue:", self.queue)
+
     def delegate(self, hashe, obj):
         log(self,"will delegate",obj,"as",hashe)
         task_data = dict(
@@ -77,9 +79,10 @@ class QueueCacheWorker(object):
         self.queue_directory = queue_directory
 
         self.load_queue()
+        print("initialized dqueue:", self.queue)
 
     def load_queue(self):
-        self.queue = dqueue.Queue(self.queue_directory)
+        self.queue = dqueue.from_uri(self.queue_directory)
 
 
     def run_task(self,task):
@@ -157,7 +160,8 @@ class QueueCacheWorker(object):
                 break
 
             try:
-                #log("trying to get a task...")
+                log("trying to get a task from", self.queue)
+                print("trying to get a task from", self.queue)
                 task=self.queue.get()
                 log("got this:",task)
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
@@ -198,7 +202,7 @@ class QueueCacheWorker(object):
                         status="failed",
                         exception=dict(
                             exception_class=e.__class__.__name__,
-                            exception_message=e.message,
+                            exception_message=getattr(e, 'message', repr(e)),
                             exception_args=e.args,
                             formatted_exception=traceback.format_exc(),
                         ),
@@ -244,7 +248,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("queue",nargs="*", default=None)
+    parser.add_argument("queue", default=None)
     parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
     parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
     parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
@@ -258,6 +262,7 @@ if __name__ == "__main__":
         da.debug_output()
 
     qcworker = QueueCacheWorker(args.queue)
+
     if args.watch_closely > 0:
         while True:
             log(qcworker.queue_status())
