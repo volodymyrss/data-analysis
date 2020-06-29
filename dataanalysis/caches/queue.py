@@ -254,7 +254,7 @@ if __name__ == "__main__":
     parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
     parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
     parser.add_argument('-W', dest='watch_closely', type=int, help='...', default=0)
-    parser.add_argument('-d', dest='delay between requests', type=int, help='...', default=10)
+    parser.add_argument('-d', dest='delay', type=int, help='...', default=10)
 
     args=parser.parse_args()
 
