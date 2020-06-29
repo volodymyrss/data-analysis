@@ -31,7 +31,7 @@ def test_whatif():
     assert hasattr(aa1,'nonearg')
 
 
-    print("NoneArg:",aa1.nonearg,type(aa1.nonearg))
+    print(("NoneArg:",aa1.nonearg,type(aa1.nonearg)))
 
     assert aa1.nonearg is None
 

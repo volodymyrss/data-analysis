@@ -22,7 +22,7 @@ def test_api_ping_separate(ddservice_fixture,app):
     import requests
 
     full_url = ddservice_fixture.decode("utf-8")+ url
-    print("full url", full_url)
+    print(("full url", full_url))
     res = requests.get(full_url)
     assert res.json()['ping']== 'pong'
     assert res.json()['pid'] != os.getpid()
@@ -194,14 +194,14 @@ def test_live_resource_server_cachable(client):
     fr = excinfo.value.resources[0].get(getter=getter)
 
     assert fr.status == "result"
-    print(fr.data)
+    print((fr.data))
     assert fr.data['data'] == 'dataAdataB'
 
     fr = excinfo.value.resources[0].fetch(getter=getter)
 
     assert fr.status == "result"
 
-    print(fr.data)
+    print((fr.data))
 
     assert fr.data['data'] == 'dataAdataB'
 
@@ -322,7 +322,7 @@ def test_passing_assumptions(ddservice_fixture, app):
     a=A.get()
 
 
-    print(a.data)
+    print((a.data))
 
     assert a.data=={'a': 'dataAassumed:fromclient', 'b': 'dataB_A:dataAassumed:fromclient'}
     assert a.resource_stats_a['main_executed_on']['pid'] != os.getpid()

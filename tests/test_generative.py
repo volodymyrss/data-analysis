@@ -208,11 +208,11 @@ def test_generate_aliased():
     r = A.get()
 
     print(r)
-    print(r.output)
+    print((r.output))
 
     for b,c in r.output:
-        print(b,b.data,b._da_locally_complete)
-        print(c, c.data,c._da_locally_complete)
+        print((b,b.data,b._da_locally_complete))
+        print((c, c.data,c._da_locally_complete))
         print()
 
     print((r.output[1][0].c, r.output[1][0].data))

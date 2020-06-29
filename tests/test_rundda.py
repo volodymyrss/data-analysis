@@ -186,7 +186,7 @@ def test_delegation():
     p.wait()
     print((p.stdout.read()))
     
-    print("queue after again:", qw.queue.info)
+    print(("queue after again:", qw.queue.info))
 
     assert not os.path.exists(exception_report)
 

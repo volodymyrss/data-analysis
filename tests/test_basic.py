@@ -234,7 +234,7 @@ def test_factory():
     assert len(A.factory.cache_assumptions) == 1
 
     iden=A.get_identity()
-    print(iden.assumptions)
+    print((iden.assumptions))
 
 
 

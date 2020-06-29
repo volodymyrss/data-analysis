@@ -33,7 +33,7 @@ def test_queue_cache():
     with pytest.raises(da.AnalysisDelegatedException):
         A.get()
 
-    print(q_cache.queue.info)
+    print((q_cache.queue.info))
     assert q_cache
 
     # worker part
@@ -49,10 +49,10 @@ def test_queue_cache():
     A.cached = True
 
     worker=caches.queue.QueueCacheWorker("/tmp/queue")
-    print(q_cache.queue.info)
-    print("with worker",worker)
+    print((q_cache.queue.info))
+    print(("with worker",worker))
 
-    print(worker.run_all())
+    print((worker.run_all()))
 
 def test_queue_cache_generative():
     from dataanalysis import caches
@@ -79,15 +79,15 @@ def test_queue_cache_generative():
     with pytest.raises(da.AnalysisDelegatedException) as e:
         A.get()
 
-    print('AnalysisDelegatedException',e.value,e.value.origin,e.value.hashe)
+    print(('AnalysisDelegatedException',e.value,e.value.origin,e.value.hashe))
     assert len(e.value.hashe[1:])==2
 
     assert len(e.value.source_exceptions)==2
     for se in e.value.source_exceptions:
-        print('found multiple AnalysisDelegatedException',se,se.origin)
+        print(('found multiple AnalysisDelegatedException',se,se.origin))
 
 
-    print(q_cache.queue.list())
+    print((q_cache.queue.list()))
 #    assert len(q_cache.queue.list())==2
     assert len(q_cache.queue.list())==1
 
@@ -105,7 +105,7 @@ def test_queue_cache_generative():
 
     worker=caches.queue.QueueCacheWorker("./queue_test")
 
-    print(worker.run_once())
+    print((worker.run_once()))
 
 def test_queue_reconstruct_env():
     from dataanalysis import caches
@@ -141,7 +141,7 @@ def test_queue_reconstruct_env():
 
     worker=caches.queue.QueueCacheWorker()
 
-    print(worker.run_all())
+    print((worker.run_all()))
 
 
 #    worker.run_all()
@@ -187,7 +187,7 @@ def test_delegating_analysis():
 
     A=BAnalysis()
 
-    print(A.cache.list_parent_stack())
+    print((A.cache.list_parent_stack()))
 
     with pytest.raises(da.AnalysisDelegatedException):
         A.get()
@@ -195,7 +195,7 @@ def test_delegating_analysis():
     try:
         A.get()
     except da.AnalysisDelegatedException as e:
-        print("resources:",e.resources)
+        print(("resources:",e.resources))
 
     del da.DataAnalysis.cache.parent
 
@@ -234,13 +234,13 @@ def test_delegating_generative():
 
     A=BAnalysis()
 
-    print(A.cache.list_parent_stack())
+    print((A.cache.list_parent_stack()))
 
     try:
         A.get()
     except da.AnalysisDelegatedException as e:
-        print("delegating exception:",e.__class__,e,e.hashe)
-        print("resources:",e.resources)
+        print(("delegating exception:",e.__class__,e,e.hashe))
+        print(("resources:",e.resources))
 
     del da.DataAnalysis.cache.parent
 
@@ -314,12 +314,12 @@ def test_multiple_delegation():
 
     A=BAnalysis()
 
-    print(A.cache.list_parent_stack())
+    print((A.cache.list_parent_stack()))
 
     try:
         A.get()
     except da.AnalysisDelegatedException as e:
-        print("delegating exception:",e.__class__,e,e.hashe)
-        print("resources:",e.resources)
+        print(("delegating exception:",e.__class__,e,e.hashe))
+        print(("resources:",e.resources))
 
     del da.DataAnalysis.cache.parent

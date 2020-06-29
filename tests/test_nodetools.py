@@ -31,12 +31,12 @@ def test_create_datanode():
 
     assert C.data == B.data
 
-    print(C._da_locally_complete)
+    print((C._da_locally_complete))
 
     aB=B.__class__().get()
     assert aB.export_data() == B.export_data()
-    print(B.export_data())
+    print((B.export_data()))
 
     assert aB._da_locally_complete == B._da_locally_complete
-    print(B._da_locally_complete)
+    print((B._da_locally_complete))
 

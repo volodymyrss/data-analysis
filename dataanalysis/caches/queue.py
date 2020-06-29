@@ -141,7 +141,7 @@ class QueueCacheWorker(object):
     def run_once(self):
         self.run_all(limited_burst=1)
 
-    def run_all(self,burst=True,wait=1,limited_burst=None):
+    def run_all(self,burst=True,wait=10, limited_burst=None):
         log_logstash("worker", message="worker starting", worker_event="starting")
         worker_age=0
 
@@ -254,6 +254,7 @@ if __name__ == "__main__":
     parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
     parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
     parser.add_argument('-W', dest='watch_closely', type=int, help='...', default=0)
+    parser.add_argument('-d', dest='delay between requests', type=int, help='...', default=10)
 
     args=parser.parse_args()
 
@@ -272,7 +273,7 @@ if __name__ == "__main__":
             log(qcworker.queue.info)
             time.sleep(args.watch)
     else:
-        qcworker.run_all(burst=args.burst_mode,limited_burst=args.limited_burst)
+        qcworker.run_all(burst=args.burst_mode,limited_burst=args.limited_burst, wait=args.delay)
 
 
 

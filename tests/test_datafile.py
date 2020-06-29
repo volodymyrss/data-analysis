@@ -38,7 +38,7 @@ def test_recursive_datafile():
 
     assert hasattr(B,'data')
 
-    print(B.data)
+    print((B.data))
 
     #assert hasattr(B._datafile_data,'adopted_format')
     #assert B._datafile_data.adopted_format == "numpy"
@@ -88,7 +88,7 @@ def test_numpy_to_datafile():
     assert hasattr(B._datafile_data,'adopted_format')
     assert B._datafile_data.adopted_format == "numpy"
 
-    print(B._datafile_data.get_path())
+    print((B._datafile_data.get_path()))
     assert os.path.exists(B._datafile_data.get_path())
 
     assert hasattr(B, 'data')
@@ -141,7 +141,7 @@ def test_numpy_to_datafile_recursive():
     assert hasattr(B._datafile_data_a,'adopted_format')
     assert B._datafile_data_a.adopted_format == "numpy"
 
-    print(B._datafile_data_a.get_path())
+    print((B._datafile_data_a.get_path()))
     assert os.path.exists(B._datafile_data_a.get_path())
 
     assert hasattr(B, 'data')
@@ -191,7 +191,7 @@ def test_pandas_to_datafile():
     assert hasattr(B._datafile_data,'adopted_format')
     assert B._datafile_data.adopted_format == "pandas"
 
-    print(B._datafile_data.get_path())
+    print((B._datafile_data.get_path()))
     assert os.path.exists(B._datafile_data.get_path())
 
     assert hasattr(B, 'data')

@@ -107,14 +107,14 @@ def test_input_assumption_version():
     C=ddmoduletest.BAnalysis(assume=[ddmoduletest.AAnalysis(use_version="xxx_version")])
     C.get()
 
-    print(C.data)
+    print((C.data))
 
     ident=C.get_identity()
 
     assert len(ident.assumptions)==1
 
-    print("assumption",ident.assumptions[0])
-    print("assumption data",ident.assumptions[0][1]['assumed_data'],type(ident.assumptions[0][1]['assumed_data']))
+    print(("assumption",ident.assumptions[0]))
+    print(("assumption data",ident.assumptions[0][1]['assumed_data'],type(ident.assumptions[0][1]['assumed_data'])))
 
     import dataanalysis.emerge as emerge
     da.reset()
@@ -126,7 +126,7 @@ def test_input_assumption_version():
 
     assert C.data == eC.data
 
-    print(C._da_locally_complete)
+    print((C._da_locally_complete))
     assert C._da_locally_complete[1][2]=='AAnalysis.xxx_version'
 
 def test_used_modules_stacking():

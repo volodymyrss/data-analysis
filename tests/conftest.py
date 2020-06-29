@@ -7,8 +7,8 @@ import dataanalysis.ddservice
 
 @pytest.fixture
 def app():
-    print(dataanalysis.__file__)
-    print(dataanalysis.ddservice.__file__)
+    print((dataanalysis.__file__))
+    print((dataanalysis.ddservice.__file__))
     app = dataanalysis.ddservice.create_app()
     return app
 
@@ -34,9 +34,9 @@ def ddservice_fixture(pytestconfig):
     from threading import Thread
 
     env=copy.deepcopy(dict(os.environ))
-    print("rootdir",str(pytestconfig.rootdir))
+    print(("rootdir",str(pytestconfig.rootdir)))
     env['PYTHONPATH']=str(pytestconfig.rootdir)+":"+str(pytestconfig.rootdir)+"/tests:"+env.get('PYTHONPATH',"")
-    print("pythonpath",env['PYTHONPATH'])
+    print(("pythonpath",env['PYTHONPATH']))
 
     p=subprocess.Popen(
         ["python","-m","dataanalysis.ddservice"],
@@ -50,15 +50,15 @@ def ddservice_fixture(pytestconfig):
     def follow_output():
         url_store[0] = None
         for line in iter(p.stdout):
-            print("following server:", line.rstrip())
+            print(("following server:", line.rstrip()))
             m = re.search(b"Running on (.*?) \(Press CTRL\+C to quit\)", line)
             if m:
                 url_store[0] = m.group(1)[:-1]  # alaternatively get from configenv
-                print("found url:", url_store[0])
+                print(("found url:", url_store[0]))
 
             if re.search(b"\* Debugger PIN:.*?", line):
                 url_store[0] = url_store[0].replace("0.0.0.0", "127.0.0.1")
-                print("server ready, url", url_store[0])
+                print(("server ready, url", url_store[0]))
 
 
     thread = Thread(target=follow_output, args=())
@@ -72,7 +72,7 @@ def ddservice_fixture(pytestconfig):
 
     yield ddservice
 
-    print("child:",p.pid)
+    print(("child:",p.pid))
     #p.kill()
 
     import os,signal

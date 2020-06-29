@@ -7,7 +7,7 @@ def test_hashe_stability():
     c=('analysis', ('analysis', ('analysis', ('analysis', 'None', 'AnyAnalysis.v0'), 'BAnalysis.v0'), 'CAnalysis.v0'), 'DAnalysis.v0')
     from dataanalysis import hashtools as ht
 
-    print(c,ht.shhash(c))
+    print((c,ht.shhash(c)))
 
 
 def test_clone():
@@ -33,8 +33,8 @@ def test_clone():
 
     aakeys = sorted(list(aa.export_data().keys()))
     abkeys = sorted(list(ab.export_data().keys()))
-    print("aakeys",aakeys)
-    print("abkeys",abkeys)
+    print(("aakeys",aakeys))
+    print(("abkeys",abkeys))
 
     assert aakeys == abkeys
 
@@ -61,7 +61,7 @@ def test_factorize():
         input_c=CAnalysis
 
     c=DAnalysis().get()
-    print("got:",c._da_locally_complete)
+    print(("got:",c._da_locally_complete))
 
     fct=gt.Factorize(use_root='DAnalysis',use_leaves=['BAnalysis'])
 
@@ -72,7 +72,7 @@ def test_factorize():
     assert isinstance(fct, da.DataHandle)
 
     
-    print("got this",fct.str())
+    print(("got this",fct.str()))
     assert fct.str() == "Factorize.v0.Factor_DAnalysis.By_BAnalysis.processing_definition.8609173b"
 
 
@@ -96,7 +96,7 @@ def test_factorize_run_for_hashe_analysis():
         input_c=CAnalysis
 
     c=DAnalysis().get()
-    print("got:",c._da_locally_complete)
+    print(("got:",c._da_locally_complete))
 
     fct=gt.Factorize(use_root='DAnalysis',use_leaves=['BAnalysis'])
 
@@ -124,4 +124,4 @@ def test_factorize_note():
     fn=A._da_cached_path+"/factorizations.txt"
     assert os.path.exists(fn)
 
-    print(">>>>\n"+open(fn).read()+"<<<<")
+    print((">>>>\n"+open(fn).read()+"<<<<"))
