@@ -75,7 +75,7 @@ class QueueCacheWorker(object):
     def __repr__(self):
         return "[%s: %i]"%(self.__class__.__name__,id(self))
 
-    def __init__(self,queue_directory=None):
+    def __init__(self,queue_directory="default"):
         self.queue_directory = queue_directory
 
         self.load_queue()
