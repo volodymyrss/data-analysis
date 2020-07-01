@@ -1995,10 +1995,10 @@ class DataFile(DataAnalysis):
 
         if self.size<100e3:
             try:
-                return json.load(self.open())
+                return json.load(self.open("rt"))
             except:    
                 try:
-                    content=self.open().read()
+                    content=self.open("rt").read()
                 except UnicodeDecodeError:
                     content=self.open("rb").read().decode('utf-8', 'ignore') #??
 
@@ -2009,11 +2009,10 @@ class DataFile(DataAnalysis):
                 log("can not interpret as fits:",e)
             
             try:
-                json.dumps(content)
+                json.dumps(content) # just to try
                 return content
-            except:
-                content=self.open().read()
-                return str(self)+" can not encode "+str(self.size)+" fits error "+str(e)
+            except Exception as e:
+                return str(self)+" can not encode to json "+str(self.size)+" fits error "+repr(e)
         else:
             return str(self)+" too big "+str(self.size)
 
