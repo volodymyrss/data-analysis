@@ -100,7 +100,7 @@ class QueueCacheWorker(object):
 
         dataanalysis.callback.Callback.set_callback_accepted_classes([da.byname(object_identity.factory_name).__class__])
 
-        for url in task.submission_info['callbacks']:
+        for url in task.submission_info.get('callbacks', []):
             log("setting object callback",A,url)
             A.set_callback(url)
 
