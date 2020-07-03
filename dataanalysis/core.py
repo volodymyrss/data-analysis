@@ -308,6 +308,8 @@ class DataAnalysisIdentity(object):
     def serialize(self):
         result=self.__dict__
 
+        return result
+
         serialized_assumptions=[]
         for assumption in result['assumptions']:
             if isinstance(assumption,tuple) and isinstance(assumption[1],dict):
