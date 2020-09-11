@@ -15,7 +15,6 @@ before_install:
 - mysql -e 'CREATE DATABASE IF NOT EXISTS dqueue;'
 install:
 - pip uninstall numpy -y
-- pip install --upgrade ./dqueue
 - pip install -r requirements.txt --ignore-installed
 - pip install .
 script:
