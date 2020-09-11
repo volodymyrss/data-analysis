@@ -109,8 +109,14 @@ def test_delegation():
     assert qw.queue.info['done'] == 2
 
 
-    print("\n\nWORKER run to unlock")
+    print("\n\nWORKER run to unlock does not work anymore")
     qw.run_once()
+    assert qw.queue.info['waiting'] == 0
+    assert qw.queue.info['locked'] == 1
+    assert qw.queue.info['done'] == 2
+
+    print("\n\nWORKER run to unlock does not work anymore")
+    qw.queue.try_all_locked()
     assert qw.queue.info['waiting'] == 1
     assert qw.queue.info['locked'] == 0
     assert qw.queue.info['done'] == 2

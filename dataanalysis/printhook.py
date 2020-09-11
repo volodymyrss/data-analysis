@@ -71,14 +71,19 @@ def setup_logstash(default_logstash_level):
     import os
     import sys
     import logging
-    from logstash_formatter import LogstashFormatterV1
+
 
     my_logger = logging.getLogger('logstash_logger')
     my_logger.setLevel(default_logstash_level)
+    
+    try:
+        from logstash_formatter import LogstashFormatterV1
+        formatter = LogstashFormatterV1()
+        handler.setFormatter(formatter)
+    except Exception as e:
+        my_logger.warning("unable to setup logstash formatter: %s", e)
 
     handler = logging.StreamHandler(stream=sys.stdout)
-    formatter = LogstashFormatterV1()
-    handler.setFormatter(formatter)
     my_logger.addHandler(handler)
 
     my_logger.info("starting logstash logger",extra=dict(main=__file__,origin="dda",levels=logstash_levels))
