@@ -1,7 +1,7 @@
-healpy==1.13.0
+healpy==1.14.0
 scipy
 pydot
-numpy==1.18.2
+numpy==1.19.2
 pandas
 astropy
 persist-queue
@@ -12,5 +12,5 @@ pytest-flask
 psutil
 logstash_formatter
 requests
-PyYAML==5.1
+PyYAML==5.3.1
 future
