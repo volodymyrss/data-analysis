@@ -1,4 +1,4 @@
-healpy 
+healpy==1.13.0
 scipy
 pydot
 numpy==1.18.2
