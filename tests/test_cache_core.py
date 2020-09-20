@@ -71,7 +71,7 @@ def test_cache_blob():
 
     A = Analysis()
     A.get()
-    A._da_locally_complete
+    hashe = A._da_locally_complete
     assert  A._da_locally_complete == A._da_expected_full_hashe
 
     print((glob.glob(A._da_cached_path+"/*")))
@@ -88,6 +88,19 @@ def test_cache_blob():
 
     print(blob)
     assert len(blob)>50
+
+    open("blob.tgz", "wb").write(blob)
+
+    ## restore
+
+    rA = Analysis()
+
+    print("restoring cache...")
+
+    rc={'datafile_target_dir': '.'}
+    cache.restore_from_blob("blob.tgz", hashe, rA, restore_config=A.prepare_restore_config(rc))
+
+    print("restored:", A, A.data, A.datafile)
 
 def test_base_cache_check_location():
     from dataanalysis import core as da

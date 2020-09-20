@@ -1,5 +1,3 @@
-
-
 try:
     import pickle
 except ImportError:
@@ -8,6 +6,7 @@ except ImportError:
 import astropy.io.fits as fits # this should be specific to ddosa!
 
 import tarfile
+import traceback
 import glob
 import copy
 import gzip
@@ -19,6 +18,7 @@ import subprocess
 import time
 import socket
 import yaml as yaml
+import random
 
 
 import dataanalysis
@@ -151,8 +151,9 @@ class Cache(object):
         return self.parent.store(hashe,obj)
 
 
-    def load_content(self,hashe,c):
-        cached_path=self.construct_cached_file_path(hashe,c)
+    def load_content(self,hashe,c, cached_path=None):
+        if cached_path is None:
+            cached_path = self.construct_cached_file_path(hashe,c)
                     
         log("restoring from",cached_path+"/cache.pickle.gz")
 
@@ -392,6 +393,8 @@ class Cache(object):
 
         return restore_config
 
+
+    #####
     def restore(self,hashe,obj,restore_config=None):
         # check if updated
         if obj.run_for_hashe or obj.mutating:
@@ -420,6 +423,15 @@ class Cache(object):
         cached_path=self.construct_cached_file_path(hashe,obj)
         log("cached path:",cached_path)
 
+        return self.restore_from_dir(c, cached_path, hashe, obj, restore_config)
+
+
+    def restore_from_dir(self, content, cached_path, hashe, obj, restore_config):
+        c = content
+
+        if c is None:
+            c = self.load_content(hashe, None, cached_path)
+
         obj._da_cache_path_root=cached_path
         obj._da_cached_pathes=[cached_path]
 
@@ -427,6 +439,7 @@ class Cache(object):
             c=self.load_content(hashe,c)
             log("load content returns:",c)
         except Exception as e:
+            traceback.print_exc()
             log("can not load content from cache, while cache record exists! inconsistent cache!") #???
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
             return self.restore_from_parent(hashe,obj,restore_config)
@@ -439,7 +452,9 @@ class Cache(object):
             log("established cache record: will not acutally restore",level="cache")
             return True
 
-        if isinstance(c,dict):
+        if not isinstance(c, dict):
+            raise Exception("content from cache is not dict! "+str(c))
+        else:
             add_keys=[]
             remove_keys=[]
 
@@ -495,7 +510,6 @@ class Cache(object):
 
             log(self,"restore returning True")
             return True
-        raise Exception("content from cache is not dict! "+str(c))
 
     # TODO: clear the directory!
     def assemble_blob(self,hashe,obj):
@@ -507,6 +521,18 @@ class Cache(object):
 
         tar.close()
         return open("tmp.tgz", "rb")
+    
+    def restore_from_blob(self, blob_fn, hashe, obj, restore_config):
+        restored_dir = f"blob-{time.time()}-{random.randint(1, int(1e10)):10d}"
+
+        if os.path.exists(restored_dir):
+            raise RuntimeError("temp restore dir exists before creating, impossible: {restored_dir}!")
+
+        with tarfile.open(blob_fn, "r:gz") as tar:
+            tar.extractall(restored_dir)
+
+        self.restore_from_dir(None, restored_dir+"/blob", hashe, obj, restore_config)
+
 
     def adopt_datafiles(self,content):
         from dataanalysis.core import DataFile, map_nested_structure  # very delayed import
@@ -981,6 +1007,38 @@ class CacheNoIndex(Cache):
         #raise Exception("please write to index!")
         return
 
+class CacheBlob(Cache):
+    def deposit_blob(self, hashe, blob_stream):  # 
+        raise NotImplementedError
+
+    def retrieve_blob(self, hashe): # returns stream
+        raise NotImplementedError
+
+    def store(self, hashe, obj):
+        print("\033[33mtrying to store blob\033[0m")
+        blob = self.assemble_blob(hashe, obj)
+        blob.seek(0)
+
+        self.deposit_blob(hashe, blob)
+
+    def restore(self, hashe, obj, rc=None):
+        print("\033[33mtrying to restore from blob\033[0m")
+
+        try:
+            blob_stream = self.retrieve_blob(hashe)
+        except Exception as e:
+            print("problem retrieving blob:", e, "returning None")
+            return
+        
+        if blob_stream is not None:
+            blob = blob_stream.read()
+            print("\033[33mrestored blob\033[0m: blob of", len(blob)/1024/1024, "kb")
+
+            cached_blob_fn = f"restored-blob-{random.randint(1, int(1e10)):10d}.tgz"
+
+            open(cached_blob_fn, "wb").write(blob)
+
+            return self.restore_from_blob(cached_blob_fn, hashe, obj, rc)
 
 class MemCacheIRODS(CacheNoIndex):
     can_url_to_cache=False

@@ -171,7 +171,7 @@ def test_caching():
     from dataanalysis import core as da
     import time
 
-   # da.debug_output()
+    da.debug_output()
     da.reset()
 
     class Analysis(da.DataAnalysis):
@@ -196,7 +196,7 @@ def test_caching():
         cached=True
 
         def main(self):
-            raise
+            raise RuntimeError("this should have been cached")
 
     A1=Analysis()
     print(A1)
