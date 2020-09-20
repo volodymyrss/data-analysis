@@ -62,6 +62,9 @@ class Cache(object):
     filebackend=backends.FileBackend()
 
     can_url_to_cache=True
+
+    def approved_hashe(self, hashe):
+        return True
  
     def reset(self):
         log("resetting cache PLACEHOLDER",self)
@@ -1018,6 +1021,9 @@ class CacheBlob(Cache):
         raise NotImplementedError
 
     def store(self, hashe, obj):
+        if not self.approved_hashe(hashe):
+            return
+
         print("\033[33mtrying to store blob\033[0m")
         blob = self.assemble_blob(hashe, obj)
         blob.seek(0)
@@ -1025,6 +1031,9 @@ class CacheBlob(Cache):
         self.deposit_blob(hashe, blob)
 
     def restore(self, hashe, obj, rc=None):
+        if not self.approved_hashe(hashe):
+            return
+
         print("\033[33mtrying to restore from blob\033[0m")
 
         try:
