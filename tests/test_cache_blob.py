@@ -29,10 +29,13 @@ def test_cache_blob():
     A = Analysis()
     A.get()
 
+    indata = A.export_data()
+
     hashe = A._da_locally_complete
     assert  A._da_locally_complete == A._da_expected_full_hashe
 
     da.debug_output()
+    da.reset()
 
     ## restore
 
@@ -41,7 +44,20 @@ def test_cache_blob():
     rA.produce_disabled = True
     rA.get()
 
-    assert A.export_data() == rA.export_data()
+    redata = rA.export_data()
+    redata.pop('produce_disabled')
+
+    inf = indata.pop('datafile')
+    ref = redata.pop('datafile')
+
+
+    print("data before", indata)
+    print("data after", redata)
+    
+    assert indata == redata
+
+
+    assert inf.open().read() == ref.open().read()
 
     print("succesfully restored from cache blob", rA.export_data())
 

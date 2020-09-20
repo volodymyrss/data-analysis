@@ -151,11 +151,11 @@ class Cache(object):
         return self.parent.store(hashe,obj)
 
 
-    def load_content(self,hashe,c, cached_path=None):
+    def load_content(self,hashe, obj, cached_path=None):
         if cached_path is None:
-            cached_path = self.construct_cached_file_path(hashe,c)
+            cached_path = self.construct_cached_file_path(hashe, obj)
                     
-        log("restoring from",cached_path+"/cache.pickle.gz")
+        log("load_content is restoring from",cached_path+"/cache.pickle.gz", level="top")
 
         try:
             log("loading from pickle")
@@ -280,7 +280,7 @@ class Cache(object):
     def restore_datafile(self, a, b, cached_path, restore_config, obj, hashe, add_keys, remove_keys):
         log("requested to restore DataFile", b, "mode", restore_config['datafile_restore_mode'], '{log:top}')
 
-        prefix = restore_config['datafile_target_dir']
+        prefix = restore_config.get('datafile_target_dir', None)
         if prefix is not None:
             prefix = prefix + "/"
             try:
@@ -427,17 +427,17 @@ class Cache(object):
 
 
     def restore_from_dir(self, content, cached_path, hashe, obj, restore_config):
+        obj._da_cache_path_root=cached_path
+        obj._da_cached_pathes=[cached_path]
+
         c = content
 
         if c is None:
             c = self.load_content(hashe, None, cached_path)
 
-        obj._da_cache_path_root=cached_path
-        obj._da_cached_pathes=[cached_path]
-
         try:
-            c=self.load_content(hashe,c)
-            log("load content returns:",c)
+            c = self.load_content(hashe, obj, cached_path) # why do we load it twice?..
+            log("load content returns:",)
         except Exception as e:
             traceback.print_exc()
             log("can not load content from cache, while cache record exists! inconsistent cache!") #???
@@ -523,7 +523,7 @@ class Cache(object):
         return open("tmp.tgz", "rb")
     
     def restore_from_blob(self, blob_fn, hashe, obj, restore_config):
-        restored_dir = f"blob-{time.time()}-{random.randint(1, int(1e10)):10d}"
+        restored_dir = f"restored-blob-{time.time()}-{random.randint(1, int(1e10)):10d}"
 
         if os.path.exists(restored_dir):
             raise RuntimeError("temp restore dir exists before creating, impossible: {restored_dir}!")
@@ -531,7 +531,7 @@ class Cache(object):
         with tarfile.open(blob_fn, "r:gz") as tar:
             tar.extractall(restored_dir)
 
-        self.restore_from_dir(None, restored_dir+"/blob", hashe, obj, restore_config)
+        return self.restore_from_dir(None, restored_dir+"/blob", hashe, obj, restore_config)
 
 
     def adopt_datafiles(self,content):
@@ -742,7 +742,10 @@ class Cache(object):
         self.save()
         log("now entries",len(self.cache))
 
-    def construct_cached_file_path(self,hashe,obj):
+    def construct_cached_file_path(self,hashe, obj=None):
+        if obj is not None:
+            log(f"warning: provided obj {obj} for construct_cached_file_path, but it is not used")
+
         log("requested default cached file path")
 
         def hash_to_path(hashe):
