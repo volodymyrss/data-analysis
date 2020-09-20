@@ -2,6 +2,6 @@ from setuptools import setup
 
 setup(
     name='data-analysis',
-    version='1.1.6',
+    version='1.1.7-dev0',
     long_description="", #open('README.md', 'rt').read(),
 )
