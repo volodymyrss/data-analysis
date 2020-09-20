@@ -506,7 +506,7 @@ class Cache(object):
                 tar.add(name)
 
         tar.close()
-        return open("tmp.tgz", encoding="latin-1")
+        return open("tmp.tgz", "rb")
 
     def adopt_datafiles(self,content):
         from dataanalysis.core import DataFile, map_nested_structure  # very delayed import
