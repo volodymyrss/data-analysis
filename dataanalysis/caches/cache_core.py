@@ -1026,7 +1026,7 @@ class CacheBlob(Cache):
 
     def store(self, hashe, obj):
         if not self.approved_hashe(hashe):
-            return
+            return self.store_to_parent(hashe, obj)
 
         print("\033[33mtrying to store blob\033[0m")
         blob = self.assemble_blob(hashe, obj)
@@ -1036,7 +1036,7 @@ class CacheBlob(Cache):
 
     def restore(self, hashe, obj, rc=None):
         if not self.approved_hashe(hashe):
-            return
+            return self.restore_from_parent(hashe, obj, rc)
 
         print("\033[33mtrying to restore from blob\033[0m")
 
