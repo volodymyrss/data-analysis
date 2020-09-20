@@ -126,7 +126,7 @@ class CacheSqlite(Cache):
 
             log("now rows", cur.rowcount)
 
-    def load_content(self, hashe, c):
+    def load_content(self, hashe, c, d):
         log("restoring from sqlite")
         log("content", c['content'])
         return c['content']
@@ -274,7 +274,7 @@ class CacheMySQL(CacheSqlite):
 
             log("now rows", cur.rowcount)
 
-    def load_content(self, hashe, c):
+    def load_content(self, hashe, c, d):
         log("restoring from sqlite")
         log("content", c['content'])
         return c['content']

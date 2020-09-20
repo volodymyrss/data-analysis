@@ -15,7 +15,7 @@ def test_cache_blob():
 
     blob_cache = MyCacheBlob()
 
-    class Analysis(da.DataAnalysis):
+    class AnalysisInBlob(da.DataAnalysis):
         cached = True
         cache = blob_cache
 
@@ -26,10 +26,11 @@ def test_cache_blob():
             open("file.txt","w").write("filedata")
             self.datafile=da.DataFile("file.txt")
 
-    A = Analysis()
+    A = AnalysisInBlob()
     A.get()
 
     indata = A.export_data()
+    inf = indata.pop('datafile')
 
     hashe = A._da_locally_complete
     assert  A._da_locally_complete == A._da_expected_full_hashe
@@ -39,7 +40,7 @@ def test_cache_blob():
 
     ## restore
 
-    rA = Analysis()
+    rA = AnalysisInBlob()
 
     rA.produce_disabled = True
     rA.get()
@@ -47,7 +48,6 @@ def test_cache_blob():
     redata = rA.export_data()
     redata.pop('produce_disabled')
 
-    inf = indata.pop('datafile')
     ref = redata.pop('datafile')
 
 

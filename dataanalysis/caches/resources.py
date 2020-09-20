@@ -167,7 +167,7 @@ class CacheDelegateToResources(SelectivelyDelegatingCache):
     resource_factory=None
     delegation_mode="raise"
 
-    def load_content(self, hashe, c):
+    def load_content(self, hashe, c, d):
         return c
 
     def find_content_hash_obj(self,hashe,obj):

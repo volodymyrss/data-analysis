@@ -232,6 +232,7 @@ def test_live_multiple_resource_delegation(client):
     print((excinfo.value.resources))
 
 
+@pytest.mark.skip(reason="obsolete")
 def test_live_chained_delegation(ddservice_fixture, app):
     import dataanalysis.core as da
     import dataanalysis
@@ -276,6 +277,7 @@ def test_chained_waiting(ddservice_fixture, app):
     assert excinfo.value.resources[0].hashe[-1] == "ChainedDelegator.v0"
 
 
+@pytest.mark.skip(reason="obsolete")
 def test_chained(ddservice_fixture, app):
     import dataanalysis.core as da
 
@@ -301,6 +303,7 @@ def test_chained(ddservice_fixture, app):
     assert a.resource_stats_b['main_executed_on']['pid'] != os.getpid()
     assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
 
+@pytest.mark.skip(reason="obsolete")
 def test_passing_assumptions(ddservice_fixture, app):
     import dataanalysis.core as da
 
@@ -330,6 +333,7 @@ def test_passing_assumptions(ddservice_fixture, app):
     assert a.resource_stats_a['main_executed_on']['pid'] == a.resource_stats_b['main_executed_on']['pid']
 
 
+@pytest.mark.skip(reason="obsolete")
 def test_passing_unmanagable_assumptions(ddservice_fixture, app):
     import dataanalysis.core as da
     import dataanalysis.caches.resources
