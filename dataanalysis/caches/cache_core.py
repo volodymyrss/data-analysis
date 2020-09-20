@@ -30,6 +30,7 @@ from dataanalysis import analysisfactory
 from dataanalysis import hashtools
 from dataanalysis.printhook import log
 from dataanalysis.caches import backends
+#from dataanalysis.core import DataFile, map_nested_structure, flatten_nested_structure
 
 global_readonly_caches=False
 
@@ -295,9 +296,9 @@ class Cache(object):
 
         try:
             if os.path.basename(b.path).endswith(".gz"):
-                stored_filename = cached_path + os.path.basename(b.path)  # just by name? # gzip optional
+                stored_filename = os.path.join(cached_path, os.path.basename(b.path))  # just by name? # gzip optional
             else:
-                stored_filename = cached_path + os.path.basename(b.path) + ".gz"  # just by name? # gzip optional
+                stored_filename = os.path.join(cached_path, os.path.basename(b.path) + ".gz")  # just by name? # gzip optional
             log("stored filename:", stored_filename)
         except Exception as e:
             log("wat", e)
@@ -316,7 +317,7 @@ class Cache(object):
                     # just reproduce?
                     return None
 
-                log("stored file:", stored_filename, "will restore as", prefix, b.path, level='top')
+                log("stored file:", stored_filename, "will restore in prefix", prefix, "as", b.path, level='top')
 
                 b.restore_stats, restored_file = self.restore_file(stored_filename, prefix + os.path.basename(b.path),
                                                                    obj, hashe)
@@ -461,10 +462,9 @@ class Cache(object):
             add_keys=[]
             remove_keys=[]
 
-            from dataanalysis.core import map_nested_structure
 
             def datafile_restore_mapper(k, b):
-                log("processing structure entry",k,b)
+                log("datafile_restore_mapper processing structure entry",k,b)
                 if is_datafile(b):
                     if len(k)==1:
                         a=k[0]
@@ -474,6 +474,10 @@ class Cache(object):
                     self.restore_datafile(a, b, cached_path, restore_config, obj, hashe, add_keys, remove_keys)
                 return b
 
+
+            from dataanalysis.core import DataFile, map_nested_structure, flatten_nested_structure
+                
+            log("will map_nested_structure")
             map_nested_structure(c, datafile_restore_mapper)
 
             for k, i in add_keys:
@@ -538,7 +542,6 @@ class Cache(object):
 
 
     def adopt_datafiles(self,content):
-        from dataanalysis.core import DataFile, map_nested_structure  # very delayed import
 
         extra_content={}
         remove_keys=[]
@@ -554,7 +557,8 @@ class Cache(object):
 
             return adopted_b
 
-        content=map_nested_structure(content,mapping_adoption)
+        from dataanalysis.core import DataFile, map_nested_structure, flatten_nested_structure
+        content = map_nested_structure(content,mapping_adoption)
 
         if len(extra_content)>0:
             log("extra content:",extra_content)
@@ -659,7 +663,6 @@ class Cache(object):
         else:
             log('object has no alias')
 
-        from dataanalysis.core import map_nested_structure, flatten_nested_structure
 
         if isinstance(content, dict):
             #for a, b in content.items():
@@ -683,6 +686,7 @@ class Cache(object):
                          'stats': b.store_stats, 'operation': 'store'})
                 return b
 
+            from dataanalysis.core import DataFile, map_nested_structure, flatten_nested_structure
             mapped=map_nested_structure(content,datafile_mapper)
             log("mapped structure (%i):"%len(mapped))
             for k,v in flatten_nested_structure(mapped, lambda x,y:(x,y)):

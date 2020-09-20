@@ -714,10 +714,15 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         if isinstance(content,dict):
             for a,b in list(content.items()):
                 if isinstance(b,DataFile):
-                    dest_unique=b.path+"."+self.cache.hashe2signature(hashe) # will it always?
-                    b._da_unique_local_path=dest_unique
-                    shutil.copyfile(b.path,dest_unique)
-                    log("post-processing DataFile",b,"as",b._da_unique_local_path,log='datafile')
+                    dest_unique = b.path+"."+self.cache.hashe2signature(hashe) # will it always?
+                    b._da_unique_local_path = dest_unique
+
+                    if os.path.exists(b.path):
+                        shutil.copyfile(b.path, dest_unique)
+                        log("post-processing DataFile",b,"as",b._da_unique_local_path,log='datafile')
+                    else:
+                        log("problem post-processing output file", b.path, log='datafile')
+                        raise Exception("problem post-processing output file " + b.path)
 
     def store_cache(self,fih):
         """
@@ -807,6 +812,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                 try:
                     self.process_output_files(fih)
                 except Exception as e:
+                    traceback.print_exc()
                     log("unable to restore output files: broken cache record")
                     return None
             else:
