@@ -423,7 +423,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         return name
 
     def get_identity(self):
-        log("assembling portable identity")
+        log("assembling portable identity", level="top")
         log("object assumptions:",self.assumptions)
         log("factory assumptions:", self.factory.cache_assumptions)
         return DataAnalysisIdentity(
@@ -680,7 +680,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         else:
             return ""
 
-    def get_version(self):
+    def get_version(self, for_repr=False):
         ss="_".join(["%s:%s"%(a,repr(getattr(self,a))) for a in self._da_settings]) if self._da_settings is not None else ""
         v=self.get_signature()+"."+self.version+("."+ss if ss!="" else "")
         #if hasattr(self,'timestamp'):
@@ -746,7 +746,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     _da_cache_retrieve_requests=None
 
     def retrieve_cache(self,fih,rc=None):
-        log(render("{CYAN}requested cache{/} for"), repr(self), level='top')
+        log(render("{CYAN}requested cache{/} for"), repr(self), " requested by "+(" ".join(self._da_requested_by)), level='top')
 
 
         if self._da_cache_retrieve_requests is None:
@@ -1288,6 +1288,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
+        log("stacked factory assumptions:", self.factory.factory_assumptions_stacked, level="assumptions")
         log(render("{BLUE}PROCESS{/} "+repr(self)))
 
         if requested_by is None:

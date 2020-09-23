@@ -436,7 +436,7 @@ class Cache(object):
 
         log("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
-        log("cached path:",cached_path)
+        log(self, "in restore, cached path:",cached_path)
 
         return self.restore_from_dir(c, cached_path, hashe, obj, restore_config)
 
@@ -707,6 +707,8 @@ class Cache(object):
         return content
 
     def store_object_content(self,hashe,obj):
+        log(self, "store object content", obj,'{log:top}')
+
         if not self.filebackend.exists(self.filecacheroot):
             self.filebackend.makedirs(self.filecacheroot)
 
@@ -954,7 +956,7 @@ class TransientCache(Cache): #d
     def store_to_parent(self,hashe,obj):
         return
 
-    def store(self,hashe,obj):
+    def store(self, hashe, obj):
        # return # problem with files
 
         log("storing in memory cache:",hashe)
@@ -988,7 +990,7 @@ class CacheIndex(Cache):
         cached_path=self.construct_cached_file_path(hashe,None)
 
         if os.path.exists(cached_path+"/cache.pickle.gz"):
-            log("found cache file:",cached_path+"/cache.pickle.gz")
+            log(self, "found cache file:",cached_path+"/cache.pickle.gz")
             try:
                 return self.load_content(hashe,None)
             except Exception as e:
@@ -1013,7 +1015,7 @@ class CacheNoIndex(Cache):
 
         cached_path=self.construct_cached_file_path(hashe,None)
         if self.filebackend.exists(cached_path+"/cache.pickle.gz"):
-            log("found cache file:", cached_path+"/cache.pickle.gz", level='top')
+            log(self, "found cache file:", cached_path+"/cache.pickle.gz", level='top')
             try:
                 return self.load_content(hashe,None)
             except Exception as e:
@@ -1038,11 +1040,12 @@ class CacheBlob(Cache):
         if not self.approved_hashe(hashe) or not self.approved_write_cache(obj):
             return self.store_to_parent(hashe, obj)
 
-        print("\033[33mtrying to store blob\033[0m")
+        log("\033[33mtrying to store blob\033[0m", level="top")
         blob = self.assemble_blob(hashe, obj)
         blob.seek(0)
 
         self.deposit_blob(hashe, blob)
+        log("after deposit stacked factory assumptions:", obj.factory.factory_assumptions_stacked, level="top")
 
     def restore(self, hashe, obj, rc=None):
         if not self.approved_hashe(hashe) or not self.approved_read_cache(obj):

@@ -246,7 +246,7 @@ class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this wit
         r=[]
         for a in self.cache_assumptions:
             r+=a
-        log("stacked cache assumptions",r,level="top")
+        log("requested stacked cache assumptions",r,level="assumptions")
         return r
 
     def WhatIfCopy(self, description, new_assumptions):
@@ -256,9 +256,9 @@ class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this wit
             new_assumptions = [new_assumptions]
 
         log(render("{RED}go deeper! what if?{/} stack of size %i" % len(self.cache_stack)))
-        if self.comment == description:
-            log("will not push copy, already in the assumption", description)
-            return
+#        if self.comment == description:
+            #log("will not push copy, already in the assumption", description)
+ #           return
 
         log("pushing into stack current version, using copy", description)
         self.comment = description
@@ -307,7 +307,7 @@ class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this wit
         log("poping from stack last version")
         self.cache = self.cache_stack.pop()
         assumptions = self.cache_assumptions.pop()
-        log("discarding last stacked", self.comment)
+        log("discarding last stacked", self.comment, level="top")
         log("discarding:", assumptions)
         log("current assumptions level %i:" % len(self.cache_assumptions),
                self.cache_assumptions[-1] if self.cache_assumptions != [] else "none")
