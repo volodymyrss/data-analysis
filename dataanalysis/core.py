@@ -18,6 +18,7 @@ import socket
 import sys
 import traceback
 import time
+import glob
 import base64
 from collections import Mapping, Set, Sequence, OrderedDict
 
@@ -426,11 +427,17 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         log("assembling portable identity", level="top")
         log("object assumptions:",self.assumptions)
         log("factory assumptions:", self.factory.cache_assumptions)
+
+        assumptions = []
+        for a in [a.serialize() for a in (self.factory.factory_assumptions_stacked + self.assumptions)]:
+            if len(assumptions) == 0 or assumptions[-1] != a:
+                assumptions.append(a)
+
         return DataAnalysisIdentity(
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
-            assumptions=[a.serialize() for a in (self.factory.factory_assumptions_stacked + self.assumptions)],
+            assumptions=assumptions,
             expected_hashe=self.expected_hashe,
         )
 

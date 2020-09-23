@@ -244,9 +244,18 @@ class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this wit
     @property
     def factory_assumptions_stacked(self):
         r=[]
-        for a in self.cache_assumptions:
-            r+=a
-        log("requested stacked cache assumptions",r,level="assumptions")
+        for ag in self.cache_assumptions:
+            for a in ag:
+                if len(r) == 0:
+                    log("inserting first assumption", a, level="assumptions")
+                    r.append(a)
+                else:
+                    if r[-1] != a and r[-1].serialize() != a.serialize():
+                        log("inserting next (adding to", len(r), "), different, assumption", a, level="assumptions")
+                        log("last assumption:", r[-1])
+                        r.append(a)
+
+        log("requested stacked cache assumptions", len(r), r, level="assumptions")
         return r
 
     def WhatIfCopy(self, description, new_assumptions):
@@ -302,7 +311,6 @@ class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this wit
         if self.cache_stack == []:
             log("empty stack!")
             return
-            # raise Exception("empty stack!")
 
         log("poping from stack last version")
         self.cache = self.cache_stack.pop()

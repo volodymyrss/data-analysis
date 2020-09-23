@@ -49,7 +49,12 @@ def test_simple_assumption():
     B=ddmoduletest.BAnalysis(assume=[ddmoduletest.AAnalysis(use_assumed_data="_assumedthis")])
     B.get()
 
+    da.debug_output()
     ident=B.get_identity()
+
+    print("identity assumptions:", ident.assumptions)
+    for i, a in enumerate(ident.assumptions):
+        print(i, "identity assumption:", a)
 
     assert len(ident.assumptions)==1
 
