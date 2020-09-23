@@ -26,6 +26,7 @@ from future.utils import with_metaclass
 from dataanalysis import hashtools
 from dataanalysis import jsonify
 from dataanalysis.bcolors import render
+import dataanalysis.bcolors as bcolors
 from dataanalysis.caches import cache_core
 
 from dataanalysis.analysisfactory import AnalysisFactory
@@ -729,19 +730,15 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         store output 
         """
 
-        log(render("{MAGENTA}storing in cache{/} object: %s, next cache %s"%(repr(self), repr(self.cache))),level="top")
+        log(render("{MAGENTA}object storing in cache{/}: %s, cache %s"%(repr(self), repr(self.cache))),level="top")
         log("hashe:",fih)
-
-        #c=MemCacheLocal.store(fih,self.export_data())
-        #log(render("{MAGENTA}this is non-cached analysis, reduced caching: only transient{/}"))
 
         log("transient cache", TransientCacheInstance, "storing", self)
         TransientCacheInstance.store(fih,self)
 
-        log("further cache", self.cache, "storing", self, level="top")
+        log(render("{MAGENTA}first non-transient cache{/}"), self.cache, "storing", self, level="top")
         self.cache.store(fih,self)
 
-        #c=MemCacheLocal.store(oh,self.export_data())
 
     def post_restore(self):
         pass

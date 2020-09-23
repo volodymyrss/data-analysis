@@ -66,6 +66,18 @@ class Cache(object):
 
     def approved_hashe(self, hashe):
         return True
+
+    def approved_read_cache(self, obj):
+        if not any([isinstance(self,c) for c in obj.read_caches]):
+            log("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
+            return False
+        return True
+    
+    def approved_write_cache(self, obj):
+        if not any([isinstance(self,c) for c in obj.write_caches]):
+            log("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
+            return False
+        return True
  
     def reset(self):
         log("resetting cache PLACEHOLDER",self)
@@ -404,8 +416,7 @@ class Cache(object):
         if obj.run_for_hashe or obj.mutating:
             return 
 
-        if not any([isinstance(self,c) for c in obj.read_caches]):
-            log("cache "+repr(self)+" should not be read by this analysis, allowed: "+repr(obj.read_caches))
+        if not self.approved_read_cache(obj):
             from_parent=self.restore_from_parent(hashe,obj,restore_config)
             return from_parent
 
@@ -708,9 +719,9 @@ class Cache(object):
 
         return self.store_to_directory(hashe, obj, cached_path)
 
-    def store(self,hashe,obj):
+    def store(self, hashe, obj):
         if obj.run_for_hashe or obj.mutating:
-            return 
+            return
         
         if self.readonly_cache:
             return self.store_to_parent(hashe,obj)
@@ -725,8 +736,8 @@ class Cache(object):
         else:
             log("object",obj,"is cached, storing")
         
-        if any([isinstance(self,c) for c in obj.write_caches]):
-            log("storing:", hashe)
+        if self.approved_write_cache(obj):
+            log(self, "storing:", hashe, level="top")
 
             content=self.store_object_content(hashe,obj)
 
@@ -772,7 +783,6 @@ class Cache(object):
 
         return self.filecacheroot+"/"+hash_to_path2(hashe)+"/" # choose to avoid overlapp
 
-        #return self.filecacheroot+"/"+hashe+"/"+os.path.basename(datafile.path)
 
     def save(self,target=None):
         if target is None:
@@ -1025,7 +1035,7 @@ class CacheBlob(Cache):
         raise NotImplementedError
 
     def store(self, hashe, obj):
-        if not self.approved_hashe(hashe):
+        if not self.approved_hashe(hashe) or not self.approved_write_cache(obj):
             return self.store_to_parent(hashe, obj)
 
         print("\033[33mtrying to store blob\033[0m")
@@ -1035,7 +1045,7 @@ class CacheBlob(Cache):
         self.deposit_blob(hashe, blob)
 
     def restore(self, hashe, obj, rc=None):
-        if not self.approved_hashe(hashe):
+        if not self.approved_hashe(hashe) or not self.approved_read_cache(obj):
             return self.restore_from_parent(hashe, obj, rc)
 
         print("\033[33mtrying to restore from blob\033[0m")
