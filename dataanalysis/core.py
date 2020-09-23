@@ -1989,7 +1989,17 @@ class DataFile(DataAnalysis):
                 raise Exception("unable to construct full path!")
 
     def open(self, f="r"):
-        return gzip.open(self.cached_path) if hasattr(self,'cached_path') else open(self.path, f)
+        if hasattr(self,'cached_path'):
+            if os.path.exists(self.cached_path):
+                return gzip.open(self.cached_path)
+            else:
+                m = f"\033[31mERROR\033[0m: object {self} has cached path: {self.cached_path} but it does not exist\n"
+                m += f"\033[31mERROR\033[0m: cwd {os.getcwd()}\n"
+                m += f"\033[31mERROR\033[0m: have here {glob.glob('*')}"
+                log(m, level="top")
+                raise RuntimeError(m)
+        else:
+            return open(self.path, f)
 
     def __repr__(self):
         return "[DataFile:%s]"%(self.path if hasattr(self,'path') else 'undefined')
