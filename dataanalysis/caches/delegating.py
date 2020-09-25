@@ -34,7 +34,7 @@ class SelectivelyDelegatingCache(DelegatingCache):
             return False
 
         if self.delegating_analysis is None:
-            log("this cache has no delegation specifications, going for default:",self.delegate_by_default,level="top")
+            log("this cache has no delegation specifications, going for default:",self.delegate_by_default, level="top")
             return self.delegate_by_default
 
         if any([hashe[-1] == option or re.match(option,hashe[-1]) for option in self.delegating_analysis]):

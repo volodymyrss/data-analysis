@@ -40,7 +40,7 @@ class QueueCache(SelectivelyDelegatingCache):
         print("initialized dqueue:", self.queue)
 
     def delegate(self, hashe, obj):
-        log(self,"will delegate",obj,"as",hashe)
+        log(self,"\033[31mwill delegate",obj,"\033[0mas",hashe, level="top")
         task_data = dict(
             object_identity=obj.get_identity().serialize(),
         )
