@@ -27,14 +27,15 @@ class CallbackHook(object):
             callback=callback_class(callback_url)
             log("processing callback url", callback_url, callback)
 
-            r=callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
+            r = callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
+
             if r is not None:
                 object_data=callback.extract_data(obj)
                 object_data['request_root_node']=getattr(obj,'request_root_node',False)
                 if 'hashe' in object_data:
                     object_data.pop('hashe')
                 log("loghook from callback",level='callback')
-                log_hook("callback",obj,level_orig=level,callback_params=callback.url_params, callback_response=r[0], callback_response_content=r[1],**kwargs)
+                log_hook("callback",obj,level_orig=level,callback_params=callback.url_params, callback_response=r, callback_response_content="obsolete",**kwargs)
 
 
 class Callback(object):
@@ -117,6 +118,7 @@ class Callback(object):
         if self.url.startswith("file://"):
             fn=self.url[len("file://"):]
             with open(fn,'a') as f:
+                log("callback to file", self.url, fn, params, level="callback")
                 f.write(str(datetime.datetime.now())+" "+level+": "+" in "+str(obj)+" got "+message+"; "+repr(object_data)+"\n")
 
         elif self.url.startswith("http://"):
@@ -128,12 +130,12 @@ class Callback(object):
                         )
 
                 log("callback succeeded",self.url, params, r, level="callback")
-                log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r.content)
-                return r,r.content
+                log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r)
+                return r
             except requests.ConnectionError as e:
                 log("callback failed",self.url,params,":",e,level="callback")
                 log_hook("callback",obj,message="callback failed!",callback_exception=repr(e),callback_url=self.url,callback_params=self.url_params,action_params=params)
-                return "callback failed",repr(e)
+                return "callback failed: " + repr(e)
         else:
             raise Exception("unknown callback method",self.url)
 
