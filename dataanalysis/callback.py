@@ -6,6 +6,7 @@ except ImportError:
     import urllib.parse as urlparse
 
 import requests
+import dqueue
 
 from dataanalysis.printhook import log, log_hook
 
@@ -121,11 +122,12 @@ class Callback(object):
         elif self.url.startswith("http://"):
 
             try:
-                session = requests.Session()
-                session.trust_env = False
-                r=session.get(self.url,
-                             params=params)
-                log("callback succeeded",self.url,params,r,level="callback")
+                r = dqueue.from_uri().callback(
+                            self.url,
+                            params=params
+                        )
+
+                log("callback succeeded",self.url, params, r, level="callback")
                 log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r.content)
                 return r,r.content
             except requests.ConnectionError as e:

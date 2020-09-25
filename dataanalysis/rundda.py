@@ -4,6 +4,7 @@
 
 import argparse
 import json
+import dqueue
 import sys
 import urllib.request, urllib.parse, urllib.error
 import shutil
@@ -178,8 +179,10 @@ def main():
             message="loading modules",
             action="progress",
         )
-        requests.get(args.callback,
-                     params=params)
+        dqueue.from_uri().callback(
+                         args.callback,
+                         params=params,
+                      )
 
     for m in modules:
         log("importing",m)
@@ -195,8 +198,10 @@ def main():
             message="done loading modules",
             action="progress",
         )
-        requests.get(args.callback,
-                     params=params)
+        dqueue.from_uri().callback(
+                         args.callback,
+                         params=params,
+                      )
 
 
 
