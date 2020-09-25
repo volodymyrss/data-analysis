@@ -55,6 +55,7 @@ class QueueCache(SelectivelyDelegatingCache):
         if r['state'] == "done":
             #todo
             obj.process_hooks("top",obj,message="task dependencies done while delegating, strange",state="locked?", task_comment="dependencies done before task")
+            log(self,"\033[31mtask dependencies done while delegating, strange!\033[0mas", level="top")
             #self.queue.remember(task_data) # really is a race condit: retry
             #raise Exception("delegated task already done: the task is done but cache was not stored and delegated requested: ",task_data['object_identity']['factory_name'])#
             #,task_data['object_identity']['assumptions'])
