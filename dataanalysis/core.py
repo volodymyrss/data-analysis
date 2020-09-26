@@ -753,7 +753,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     _da_cache_retrieve_requests=None
 
     def retrieve_cache(self,fih,rc=None):
-        log(render("{CYAN}requested cache{/} for"), repr(self), " requested by "+(" ".join(self._da_requested_by)), level='top')
+        log(render("{CYAN}object requesting cache{/} for"), repr(self), " requested by "+(" ".join(self._da_requested_by)), level='top')
 
 
         if self._da_cache_retrieve_requests is None:
@@ -801,7 +801,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         # discover through different caches
         #c=MemCacheLocal.find(fih)
 
-        log("searching for cache starting from",self.cache, level='top')
+        log(render("{CYAN}searching for cache starting from{/}"),self.cache, level='top')
         r=self.cache.restore(fih,self,rc)
         log("cache",self.cache,"returns",r, level='top')
 
