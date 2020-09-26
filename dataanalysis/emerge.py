@@ -66,7 +66,7 @@ def emerge_from_identity(identity):
             a.import_data(assumption[1])
             da.AnalysisFactory.WhatIfCopy('queue emergence %i'%i, a)
 
-            print((a, "from", assumption))
+            log("emerge_from_identity", a, "from", assumption)
 
     A = da.AnalysisFactory.byname(identity.factory_name)
     producable_hashe=A.get_hashe()
