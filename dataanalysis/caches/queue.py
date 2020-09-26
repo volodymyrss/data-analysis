@@ -57,7 +57,7 @@ class QueueCache(SelectivelyDelegatingCache):
 
             obj.process_hooks("top",obj,message="task dependencies done while delegating, strange",state="locked?", task_comment="dependencies done before task")
 
-            task_key = r.get('task_key', r.get('key'))
+            task_key = r.get('key')
 
             log(self, "\033[31mtask dependencies done while delegating, strange!\033[0mas", level="top")
             log(self, f"\033[31mtask {task_key} {r}\033[0mas", level="top")
