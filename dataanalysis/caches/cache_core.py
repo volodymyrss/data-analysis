@@ -446,8 +446,8 @@ class Cache(object):
         log("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
         log(self, "in restore, cached path:",cached_path)
-
-        traceback.print_stack()
+        log(self, "in restore, cached path:",cached_path, traceback.format_stack())
+        
 
         return self.restore_from_dir(cached_path, hashe, obj, restore_config)
 
