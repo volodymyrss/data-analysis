@@ -143,18 +143,23 @@ class Cache(object):
         #if self.parent is not None:
         #    self.parent.runtime_unregister(obj)
     
-    def restore_from_parent(self,hashe,obj,rc=None):
+    def restore_from_parent(self,hashe,obj,rc=None,follow_with_parent=True):
         if self.parent is None:
             log("no parent available to call for in",self)
             return None
         
         log(self,"there is a parent available to call for:",self.parent)
-        from_parent=self.parent.restore(hashe,obj,rc)
-            
-        if from_parent is not None:
-            log("storing what restored from parent") 
-# TODO: special case when object was cached and not available in tcurrent dir
-            self.store(hashe,obj)
+
+        if follow_with_parent:
+            from_parent=self.parent.restore(hashe,obj,rc)
+                
+            if from_parent is not None:
+                log("storing what restored from parent? NO!") 
+                # TODO: special case when object was cached and not available in tcurrent dir
+               # self.store(hashe,obj)
+        else:
+            log("following parent is disabled in this restore request") 
+            from_parent = None
 
         return from_parent
 
@@ -174,18 +179,18 @@ class Cache(object):
         log("load_content is restoring from",cached_path+"/cache.pickle.gz", level="top")
 
         try:
-            log("loading from pickle")
+            log("trying loading from pickle")
             content=pickle.load(self.filebackend.open(cached_path+"/cache.pickle.gz",gz=True))
             log("done loading from pickle")
             return content
         except TypeError as e:
             log("typeerror! "+repr(e))
             raise
-        except (IOError,pickle.UnpicklingError) as e:
-            log("problem loading cache! corrupt cache!")
+        except (IOError, pickle.UnpicklingError) as e:
+            log("problem loading cache! corrupt cache!", e)
             raise
-        except Exception:
-            log("problem loading cache! corrupt cache!")
+        except Exception as e:
+            log("problem loading cache! corrupt cache!", e)
             raise
 
     def restore_file(self,origin,dest,obj,hashe):
@@ -411,14 +416,14 @@ class Cache(object):
 
 
     #####
-    def restore(self,hashe,obj,restore_config=None):
+    def restore(self,hashe,obj,restore_config=None, follow_with_parent=True):
         # check if updated
         if obj.run_for_hashe or obj.mutating:
             return 
 
         if not self.approved_read_cache(obj):
             log("cache", self, "not approved_read_cache, will restore_from_parent", level="top")
-            from_parent=self.restore_from_parent(hashe,obj,restore_config)
+            from_parent=self.restore_from_parent(hashe,obj,restore_config, follow_with_parent=follow_with_parent)
             return from_parent
 
         restore_config=self.get_restore_config(obj, extra_restore_config=restore_config)
@@ -434,7 +439,7 @@ class Cache(object):
         if c is None:
             log("restore failed: passing to parent",self.parent)
             log("cache", self, "did not find, will restore_from_parent", level="top")
-            return self.restore_from_parent(hashe,obj,restore_config)
+            return self.restore_from_parent(hashe, obj, restore_config, follow_with_parent=follow_with_parent)
 
         log("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
@@ -443,7 +448,7 @@ class Cache(object):
         return self.restore_from_dir(cached_path, hashe, obj, restore_config)
 
 
-    def restore_from_dir(self, cached_path, hashe, obj, restore_config):
+    def restore_from_dir(self, cached_path, hashe, obj, restore_config, follow_with_parent=True):
         obj._da_cache_path_root=cached_path
         obj._da_cached_pathes=[cached_path]
 
@@ -459,7 +464,7 @@ class Cache(object):
             traceback.print_exc()
             log("can not load content from cache, while cache record exists! inconsistent cache!") #???
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
-            return self.restore_from_parent(hashe,obj,restore_config)
+            return self.restore_from_parent(hashe,obj,restore_config, follow_with_parent=follow_with_parent)
 
         if not self.can_url_to_cache:
             log("cache can not be url, will copy all output",level="cache")
@@ -1049,9 +1054,9 @@ class CacheBlob(Cache):
         self.deposit_blob(hashe, blob)
         log("after deposit stacked factory assumptions:", obj.factory.factory_assumptions_stacked, level="top")
 
-    def restore(self, hashe, obj, rc=None):
+    def restore(self, hashe, obj, rc=None, follow_with_parent=True):
         if not self.approved_hashe(hashe) or not self.approved_read_cache(obj):
-            return self.restore_from_parent(hashe, obj, rc)
+            return self.restore_from_parent(hashe, obj, rc, follow_with_parent=follow_with_parent)
 
         print("\033[33mtrying to restore from blob\033[0m")
 
