@@ -816,7 +816,6 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                 try:
                     self.process_output_files(fih)
                 except Exception as e:
-                    traceback.print_exc()
                     log("unable to restore output files: broken cache record")
                     return None
             else:
