@@ -51,11 +51,16 @@ class QueueCache(SelectivelyDelegatingCache):
                 request_origin="undefined",
             ),
         )
+        
+        log(self,"\033[31mdelegated",obj,"\033[0m with state", r['state'], level="top")
 
         if r['state'] == "done":
             #todo
 
-            obj.process_hooks("top",obj,message="task dependencies done while delegating, strange",state="locked?", task_comment="dependencies done before task")
+            obj.process_hooks("top",
+                              obj,message="task dependencies done while delegating, strange",
+                              state="locked?", 
+                              task_comment="dependencies done before task")
 
             task_key = r.get('key')
 
