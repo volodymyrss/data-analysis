@@ -417,6 +417,7 @@ class Cache(object):
             return 
 
         if not self.approved_read_cache(obj):
+            log("cache", self, "not approved_read_cache, will restore_from_parent", level="top")
             from_parent=self.restore_from_parent(hashe,obj,restore_config)
             return from_parent
 
@@ -432,6 +433,7 @@ class Cache(object):
 
         if c is None:
             log("restore failed: passing to parent",self.parent)
+            log("cache", self, "did not find, will restore_from_parent", level="top")
             return self.restore_from_parent(hashe,obj,restore_config)
 
         log("requested to restore cache")
