@@ -7,6 +7,7 @@ import sys
 #from dataanalysis.core import DataAnalysis, DataFile
 from dataanalysis.hashtools import *
 from dataanalysis.printhook import log as printhook_log
+import traceback
 #from dataanalysis import analysisfactory
 
 from dataanalysis.printhook import get_local_log
@@ -26,6 +27,8 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
             except Exception as e:
                 log("failed to import",e)
                 exceptions.append(e)
+
+        traceback.print_stack()
 
         raise Exception("failed to import",remote_git_root,name,version,"from git",exceptions)
 
