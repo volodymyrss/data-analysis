@@ -440,17 +440,17 @@ class Cache(object):
         cached_path=self.construct_cached_file_path(hashe,obj)
         log(self, "in restore, cached path:",cached_path)
 
-        return self.restore_from_dir(c, cached_path, hashe, obj, restore_config)
+        return self.restore_from_dir(cached_path, hashe, obj, restore_config)
 
 
-    def restore_from_dir(self, content, cached_path, hashe, obj, restore_config):
+    def restore_from_dir(self, cached_path, hashe, obj, restore_config):
         obj._da_cache_path_root=cached_path
         obj._da_cached_pathes=[cached_path]
 
-        c = content
+        #c = content
 
-        if c is None:
-            c = self.load_content(hashe, None, cached_path)
+        #if c is None:
+        #    c = self.load_content(hashe, None, cached_path)
 
         try:
             c = self.load_content(hashe, obj, cached_path) # why do we load it twice?..
@@ -551,7 +551,7 @@ class Cache(object):
         with tarfile.open(blob_fn, "r:gz") as tar:
             tar.extractall(restored_dir)
 
-        return self.restore_from_dir(None, restored_dir+"/blob", hashe, obj, restore_config)
+        return self.restore_from_dir(restored_dir+"/blob", hashe, obj, restore_config)
 
 
     def adopt_datafiles(self,content):
