@@ -152,11 +152,13 @@ class QueueCacheWorker(object):
 
 
     def run_once(self):
-        self.run_all(limited_burst=1)
+        self.run_all()
 
-    def run_all(self,burst=True,wait=10, limited_burst=None):
+    def run_all(self, limit_tasks=1, limit_time_seconds=None, wait=10):
         log_logstash("worker", message="worker starting", worker_event="starting")
-        worker_age=0
+        worker_tasks=0
+
+        worker_t0 = time.time()
 
         try:
             worker_heartrate_skip=int(os.environ.get("WORKER_HEARTRATE_SKIP","0"))
@@ -167,9 +169,16 @@ class QueueCacheWorker(object):
         while True:
             if worker_heartrate_skip>0 and worker_age%worker_heartrate_skip==0:
                 log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_age)
-            worker_age+=1
+            worker_tasks+=1
 
-            if limited_burst is not None and limited_burst>0 and worker_age>limited_burst:
+            if limit_tasks is not None and limit_tasks>0 and worker_tasks>limit_tasks:
+                log(f"\033[31mstopping worker, it completed {worker_tasks} > {limit_tasks} seconds\033[0m")
+                break
+
+            worker_age_seconds = time.time() - worker_t0
+
+            if limit_time_seconds is not None and limit_time_seconds>0 and worker_age_seconds > limit_time_seconds:
+                log(f"\033[31mstopping worker due to old age, {worker_age_seconds} > {limit_time_seconds} seconds\033[0m")
                 break
 
             try:
@@ -182,11 +191,8 @@ class QueueCacheWorker(object):
                 time.sleep(wait)
                 continue
             except dqueue.Empty:
-                if burst:
-                    break
-                else:
-                    time.sleep(wait)
-                    continue
+                time.sleep(wait)
+                continue
 
             try:
                 self.run_task(task)
@@ -261,10 +267,10 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("queue", default=None)
+    parser.add_argument("queue", nargs='?', default=os.environ.get("ODAHUB", None))
     parser.add_argument('-V', dest='very_verbose',  help='...',action='store_true', default=False)
-    parser.add_argument('-b', dest='burst_mode',  help='...',action='store_true', default=False)
-    parser.add_argument('-B', dest='limited_burst', help='...', type=int, default=0)
+    parser.add_argument('-B', dest='limit_tasks', help='...', type=int, default=1)
+    parser.add_argument('-t', dest='limit_time_seconds', help='...', type=int, default=0)
     parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
     parser.add_argument('-W', dest='watch_closely', type=int, help='...', default=0)
     parser.add_argument('-d', dest='delay', type=int, help='...', default=10)
@@ -286,7 +292,11 @@ def main():
             log(qcworker.queue.info)
             time.sleep(args.watch)
     else:
-        qcworker.run_all(burst=args.burst_mode,limited_burst=args.limited_burst, wait=args.delay)
+        qcworker.run_all(
+                    limit_tasks=args.limit_tasks,
+                    limit_time_seconds=args.limit_time_seconds,
+                    wait=args.delay
+                )
 
 
 
