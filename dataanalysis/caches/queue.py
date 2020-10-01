@@ -257,7 +257,7 @@ class QueueCacheWorker(object):
         return r
 
 
-if __name__ == "__main__":
+def main():
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -292,3 +292,5 @@ if __name__ == "__main__":
 
 
 
+if __name__ == "__main__":
+    main()
