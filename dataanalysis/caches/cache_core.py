@@ -446,8 +446,6 @@ class Cache(object):
         log("requested to restore cache")
         cached_path=self.construct_cached_file_path(hashe,obj)
         log(self, "in restore, cached path:",cached_path)
-        log(self, "in restore, cached path:",cached_path, traceback.format_stack())
-        
 
         return self.restore_from_dir(cached_path, hashe, obj, restore_config)
 
@@ -465,7 +463,6 @@ class Cache(object):
             c = self.load_content(hashe, obj, cached_path) # why do we load it twice?..
             log("load content returns:",)
         except Exception as e:
-            traceback.print_exc()
             log("can not load content from cache, while cache record exists! inconsistent cache!") #???
             #raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!") # ???
             return self.restore_from_parent(hashe,obj,restore_config)
