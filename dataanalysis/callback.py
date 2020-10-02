@@ -22,12 +22,17 @@ class CallbackHook(object):
                 callback_url,callback_filter_name=callback_url #
                 callback_filter=globals()[callback_filter_name]
 
-            callback_class=callback_filter
-            log("callback class:",callback_class,level='callback')
-            callback=callback_class(callback_url)
-            log("processing callback url", callback_url, callback)
+            callback_class = callback_filter
+            log("callback class:", callback_class, level='callback')
+            callback = callback_class(callback_url)
+            log("processing callback url", callback_url, callback, level='top')
 
-            r = callback.process_callback(level=level,obj=obj,message=message,data=kwargs)
+            r = callback.process_callback(
+                    level=level,
+                    obj=obj,
+                    message=message,
+                    data=kwargs
+                )
 
             if r is not None:
                 object_data=callback.extract_data(obj)
@@ -129,11 +134,11 @@ class Callback(object):
                             params=params
                         )
 
-                log("callback succeeded",self.url, params, r, level="callback")
+                log("callback succeeded",self.url, params, r, level="top")
                 log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r)
                 return r
             except requests.ConnectionError as e:
-                log("callback failed",self.url,params,":",e,level="callback")
+                log("callback failed", self.url,params,":",e,level="top")
                 log_hook("callback",obj,message="callback failed!",callback_exception=repr(e),callback_url=self.url,callback_params=self.url_params,action_params=params)
                 return "callback failed: " + repr(e)
         else:
