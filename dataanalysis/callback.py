@@ -26,7 +26,7 @@ class CallbackHook(object):
             callback_class = callback_filter
             log("callback class:", callback_class, level='callback')
             callback = callback_class(callback_url)
-            log("processing callback url", callback_url, callback, level='top')
+            log("processing callback url", callback_url, callback, level='callback')
 
             r = callback.process_callback(
                     level=level,
@@ -135,11 +135,11 @@ class Callback(object):
                             params=params
                         )
 
-                log("callback succeeded",self.url, params, r, level="top")
+                log("callback succeeded",self.url, params, r, level="callback")
                 log_hook("callback",obj,message="callback succeeded",callback_url=self.url,callback_params=self.url_params,action_params=params,callback_response_content=r)
                 return r
             except requests.ConnectionError as e:
-                log("callback failed", self.url,params,":",e,level="top")
+                log("callback failed", self.url,params,":",e,level="callback")
                 log_hook("callback",obj,message="callback failed!",callback_exception=repr(e),callback_url=self.url,callback_params=self.url_params,action_params=params)
                 return "callback failed: " + repr(e)
         else:
