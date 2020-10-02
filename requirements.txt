@@ -1,16 +1,1 @@
-healpy==1.14.0
-scipy
-pydot
-numpy==1.19.2
-pandas
-astropy
-persist-queue
-flask
-flask-restful
-pytest
-pytest-flask 
-psutil
-logstash_formatter
-requests
-PyYAML==5.3.1
-future
+
