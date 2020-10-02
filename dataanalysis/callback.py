@@ -16,6 +16,7 @@ class CallbackHook(object):
         level, obj=args
         message=kwargs['message']
 
+        log("callback class:", self, "will send message \"", message, "\" for object", obj, "to callbacks ", obj.callbacks, level='callback')
         for callback_url in obj.callbacks:
             callback_filter=default_callback_filter
             if isinstance(callback_url,tuple):

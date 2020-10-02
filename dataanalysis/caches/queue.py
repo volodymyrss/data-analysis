@@ -154,7 +154,7 @@ class QueueCacheWorker(object):
     def run_once(self):
         self.run_all()
 
-    def run_all(self, limit_tasks=1, limit_time_seconds=None, wait=10):
+    def run_all(self, limit_tasks=1, limit_time_seconds=0, wait=10):
         log_logstash("worker", message="worker starting", worker_event="starting")
         worker_tasks=0
 
@@ -172,7 +172,7 @@ class QueueCacheWorker(object):
             worker_tasks+=1
 
             if limit_tasks is not None and limit_tasks>0 and worker_tasks>limit_tasks:
-                log(f"\033[31mstopping worker, it completed {worker_tasks} > {limit_tasks} seconds\033[0m")
+                log(f"\033[31mstopping worker, it completed {worker_tasks} > {limit_tasks} tasks\033[0m")
                 break
 
             worker_age_seconds = time.time() - worker_t0

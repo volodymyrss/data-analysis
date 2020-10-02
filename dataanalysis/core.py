@@ -1304,8 +1304,9 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         log('object assumptions:',self.assumptions,'{log:top}')
 
         if 'callback_url' in extra:
-            log("setting callback from process:",extra['callback_url'])
+            log(self, "setting callback from process:",extra['callback_url'])
             self.set_callback(extra['callback_url'])
+            log(self, "now callbacks:", self.callbacks)
 
         restore_config=self.process_restore_config(restore_config)
         restore_rules=self.process_restore_rules(restore_rules,extra)
@@ -1552,7 +1553,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         if self._da_callbacks is None:
             return []
         else:
-            log("callbacks",self._da_callbacks)
+            log("requested callbacks property", self._da_callbacks, level="callback")
             return self._da_callbacks
 
     def prepare_restore_config(self,restore_config):
@@ -1729,7 +1730,12 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
             log("item:",item._da_locally_complete)
         except Exception as e:
             raise Exception(str(item)+" has no locally complete!")
-        input_hash,newitem=item.process(restore_rules=rr,restore_config=restore_config,requested_by=requested_by, callback_url=self.callbacks) # recursively for all inputs process input
+        input_hash,newitem = item.process(
+                                restore_rules=rr,
+                                restore_config=restore_config,
+                                requested_by=requested_by, 
+                                callback_url=self.callbacks
+                            ) # recursively for all inputs process input
         log("process_input finishing at the end",input_hash,newitem)
 
         return input_hash,newitem # return path to the item (hash) and the item
