@@ -129,6 +129,8 @@ def main():
         elif delegation_state is not None and delegation_state['state']=="failed":
             log("the prompt delegation already done and failed, raising exception")
 
+            log("delegation state failure:", failure)
+
             failure=delegation_state
             failed_task=failure['task_entry']
             log("failed task",failed_task)
