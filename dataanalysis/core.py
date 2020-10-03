@@ -41,6 +41,16 @@ log=get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
 
+def repr_short(d):
+    lim = 100
+
+    r = repr(d)
+
+    if len(r)<lim*2:
+        return r
+
+    return r[:lim] + " ... " + r[-lim:]
+
 dda_hooks=[CallbackHook(),log_hook]
 
 Cache = cache_core.CacheNoIndex()
@@ -1660,7 +1670,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                     inputs.append(l)
 
             if delegated != []:
-                log("delegated:",len(delegated),delegated,level="top")
+                log("delegated:", len(delegated), repr_short(delegated),level="top")
                 log("still implemented:", len(inputhashes),inputs)
 
                 raise AnalysisDelegatedException.from_list(delegated)
@@ -1696,7 +1706,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                     nitems.append(ni)
 
                 if delegated!=[]:
-                    log("delegated:", len(delegated), delegated)
+                    log("delegated:", len(delegated), (lambda x:x[:100]+" ... "+x[-100:])(repr(delegated)))
                     raise AnalysisDelegatedException.from_list(delegated)
                 else:
                     log("no delegated analysis found")

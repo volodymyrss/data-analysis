@@ -199,7 +199,7 @@ class QueueCacheWorker(object):
             except dqueue.TaskStolen as e:
                 log("task stolen, whatever",e)
             except da.AnalysisDelegatedException as delegation_exception:
-                log("found delegated dependencies:", delegation_exception.delegation_states,level='top')
+                log("found delegated dependencies:", da.repr_short(delegation_exception.delegation_states), level='top')
                 task_dependencies = [d['task_data'] for d in delegation_exception.delegation_states]
                 #locked_task=dqueue.Task.from_file(self.queue.put(task.task_data)['fn'])
                 #assert task.filename_key == locked_task.filename_key
