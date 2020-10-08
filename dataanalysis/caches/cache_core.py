@@ -182,7 +182,15 @@ class Cache(object):
 
         try:
             log("trying loading from pickle")
-            content=pickle.load(self.filebackend.open(cached_path+"/cache.pickle.gz",gz=True))
+            f = self.filebackend.open(cached_path+"/cache.pickle.gz",gz=True)
+            try:
+                content=pickle.load(f)
+            except: # unicodeerror
+                log("unicode compatibility with py2 caches")
+                u = pickle._Unpickler(f)
+                u.encoding = 'latin1'
+                content = u.load()
+
             log("done loading from pickle")
             return content
         except TypeError as e:
