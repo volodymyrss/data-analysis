@@ -1,5 +1,6 @@
 import time
 import traceback
+import yaml
 
 
 import os
@@ -44,13 +45,26 @@ class QueueCache(SelectivelyDelegatingCache):
         task_data = dict(
             object_identity=obj.get_identity().serialize(),
         )
-        r=self.queue.put(
-            task_data,
-            submission_data=dict(
-                callbacks=obj.callbacks,
-                request_origin="undefined",
-            ),
-        )
+
+        r = None
+        for i in range(20):
+            try:
+                r=self.queue.put(
+                    task_data,
+                    submission_data=dict(
+                        callbacks=obj.callbacks,
+                        request_origin="undefined",
+                    ),
+                )
+                if r.status_code != 200:
+                    raise Exception(f"problematic response from put task {r}")
+                break
+            except Exception as e:
+                log("problem putting task:", e)
+                time.sleep(2)
+
+        if r is None:
+            raise Exception(f"unable to put task in queue: {task_data}")
         
         log(self,"\033[31mdelegated",obj,"\033[0m with state", r['state'], level="top")
 
@@ -158,6 +172,8 @@ class QueueCacheWorker(object):
         log_logstash("worker", message="worker starting", worker_event="starting")
         worker_tasks=0
 
+        print('worker_knowledge:', self.worker_knowledge)
+
         worker_t0 = time.time()
 
         try:
@@ -184,7 +200,7 @@ class QueueCacheWorker(object):
             try:
                 log("trying to get a task from", self.queue)
                 print("trying to get a task from", self.queue)
-                task=self.queue.get()
+                task=self.queue.get(worker_knowledge=self.worker_knowledge)
                 log("got this:",task)
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
             except dqueue.TaskStolen:
@@ -274,6 +290,7 @@ def main():
     parser.add_argument('-w', dest='watch', type=int, help='...', default=0)
     parser.add_argument('-W', dest='watch_closely', type=int, help='...', default=0)
     parser.add_argument('-d', dest='delay', type=int, help='...', default=10)
+    parser.add_argument('-k', dest='worker_knowledge_yaml', type=str, help='...', default=None)
 
     args=parser.parse_args()
 
@@ -281,7 +298,12 @@ def main():
         dataanalysis.printhook.global_permissive_output=True
         da.debug_output()
 
+
+
     qcworker = QueueCacheWorker(args.queue)
+
+    if args.worker_knowledge_yaml is not None:
+        qcworker.worker_knowledge = yaml.load(open(args.worker_knowledge_yaml))
 
     if args.watch_closely > 0:
         while True:

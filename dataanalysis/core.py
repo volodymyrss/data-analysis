@@ -683,8 +683,8 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
 
     def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
-        log("serialize",self,"as",embed_datafiles,verify_jsonifiable,include_class_attributes)
-        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
+        log("serialize", self, "as", embed_datafiles, verify_jsonifiable, include_class_attributes)
+        return self.get_factory_name(), self.export_data(embed_datafiles, verify_jsonifiable, include_class_attributes, deep_export)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
     # it can be done differently
