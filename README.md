@@ -33,6 +33,8 @@ The workflow definition is compatible with __CWL__ workflow expression (complete
 
 The results are stored in an __append-only database__ indexed with the data __provenance__, derived directly from the workflow definition.
 
+__Provenance__ is expressed in a simplified form, a variation of [S-expression](https://en.wikipedia.org/wiki/S-expression).
+
 ## Example
 
 Below is an example of a workflow definition:
