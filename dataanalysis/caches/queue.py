@@ -56,7 +56,7 @@ class QueueCache(SelectivelyDelegatingCache):
                         request_origin="undefined",
                     ),
                 )
-                if r.status_code != 200:
+                if getattr(r, 'status_code', 200) != 200:
                     raise Exception(f"problematic response from put task {r}")
                 break
             except Exception as e:
@@ -167,6 +167,13 @@ class QueueCacheWorker(object):
 
     def run_once(self):
         self.run_all()
+
+    def set_worker_knowledge(self, w):
+        self._worker_knowledge = w
+
+    @property
+    def worker_knowledge(self):
+        return getattr(self, "_worker_knowledge", {})
 
     def run_all(self, limit_tasks=1, limit_time_seconds=0, wait=10):
         log_logstash("worker", message="worker starting", worker_event="starting")
@@ -303,7 +310,7 @@ def main():
     qcworker = QueueCacheWorker(args.queue)
 
     if args.worker_knowledge_yaml is not None:
-        qcworker.worker_knowledge = yaml.load(open(args.worker_knowledge_yaml))
+        qcworker.set_worker_knowledge = yaml.load(open(args.worker_knowledge_yaml))
 
     if args.watch_closely > 0:
         while True:
