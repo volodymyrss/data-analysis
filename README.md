@@ -10,6 +10,8 @@ data-analysis
 *Framework facilitating semantic declarative expression of reproducible data analysis
 workflows.*
 
+**Most of all, this project is the test bed for various interesting ways of organizing data analysis.**.
+
 ## Why?
 
 We had large linear redundant analysis pipeline (INTEGRAL [OSA](https://www.isdc.unige.ch/integral/analysis)). We needed to understand it and make a lot of improvements, try many things - this made the pipeline much more complex.
@@ -34,6 +36,8 @@ The workflow definition is compatible with __CWL__ workflow expression (complete
 The results are stored in an __append-only database__ indexed with the data __provenance__, derived directly from the workflow definition.
 
 __Provenance__ is expressed in a simplified form, a variation of [S-expression](https://en.wikipedia.org/wiki/S-expression).
+
+*Is this not very complex?* Arguably, describing workflow as an RDF graph (or, equivalently, an S-expression), is very natural for researchers with background in natural sciences with involvemnet mathematical.
 
 ## Example
 
