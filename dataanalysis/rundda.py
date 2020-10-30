@@ -6,6 +6,7 @@ import argparse
 import json
 import dqueue
 import sys
+import os
 import urllib.request, urllib.parse, urllib.error
 import shutil
 
@@ -326,8 +327,16 @@ def main():
 
     if args.json:
         log("will dump serialization to json")
-        json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
-                          indent=4, separators=(',', ': '))
+        if A._da_isolated_directory:
+            cwd = os.getcwd()
+            os.chdir(A._da_isolated_directory)
+            try:
+                json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open(os.path.join(cwd, "object_data.json"),"w"), sort_keys=True,
+                                  indent=4, separators=(',', ': '))
+                os.chdir(cwd)
+            except:
+                os.chdir(cwd)
+                raise
 
     if args.serialize_json:
         fn = A.get_factory_name() + "_data.json"
