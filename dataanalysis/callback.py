@@ -123,7 +123,7 @@ class Callback(object):
         params['action'] = data.get('state', 'progress')
 
         for k,v in params.items():
-            log(f"callback key {k} size {len(json.dumps(v))}", level='top')
+            log(f"callback key {k} size {len(json.dumps(v))}", level='callback')
 
         if self.url.startswith("file://"):
             fn=self.url[len("file://"):]

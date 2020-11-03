@@ -34,6 +34,9 @@ def totype(v):
     if isinstance(v, str): return v
     if isinstance(v, int): return v
     if isinstance(v, float): return v
+    
+    if isinstance(v, np.ndarray):
+        return jsonify_array(v)
 
     if hasattr(v, 'dtype'):
         if v.dtype in (np.int16, np.int32, np.int64):
