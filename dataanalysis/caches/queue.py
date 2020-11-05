@@ -311,7 +311,7 @@ def main():
     qcworker = QueueCacheWorker(args.queue)
 
     if args.worker_knowledge_yaml is not None:
-        qcworker.set_worker_knowledge = yaml.load(open(args.worker_knowledge_yaml))
+        qcworker.set_worker_knowledge(yaml.load(open(args.worker_knowledge_yaml), Loader=yaml.FullLoader))
 
     if args.watch_closely > 0:
         while True:
