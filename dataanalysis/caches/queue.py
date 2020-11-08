@@ -215,6 +215,7 @@ class QueueCacheWorker(object):
                 time.sleep(wait)
                 continue
             except dqueue.Empty:
+                print("queue empty")
                 time.sleep(wait)
                 continue
 
