@@ -102,14 +102,14 @@ class QueueCacheWorker(object):
     def __repr__(self):
         return "[%s: %i]"%(self.__class__.__name__,id(self))
 
-    def __init__(self,queue_directory="default"):
+    def __init__(self,queue_directory="default", worker_id=None):
         self.queue_directory = queue_directory
 
-        self.load_queue()
+        self.load_queue(worker_id)
         print("initialized dqueue:", self.queue)
 
-    def load_queue(self):
-        self.queue = dqueue.from_uri(self.queue_directory)
+    def load_queue(self, worker_id=None):
+        self.queue = dqueue.from_uri(self.queue_directory, worker_id)
 
 
     def run_task(self,task):
@@ -300,6 +300,7 @@ def main():
     parser.add_argument('-W', dest='watch_closely', type=int, help='...', default=0)
     parser.add_argument('-d', dest='delay', type=int, help='...', default=10)
     parser.add_argument('-k', dest='worker_knowledge_yaml', type=str, help='...', default=None)
+    parser.add_argument('-n', dest='worker_id', type=str, help='...', default=None)
 
     args=parser.parse_args()
 
@@ -309,7 +310,7 @@ def main():
 
 
 
-    qcworker = QueueCacheWorker(args.queue)
+    qcworker = QueueCacheWorker(args.queue, args.worker_id)
 
     if args.worker_knowledge_yaml is not None:
         qcworker.set_worker_knowledge(yaml.load(open(args.worker_knowledge_yaml), Loader=yaml.FullLoader))
