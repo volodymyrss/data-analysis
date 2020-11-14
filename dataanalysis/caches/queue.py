@@ -47,6 +47,7 @@ class QueueCache(SelectivelyDelegatingCache):
         )
 
         r = None
+        problems = []
         for i in range(20):
             try:
                 r=self.queue.put(
@@ -57,14 +58,16 @@ class QueueCache(SelectivelyDelegatingCache):
                     ),
                 )
                 if getattr(r, 'status_code', 200) != 200:
+                    problems.append(f"problematic response from put task {r}")
                     raise Exception(f"problematic response from put task {r}")
                 break
             except Exception as e:
                 log("problem putting task:", e)
+                problems.append(f"problem putting task {e}, attempt {i}")
                 time.sleep(2)
 
         if r is None:
-            raise Exception(f"unable to put task in queue: {task_data}")
+            raise Exception(f"unable to put task in queue, problems {problems} task_data: {task_data}")
         
         log(self,"\033[31mdelegated",obj,"\033[0m with state", r['state'], level="top")
 
