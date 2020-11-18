@@ -1,6 +1,7 @@
 import time
 import traceback
 import yaml
+import json
 
 
 import os
@@ -14,8 +15,6 @@ from dataanalysis.caches.delegating import SelectivelyDelegatingCache
 
 import dqueue
 import imp
-
-
 
 try:
     import sentryclient
@@ -32,6 +31,7 @@ log=get_local_log("queue")
 
 class QueueCache(SelectivelyDelegatingCache):
     delegate_by_default=True
+
 
     def __init__(self,queue_directory="/tmp/queue"):
         super(QueueCache, self).__init__()
@@ -111,11 +111,19 @@ class QueueCacheWorker(object):
         self.load_queue(worker_id)
         print("initialized dqueue:", self.queue)
 
+    json_log_file = None
+
+    def log_json(self, j):
+        self.queue.log_task(json.dumps(j))
+        if self.json_log_file:
+            self.json_log_file.write(json.dumps(j)+"\n")
+            self.json_log_file.flush()
+
     def load_queue(self, worker_id=None):
         self.queue = dqueue.from_uri(self.queue_directory, worker_id)
 
 
-    def run_task(self,task):
+    def run_task(self, task):
         task_data=task.task_data
         log("emerging from object_identity",task_data['object_identity'])
         object_identity=da.DataAnalysisIdentity.from_dict(task_data['object_identity'])
@@ -123,18 +131,36 @@ class QueueCacheWorker(object):
 
         imp.reload(dataanalysis.graphtools)
         log("fresh factory knows",da.AnalysisFactory.cache)
+        
+        t_start = time.time()
+        self.log_json(dict(
+                    origin="oda-worker",
+                    action="worker_taking_task",
+                    object_factory_name=object_identity.factory_name,
+                    worker_id=self.queue.worker_id,
+                ))
 
         log(object_identity)
         A=emerge.emerge_from_identity(object_identity)
         A._da_delegation_allowed=False
 
         dataanalysis.callback.Callback.set_callback_accepted_classes([da.byname(object_identity.factory_name).__class__])
+        
+        t_start_get = time.time()
+        self.queue.log_task(json.dumps(dict(
+                    origin="oda-worker",
+                    action="worker_emerged_task",
+                    object_factory_name=object_identity.factory_name,
+                    worker_id=self.queue.worker_id,
+                )))
+
 
         for url in task.submission_info.get('callbacks', []):
             log("setting object callback",A,url)
             A.set_callback(url)
 
         log("emerged object:",A)
+        
 
         request_root_node=getattr(A, 'request_root_node', False)
         if request_root_node:
@@ -162,9 +188,26 @@ class QueueCacheWorker(object):
             if client is not None:
                 client.captureException()
 
+            self.log_json(dict(
+                            origin="oda-worker",
+                            action="run_task_exception",
+                            object_factory_name=A.factory_name,
+                            object_fullname=str(A),
+                            tspent_s=time.time()-t_start,
+                            tspent_get_s=time.time()-t_start_get,
+                         ))
+
             raise
         else:
             A.process_hooks("top",A,message="task complete",state=final_state, task_comment="completed with success")
+            self.log_json(dict(
+                            origin="oda-worker",
+                            action="run_task_complete",
+                            object_factory_name=object_identity.factory_name,
+                            object_fullname=str(A),
+                            tspent_s=time.time()-t_start,
+                            tspent_get_s=time.time()-t_start_get,
+                         ))
             return result
 
 
@@ -304,6 +347,7 @@ def main():
     parser.add_argument('-d', dest='delay', type=int, help='...', default=10)
     parser.add_argument('-k', dest='worker_knowledge_yaml', type=str, help='...', default=None)
     parser.add_argument('-n', dest='worker_id', type=str, help='...', default=None)
+    parser.add_argument('--json-log-file', dest='json_log_file', type=str, help='...', default=None)
 
     args=parser.parse_args()
 
@@ -311,9 +355,11 @@ def main():
         dataanalysis.printhook.global_permissive_output=True
         da.debug_output()
 
-
-
     qcworker = QueueCacheWorker(args.queue, args.worker_id)
+
+    if args.json_log_file:
+        qcworker.json_log_file = open(args.json_log_file, "at")
+
 
     if args.worker_knowledge_yaml is not None:
         qcworker.set_worker_knowledge(yaml.load(open(args.worker_knowledge_yaml), Loader=yaml.FullLoader))

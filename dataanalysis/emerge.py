@@ -132,7 +132,7 @@ def main():
         for m in identity.modules:
             print(m)
             if m[0] == 'git':
-                if m[2] is None:
+                if m[2] is None or m[2] == 'None':
                     c += f' -m git://{m[1]}'
                 else:
                     c += f' -m git://{m[1]}/{m[2]}'
