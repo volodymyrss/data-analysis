@@ -113,10 +113,31 @@ class QueueCacheWorker(object):
 
     json_log_file = None
 
+    _worker_metadata = None
+
+    @property
+    def worker_metadata(self):
+        if self._worker_metadata is None:
+            self._worker_metadata = json.loads(os.environ.get('DDA_WORKER_METADATA_JSON', '{}'))
+            for k, v in os.environ.items():
+                prefix = "DDA_WORKER_METADATA_"
+                if k.startswith(prefix):
+                    self._worker_metadata[k[len(prefix):].lower()] = v
+
+            print("discovered worker metadata: ", self._worker_metadata)
+
+        return self._worker_metadata
+
     def log_json(self, j):
-        self.queue.log_task(json.dumps(j))
+        j_e = {
+                **j,
+               'worker_id': self.queue.worker_id,
+               'worker_metadata': self.worker_metadata,
+              }
+
+        self.queue.log_task(json.dumps(j_e))
         if self.json_log_file:
-            self.json_log_file.write(json.dumps(j)+"\n")
+            self.json_log_file.write(json.dumps(j_e)+"\n")
             self.json_log_file.flush()
 
     def load_queue(self, worker_id=None):
@@ -137,7 +158,6 @@ class QueueCacheWorker(object):
                     origin="oda-worker",
                     action="worker_taking_task",
                     object_factory_name=object_identity.factory_name,
-                    worker_id=self.queue.worker_id,
                 ))
 
         log(object_identity)
