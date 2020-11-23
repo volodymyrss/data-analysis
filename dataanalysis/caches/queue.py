@@ -211,7 +211,7 @@ class QueueCacheWorker(object):
             self.log_json(dict(
                             origin="oda-worker",
                             action="run_task_exception",
-                            object_factory_name=A.factory_name,
+                            object_factory_name=object_identity.factory_name,
                             object_fullname=str(A),
                             tspent_s=time.time()-t_start,
                             tspent_get_s=time.time()-t_start_get,
