@@ -276,6 +276,7 @@ class QueueCacheWorker(object):
                 task=self.queue.get(worker_knowledge=self.worker_knowledge)
                 print("\033[031mgot task:", task, "\033[0m")
                 print("\033[031mgot task dict:", task.task_data, "\033[0m")
+                open('object_identity.json', 'w').write(json.dumps(task.task_data['object_identity']))
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
             except dqueue.TaskStolen:
                 time.sleep(wait)

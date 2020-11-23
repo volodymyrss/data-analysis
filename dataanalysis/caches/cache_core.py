@@ -44,6 +44,8 @@ def update_dict(a,b):
     return dict(list(a.items())+list(b.items()))
 
 
+class FailedToRestoreDataFile(Exception):
+    pass
 
 class Cache(object):
     # currently store each cache in a file; this is not neccesary 
@@ -231,6 +233,15 @@ class Cache(object):
         shutil.copyfile(dest_unique,dest)
 
         if obj.test_files:
+            log("will test file", dest, level='top')
+            try:
+                self.test_file(dest)
+                log("test file", dest, level='top')
+            except Exception as e:
+                log("\033[31mtesting file", dest, "revealed issue", e,"\033[0m", level='top')
+                raise
+        else:
+            log("\033[31mwill NOT test file\033[0m", dest, level='top')
             self.test_file(dest)
         
         log("successfully copied to",dest)
@@ -301,7 +312,7 @@ class Cache(object):
         return {'size':fsize,'copytime':tspent,'compressiontime':tspentc}
 
     def restore_datafile(self, a, b, cached_path, restore_config, obj, hashe, add_keys, remove_keys):
-        log("requested to restore DataFile", b, "mode", restore_config['datafile_restore_mode'], '{log:top}')
+        log("requested to restore_datafile DataFile", b, "mode", restore_config['datafile_restore_mode'], level='top')
 
         prefix = restore_config.get('datafile_target_dir', None)
         if prefix is not None:
@@ -340,7 +351,7 @@ class Cache(object):
 
                 b.restore_stats, restored_file = self.restore_file(stored_filename, prefix + os.path.basename(b.path),
                                                                    obj, hashe)
-                log("restored as", restored_file)
+                log("restored as", restored_file, level='top')
 
                 obj.note_resource_stats({'resource_type': 'cache', 'resource_source': repr(self), 'filename': b.path,
                                          'stats': b.restore_stats, 'operation': 'restore'})
@@ -354,20 +365,23 @@ class Cache(object):
                     log("can not copy from from cache, while cache record exists! inconsistent cache!")
                     #          raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                     # just reproduce?
-                    return None
+                    #return None
+                    raise FailedToRestoreDataFile()
             except subprocess.CalledProcessError:
                 log("can not copy from from cache, while cache record exists! inconsistent cache!")
                 #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                 # just reproduce?
-                return None
+                #return None
+                raise FailedToRestoreDataFile()
             except Exception as e:
-                log("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!")
+                log("UNHANDLED can not copy from from cache, while cache record exists! inconsistent cache!", level="top")
                 log("details:" + repr(e))
                 if not self.ingore_unhandled:
                     raise
                     #           raise Exception("can not copy from from cache, while cache record exists! inconsistent cache!")
                 # just reproduce?
-                return None
+                raise FailedToRestoreDataFile()
+                #return None
         elif restore_config['datafile_restore_mode'] == "symlink":
             self.filebackend.symlink(stored_filename,
                                      prefix + os.path.basename(b.path) + ".gz")  # just by name? # gzip optional
@@ -384,7 +398,7 @@ class Cache(object):
             if not os.path.exists(b.cached_path):
                 raise Exception("cached file does not exist!")
             b.cached_path_valid_url = True
-            log("stored url:", b.cached_path, b.cached_path_valid_url)
+            log("stored url:", b.cached_path, b.cached_path_valid_url, level='top')
 
             if 'test_files' in restore_config and restore_config['test_files']:
                 try:
@@ -454,10 +468,7 @@ class Cache(object):
         obj._da_cache_path_root=cached_path
         obj._da_cached_pathes=[cached_path]
 
-        #c = content
-
-        #if c is None:
-        #    c = self.load_content(hashe, None, cached_path)
+        log("will restore object from dir", cached_path, obj, level="top")
 
         try:
             c = self.load_content(hashe, obj, cached_path) # why do we load it twice?..
@@ -497,7 +508,13 @@ class Cache(object):
             from dataanalysis.core import DataFile, map_nested_structure, flatten_nested_structure
                 
             log("will map_nested_structure")
-            map_nested_structure(c, datafile_restore_mapper)
+
+            try:
+                map_nested_structure(c, datafile_restore_mapper)
+            except FailedToRestoreDataFile as e:
+                log("\033[31mdatafile_restore_mapper failed, cache is invalid: ", e,"\033m")
+                return
+
 
             for k, i in add_keys:
                 log("adding key:",k,i,level=__name__)
