@@ -1,10 +1,5 @@
-
-
-try:
-    from io import StringIO
-except ImportError:
-    from io import StringIO
-
+from io import StringIO
+from pathlib import Path
 import collections
 import threading
 import gzip
@@ -901,7 +896,15 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
             log("isolate cleanup:",self._da_isolated_directory,level='top')
             if self._da_isolated_directory == os.environ.get('HOME'):
                 raise Exception("should not clean home!")
-            shutil.rmtree(self._da_isolated_directory)
+
+            try:
+                shutil.rmtree(self._da_isolated_directory)
+            except OSError as e:
+                log("\033[31m isolate cleanup FAILED:",self._da_isolated_directory,"\033[0m",level='top')
+                files = list(Path(".").rglob("*"))
+                log("\033[31m found residual files:", files, "\033[0m", level='top')
+                raise Exception(e, files)
+                
 
 
         return result

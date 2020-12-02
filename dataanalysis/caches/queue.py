@@ -161,7 +161,13 @@ class QueueCacheWorker(object):
                 ))
 
         log(object_identity)
-        A=emerge.emerge_from_identity(object_identity)
+
+        try:
+            A=emerge.emerge_from_identity(object_identity)
+        except Exception as e:
+            log("\033[0mtask emergence failed!\033[0m", level="top")
+            raise
+
         A._da_delegation_allowed=False
 
         dataanalysis.callback.Callback.set_callback_accepted_classes([da.byname(object_identity.factory_name).__class__])
@@ -301,7 +307,7 @@ class QueueCacheWorker(object):
                 log_logstash("worker", message="worker task locked", origin="dda_worker", worker_event="task_done",
                              target=task.task_data['object_identity']['factory_name'])
             except Exception as e:
-                log("task failed:",e)
+                log("task failed:",e, level="top")
                 log_logstash("worker",message="worker task failed",origin="dda_worker",worker_event="task_failed",target=task.task_data['object_identity']['factory_name'])
                 client=get_sentry_client()
                 if client is not None:
