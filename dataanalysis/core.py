@@ -898,7 +898,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                 raise Exception("should not clean home!")
 
             try:
-                shutil.rmtree(self._da_isolated_directory)
+                shutil.rmtree(self._da_isolated_directory, ignore_errors=True)
             except OSError as e:
                 log("\033[31m isolate cleanup FAILED:",self._da_isolated_directory,"\033[0m",level='top')
                 files = [str(p) for p in Path(".").rglob("*")]
