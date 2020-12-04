@@ -901,10 +901,9 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                 shutil.rmtree(self._da_isolated_directory)
             except OSError as e:
                 log("\033[31m isolate cleanup FAILED:",self._da_isolated_directory,"\033[0m",level='top')
-                files = list(Path(".").rglob("*"))
+                files = [str(p) for p in Path(".").rglob("*")]
                 log("\033[31m found residual files:", files, "\033[0m", level='top')
-                raise Exception(e, files)
-                
+                raise Exception(repr(e), repr(files))
 
 
         return result
