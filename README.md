@@ -39,6 +39,12 @@ __Provenance__ is expressed in a simplified form, a variation of [S-expression](
 
 *Is this not very complex?* Arguably, describing workflow as an RDF graph (or, equivalently, an S-expression), is very natural for researchers with background in natural sciences with involvemnet mathematical.
 
+## Even if it is good for something, why should anyone bother getting locked-in some very custom workflow description framework?
+
+I aim this to be preciesly **workflow description framework**, developed starting from python-friendly semantics, not from engine needs. For execution, the workflow can be dispatched in existing WMS (luigia, CWL-compliant environments).
+
+Hence, I consider this framework a tool for **simplifying some forms of usage of existing frameworks**, and strickly a competitor to them. Though it is clearly an alternative to dealing with the said existing frameworks directly.
+
 ## Example
 
 Below is an example of a workflow definition:
