@@ -1,10 +1,5 @@
-
-
-try:
-    from io import StringIO
-except ImportError:
-    from io import StringIO
-
+from io import StringIO
+from pathlib import Path
 import collections
 import threading
 import gzip
@@ -683,8 +678,8 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
 
     def serialize(self,embed_datafiles=True,verify_jsonifiable=True,include_class_attributes=True,deep_export=True):
-        log("serialize",self,"as",embed_datafiles,verify_jsonifiable,include_class_attributes)
-        return self.get_factory_name(),self.export_data(embed_datafiles,verify_jsonifiable,include_class_attributes,deep_export)
+        log("serialize", self, "as", embed_datafiles, verify_jsonifiable, include_class_attributes)
+        return self.get_factory_name(), self.export_data(embed_datafiles, verify_jsonifiable, include_class_attributes, deep_export)
 
     # the difference between signature and version is that version can be avoided in definition and substituted later
     # it can be done differently
@@ -901,7 +896,14 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
             log("isolate cleanup:",self._da_isolated_directory,level='top')
             if self._da_isolated_directory == os.environ.get('HOME'):
                 raise Exception("should not clean home!")
-            shutil.rmtree(self._da_isolated_directory)
+
+            try:
+                shutil.rmtree(self._da_isolated_directory, ignore_errors=True)
+            except OSError as e:
+                log("\033[31m isolate cleanup FAILED:",self._da_isolated_directory,"\033[0m",level='top')
+                files = [str(p) for p in Path(".").rglob("*")]
+                log("\033[31m found residual files:", files, "\033[0m", level='top')
+                raise Exception(repr(e), repr(files))
 
 
         return result

@@ -1,3 +1,4 @@
+import os
 import json
 import yaml as yaml
 import argparse
@@ -109,21 +110,57 @@ def main():
 
     parser = argparse.ArgumentParser(description='client to remote dda combinator')
     parser.add_argument('target')
+    parser.add_argument('-p',dest='just_print',action='store_true',default=False)
     parser.add_argument('-F',dest='from_file',action='store_true',default=False)
     parser.add_argument('-m',dest='modules',action='append',default=[])
     parser.add_argument('-a',dest='assume',action='append',default=[])
     parser.add_argument('-i',dest='inject',action='append',default=[])
     parser.add_argument('-D',dest='prompt_delegate',action='store_true',default=False)
+    parser.add_argument('-H',dest='from_hub',action='store_true',default=False)
 
     args = parser.parse_args()
 
-    if args.from_file:
-        identity=da.DataAnalysisIdentity.from_dict(yaml.load(open(args.target)))
-    else:
+    custom_source_flags = { k:getattr(args, k) for k in ['from_hub', 'from_file'] }
+
+    if sum(custom_source_flags.values()) > 1:
+        raise Exception(f"{', '.join(custom_source_flags.keys())} are mutually exclusive!")
+
+    if sum(custom_source_flags.values()) == 0:
         log("target:",args.target)
         log("modules:",args.modules)
 
-    emerge_from_identity(identity).get()
+    if args.from_hub:
+        import dqueue
+        q = dqueue.from_uri(os.environ.get('ODAHUB', None))
+        ti = json.loads(q.task_info(args.target)['task_dict_string'])
+        print(ti)
+        identity=da.DataAnalysisIdentity.from_dict(ti['task_data']['object_identity'])
+
+    if args.from_file:
+        identity=da.DataAnalysisIdentity.from_dict(yaml.load(open(args.target)))
+
+    if args.just_print:
+        print(identity)
+
+        c = identity.factory_name
+
+        for m in identity.modules:
+            print(m)
+            if m[0] == 'git':
+                if m[2] is None or m[2] == 'None':
+                    c += f' -m git://{m[1]}'
+                else:
+                    c += f' -m git://{m[1]}/{m[2]}'
+            else:
+                c += f' -m {m}'
+
+        for a in identity.assumptions:
+            if a[0] == '':
+                c += ' -a \'' + str(a[1]) + '\''
+        
+        print(c)
+    else:
+        emerge_from_identity(identity).get()
 
 
 if __name__ == "__main__":

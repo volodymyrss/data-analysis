@@ -6,6 +6,7 @@ import argparse
 import json
 import dqueue
 import sys
+import os
 import urllib.request, urllib.parse, urllib.error
 import shutil
 
@@ -40,6 +41,7 @@ def main():
     parser.add_argument('-D', dest='prompt_delegate_to_queue', metavar='QUEUE', type=str, help='delegate to queue',default=None)
     parser.add_argument('-I', dest='isolate',  help='...',action='store_true', default=True)
     parser.add_argument('-Ic', dest='isolate_cleanup',  help='...',action='store_true', default=False)
+    parser.add_argument('-A', dest='accept_failure',  help='...',action='store_true', default=False)
     parser.add_argument('--delegate-target', dest='delegate_target', action="store_true",  help='delegate target',default=False)
     parser.add_argument('--callback', dest='callback', metavar='QUEUE', type=str, help='delegate to queue',default=None)
 
@@ -126,12 +128,11 @@ def main():
         if delegation_state is not None and delegation_state['state']=="done":
             log("the prompt delegation already done, disabling run and hoping for results")
             args.disable_run.append([args.object_name])
-        elif delegation_state is not None and delegation_state['state']=="failed":
+        elif delegation_state is not None and delegation_state['state']=="failed" and args.accept_failure:
             log("the prompt delegation already done and failed, raising exception")
 
-            log("delegation state failure:", failure)
-
             failure=delegation_state
+            log("delegation state failure:", failure)
             failed_task=failure['task_entry']
             log("failed task",failed_task)
             failed_task_execution_info=failed_task['execution_info']
@@ -326,8 +327,16 @@ def main():
 
     if args.json:
         log("will dump serialization to json")
-        json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open("object_data.json","w"), sort_keys=True,
-                          indent=4, separators=(',', ': '))
+        if A._da_isolated_directory:
+            cwd = os.getcwd()
+            os.chdir(A._da_isolated_directory)
+            try:
+                json.dump(A.export_data(embed_datafiles=True,verify_jsonifiable=True),open(os.path.join(cwd, "object_data.json"),"w"), sort_keys=True,
+                                  indent=4, separators=(',', ': '))
+                os.chdir(cwd)
+            except:
+                os.chdir(cwd)
+                raise
 
     if args.serialize_json:
         fn = A.get_factory_name() + "_data.json"

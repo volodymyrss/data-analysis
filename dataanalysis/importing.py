@@ -30,7 +30,7 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
 
         traceback.print_stack()
 
-        raise Exception("failed to import",remote_git_root,name,version,"from git",exceptions)
+        raise Exception(f"failed to import {remote_git_root} {name} {version} from git: {exceptions}")
 
 
     if local_gitroot is None:
@@ -67,7 +67,12 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
     if os.path.exists(local_module_dir+"/dir_to_pythonpath"):
         if sys.path[0]!=local_module_dir:
             sys.path.insert(0,local_module_dir)
-    m=imp.load_source(name,module_file)
+    try:
+        m=imp.load_source(name,module_file)
+    except Exception as e:
+        print(f"\033[31m problem loading from {module_file} \033[0m")
+        print('\n'.join(traceback.format_stack()))
+        raise
     return m
 
 

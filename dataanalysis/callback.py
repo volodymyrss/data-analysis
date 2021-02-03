@@ -1,4 +1,5 @@
 import datetime
+import json
 
 try:
     import urllib.parse
@@ -120,6 +121,9 @@ class Callback(object):
 
         params.update(object_data)
         params['action'] = data.get('state', 'progress')
+
+        for k,v in params.items():
+            log(f"callback key {k} size {len(json.dumps(v))}", level='callback')
 
         if self.url.startswith("file://"):
             fn=self.url[len("file://"):]
