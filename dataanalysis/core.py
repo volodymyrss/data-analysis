@@ -8,6 +8,7 @@ import os
 import errno
 import tempfile
 import re
+import pprint
 import shutil
 import socket
 import sys
@@ -1390,6 +1391,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
                     if restore_rules['force_complete']:
+                        open("ProduceDisabledException-hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
                         raise ProduceDisabledException("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
                     else:
                         self.incomplete=True
