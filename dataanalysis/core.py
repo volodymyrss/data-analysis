@@ -1391,7 +1391,18 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
                     if restore_rules['force_complete']:
-                        open("ProduceDisabledException-hash.txt", "wt").write(pprint.pformat(hashe) + "\n")
+                        open("ProduceDisabledException-hash.txt", "wt").write(pprint.pformat(fih) + "\n")
+
+                        ftext=""
+                        for factorization in self.factory.factorizations:
+                            ftext+=("=" * 80)+"\n"
+                            for k,v in list(factorization.items()):
+                                ftext += "|" + k + "\n"
+                                ftext += ("-" * 80) + "\n"
+                                ftext += pprint.pformat(v)+"\n\n"
+
+                        open("ProduceDisabledException-factorizations.txt", "w").write(ftext)
+
                         raise ProduceDisabledException("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
                     else:
                         self.incomplete=True
