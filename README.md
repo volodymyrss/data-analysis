@@ -16,15 +16,18 @@ workflows.*
 
 We had large linear redundant analysis pipeline (INTEGRAL [OSA](https://www.isdc.unige.ch/integral/analysis)). We needed to understand it and make a lot of improvements, try many things - this made the pipeline much more complex.
 
-## What, another one?
+## What, another workflow managenment tool?
 
 Don't we have many frameworks like this already?
 
-Not quite. Here we leverage the python expressivness:
+**Not really**. 
+
+Here we leverage the python expressivness:
 
 * use class inheritance to build new workflow nodes
 * understandable to pylint
 
+**Most of all, this framework should be seen as means of expressing workflows following some user-friendly principles. For execution, can be morphed into something else**
 
 Workflow is expressed as collection of "pure function" single-valued Analysis Nodes, represented as __DataAnalysis__ classes.
 Python class inheritance is used to define __rdfs:subClassOf__ relations, and the class attributes induce __rdf:Property__ defining OWL-compatible ontology.
