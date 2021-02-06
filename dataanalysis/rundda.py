@@ -107,7 +107,7 @@ def main():
         cache=QueueCache(args.prompt_delegate_to_queue.strip())
 
         log("cache:",cache,"from",args.prompt_delegate_to_queue)
-        log("queue status before", cache.queue.info)
+        log("queue status before", cache.queue.summary)
 
         delegation_state=cache.queue.put(
             dict(
@@ -120,7 +120,7 @@ def main():
             )
         )
 
-        log("queue status now",cache.queue.info)
+        log("queue status now",cache.queue.summary)
         log("put in cache, exiting")
 
         e=dataanalysis.AnalysisDelegatedException(None)
