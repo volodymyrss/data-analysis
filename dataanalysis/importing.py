@@ -56,6 +56,7 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
         log("module already found!")
     else:
         cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
+        #log(f"\033[31mEXPENSIVE git clone {cmd} \033[0m")
         log(cmd)
         os.system(cmd)
         cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version

@@ -112,7 +112,6 @@ def main():
         delegation_state=cache.queue.put(
             dict(
                 object_identity=identity.serialize(),
-
             ),
             submission_data=dict(
                 request_origin="command_line",
@@ -155,6 +154,8 @@ def main():
 
             #args.disable_run.append([args.object_name])
         else:
+            e.delegation_state = delegation_state['state'] if delegation_state is not None else 'submitted'
+
             log("delegation exception", e)
             yaml.dump(
                 dict(
@@ -165,7 +166,7 @@ def main():
                     source_exceptions=None,
                     comment=None,
                     origin=None,
-                    delegation_state=delegation_state['state'] if delegation_state is not None else 'submitted',
+                    delegation_state=e.delegation_state,
                 ),
                 open("exception.yaml", "w"),
                 default_flow_style=False,
@@ -358,3 +359,6 @@ def main():
         log("isolate cleanup:",A._da_isolated_directory,level='top')
         shutil.rmtree(A._da_isolated_directory)
 
+
+if __name__ == "__main__":
+    main()

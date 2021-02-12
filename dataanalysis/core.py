@@ -212,7 +212,7 @@ class AnalysisDelegatedException(Exception):
     @property
     def signature(self):
         if self.hashe is None:
-            return "Undefined!"
+            return self._comment
 
         if self.hashe[0]=="analysis":
             return self.hashe[-1]
