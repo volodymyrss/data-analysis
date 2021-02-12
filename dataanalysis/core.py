@@ -829,7 +829,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
             self.summarize_resource_stats()
             self.process_hooks("top", self, message="restored from cache",
-                         resource_stats=self.current_resource_stats,
+                         #resource_stats=self.current_resource_stats,
                          resource_summmary=self.current_resource_summary,
                          #resource_stats=dict([[rs['resource_type'],rs] for rs in self._da_resource_stats]) if self._da_resource_stats is not None else {},
                          state="node_done")
