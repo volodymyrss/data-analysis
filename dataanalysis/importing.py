@@ -65,7 +65,7 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
             url = f"https://raw.githubusercontent.com/volodymyrss/dda-" + name + "/" + version + "/" + name +".py"
             r = requests.get(url, timeout=10)
             if r.status_code != 200:
-                raise RuntimeError("problem accessing url with module! {r} {r.text}")
+                raise RuntimeError(f"problem accessing url with module! url: {url} response {r} response text {r.text}")
 
             open(local_module_dir + "/" + name + ".py", "wb").write(r.content)
         else:
