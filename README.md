@@ -170,3 +170,5 @@ weak points are:
 
 The development was driven by the needs of analysing data of INTEGRAL space observatory: as of 2015 it is 20 Tb in 20Mfiles, about 1000 different kinds of data (see https://github.com/volodymyrss/dda-ddosa/).
 
+
+TODO: expressions and facts, prolog and schema
