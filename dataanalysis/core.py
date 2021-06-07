@@ -8,6 +8,7 @@ import os
 import errno
 import tempfile
 import re
+import pprint
 import shutil
 import socket
 import sys
@@ -211,7 +212,7 @@ class AnalysisDelegatedException(Exception):
     @property
     def signature(self):
         if self.hashe is None:
-            return "Undefined!"
+            return self._comment
 
         if self.hashe[0]=="analysis":
             return self.hashe[-1]
@@ -830,7 +831,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
             self.summarize_resource_stats()
             self.process_hooks("top", self, message="restored from cache",
-                         resource_stats=self.current_resource_stats,
+                         #resource_stats=self.current_resource_stats,
                          resource_summmary=self.current_resource_summary,
                          #resource_stats=dict([[rs['resource_type'],rs] for rs in self._da_resource_stats]) if self._da_resource_stats is not None else {},
                          state="node_done")
@@ -1392,6 +1393,18 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
                 if hasattr(self,'produce_disabled') and self.produce_disabled:
                     if restore_rules['force_complete']:
+                        open("ProduceDisabledException-hash.txt", "wt").write(pprint.pformat(fih) + "\n")
+
+                        ftext=""
+                        for factorization in self.factory.factorizations:
+                            ftext+=("=" * 80)+"\n"
+                            for k,v in list(factorization.items()):
+                                ftext += "|" + k + "\n"
+                                ftext += ("-" * 80) + "\n"
+                                ftext += pprint.pformat(v)+"\n\n"
+
+                        open("ProduceDisabledException-factorizations.txt", "w").write(ftext)
+
                         raise ProduceDisabledException("not allowed to produce but has to! at "+repr(self)+"; hashe: "+repr(fih))
                     else:
                         self.incomplete=True

@@ -2,6 +2,7 @@ import imp
 import os
 import shutil
 import sys
+import requests
 
 #from dataanalysis.caches import cache_core
 #from dataanalysis.core import DataAnalysis, DataFile
@@ -55,12 +56,28 @@ def _import_git_module(name,version,local_gitroot=None,remote_git_root=None,pres
     if preserve_found and os.path.exists(local_module_tag) and open(local_module_tag).read().strip()==version and os.path.exists(module_file):
         log("module already found!")
     else:
-        cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
-        log(cmd)
-        os.system(cmd)
-        cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
-        log(cmd)
-        os.system(cmd)
+        if os.environ.get('MIMIC_DDA_GIT_CLONE', 'no') == 'yes':
+            try:
+                os.makedirs(local_module_dir)
+            except FileExistsError as e:
+                log(f"can not make dir {local_module_dir} - {e} - probably ok")
+
+            url = f"https://raw.githubusercontent.com/volodymyrss/dda-" + name + "/" + version + "/" + name +".py"
+            r = requests.get(url, timeout=10)
+            if r.status_code != 200:
+                raise RuntimeError(f"problem accessing url with module! url: {url} response {r} response text {r.text}")
+
+            open(local_module_dir + "/" + name + ".py", "wb").write(r.content)
+        else:
+            cmd=netgit+" clone "+gitroot+"/dda-"+name+".git "+local_module_dir
+            log(f"\033[31mEXPENSIVE git clone {cmd} \033[0m", level='top')
+            log(cmd)
+            os.system(cmd)
+            cmd="cd " + local_module_dir + "; " + netgit + " pull; git checkout " + version
+            log(cmd)
+            os.system(cmd)
+
+        log(f"\033[32mmanaged to get from git " + local_module_dir + " \033[0m", level='top')
         open(local_module_dir+"/valid_version","w").write(version)
 
     log(name,module_file,level="importing")
