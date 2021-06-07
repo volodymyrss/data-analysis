@@ -38,7 +38,7 @@ jobs:
       run: |
         sudo apt-get -qq update
         sudo apt-get install graphviz
-        
+
         python -m pip install --upgrade pip
         pip install --upgrade pytest
         pip install codecov
@@ -66,7 +66,7 @@ jobs:
         py.test ./tests --cov=./
         
         coverage xml
-        python-codacy-coverage -r coverage.xml
+        #python-codacy-coverage -r coverage.xml
         codecov
 
 
