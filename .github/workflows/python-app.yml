@@ -20,7 +20,7 @@ jobs:
         image: mysql:5.7
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
-          MYSQL_DATABASE: laravel_tags
+          MYSQL_DATABASE: dqueue
       ports: "3306"
       options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
@@ -32,9 +32,21 @@ jobs:
         python-version: 3.8
     - name: Install dependencies
       run: |
+        sudo apt-get -qq update
+        sudo apt-get install graphviz
+
+        mysql -e 'CREATE DATABASE IF NOT EXISTS dqueue;'
+
         python -m pip install --upgrade pip
+        pip install --upgrade pytest
+        pip install codecov
+        pip install pytest-cov
+        pip install codacy-coverage
+
+        pip uninstall numpy -y
+        pip install -r requirements.txt --ignore-installed
+        
         pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install . --upgrade
     - name: Lint with flake8
       run: |
@@ -44,5 +56,15 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics || echo "failed second lint"
     - name: Test with pytest
       run: |
+        export DDA_DEFAULT_CACHE_ROOT="/tmp/servercache"
+        PYTHONPATH=./ py.test ./tests --cov=./
         export DQUEUE_DATABASE_URL="mysql+pool://root:@localhost/dqueue?max_connections=42&stale_timeout=8001.2"
-        pytest
+#        pytest
+        py.test ./tests --cov=./
+
+        coverage xml
+        python-codacy-coverage -r coverage.xml
+        codecov
+
+
+
