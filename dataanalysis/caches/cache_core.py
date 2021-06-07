@@ -348,6 +348,7 @@ class Cache(object):
         # other way
         if restore_config['datafile_restore_mode'] == "copy":
             try:
+                log('restore_config["datafile_restore_mode"] == "copy"', stored_filename)
                 if not self.filebackend.exists(stored_filename):
                     log("can not copy from from cache, while cache record exists! inconsistent cache!", stored_filename,
                         level='top')

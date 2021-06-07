@@ -1,5 +1,6 @@
 import os
 import glob
+import pytest
 
 def test_cache_corruption():
     from dataanalysis import core as da
@@ -31,13 +32,16 @@ def test_cache_corruption():
 
     
     for fn in glob.glob("filecache/InputAnalysis.v0/*/data.txt.gz") + glob.glob("data.txt*"):
+        print("removing", fn)
         os.remove(fn)    
 
     da.reset()
 
-    InputAnalysis()
+    InputAnalysis.produce_disabled = True
+    I = InputAnalysis()
+    
+    with pytest.raises(da.ProduceDisabledException):
+        A = Analysis()
+        A.get()
+    
 
-    A = Analysis()
-    A.get()
-
-    print(A.data)
