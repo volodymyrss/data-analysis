@@ -11,6 +11,7 @@ def define_analysis():
     imp.reload(ddmoduletest)
 
 
+@pytest.mark.mysql
 def test_queue_cache():
     from dataanalysis import caches
     import dataanalysis.caches.queue
@@ -54,6 +55,7 @@ def test_queue_cache():
 
     print((worker.run_all()))
 
+@pytest.mark.mysql
 def test_queue_cache_generative():
     from dataanalysis import caches
     import dataanalysis.caches.queue
@@ -107,6 +109,7 @@ def test_queue_cache_generative():
 
     print((worker.run_once()))
 
+@pytest.mark.mysql
 def test_queue_reconstruct_env():
     from dataanalysis import caches
     import dataanalysis.caches.queue
