@@ -340,6 +340,7 @@ class Cache(object):
             log("stored filename:", stored_filename)
         except Exception as e:
             log("wat", e)
+            
         if not self.filebackend.exists(stored_filename):  # and
             log("file from cache does not exist, while cache record exists! inconsistent cache!")  # ,stored_filename)
             return None

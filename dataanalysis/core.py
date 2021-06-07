@@ -370,6 +370,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     schema_hidden=False
 
     test_files=True
+    test_files_if_failed=True
 
     assumptions=[]
 
