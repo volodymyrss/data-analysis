@@ -10,12 +10,11 @@ import tempfile
 import re
 import pprint
 import shutil
-import socket
 import sys
 import traceback
 import time
 import glob
-import base64
+import socket
 from collections import Mapping, Set, Sequence, OrderedDict
 
 from future.utils import with_metaclass
@@ -33,6 +32,8 @@ from dataanalysis.printhook import decorate_method_log,debug_print,log_hook
 
 from dataanalysis.printhook import get_local_log
 from functools import reduce
+import dataanalysis.log
+
 log=get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
@@ -1251,35 +1252,11 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     report_runtime_destination=None
     runtime_id=None
 
-    def report_runtime(self,message): # separet
-        if self.report_runtime_destination is None: return
-        try:
-            if not self.report_runtime_destination.startswith("mysql://"): return
-            dbname,table=self.report_runtime_destination[8:].split(".")
-            log("state goes to",dbname,table)
+    def report_runtime(self, message): # separet
+        if self.report_runtime_destination is None:
+            return
 
-            import MySQLdb
-            db = MySQLdb.connect(host="apcclwn12",
-                      user="root",
-                      port=42512,
-                      #unix_socket="/workdir/savchenk/mysql/var/mysql.socket",
-                      passwd=open(os.environ['HOME']+"/.secret_mysql_password").read().strip(), # your password
-                      db=dbname)
-
-            import socket
-
-            if self.runtime_id is None:
-                import random
-                self.runtime_id=random.randint(0,10000000)
-
-            cur=db.cursor()
-            cur.execute("INSERT INTO "+table+" (analysis,host,date,message,id) VALUES (%s,%s,NOW(),%s,%s)",(self.get_version(),socket.gethostname(),message,self.runtime_id))
-
-            db.commit()
-            db.close()
-
-        except Exception as e:
-            log("failed:",e)
+        dataanalysis.log.report_runtime(self.report_runtime_destination, self.runtime_id, message, self.get_version())
 
     _da_output_origin=None
 
@@ -1459,6 +1436,9 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                     if restore_rules['run_if_haveto'] or self.run_for_hashe:
 
                         mr=self.process_run_main() # MAIN!
+
+                        # failing should lead to checking cache
+
                         self.process_timespent_interpret()
                         output_origin="main"
                         self._da_output_origin=output_origin

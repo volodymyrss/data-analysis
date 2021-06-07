@@ -280,8 +280,8 @@ class QueueCacheWorker(object):
                 log("trying to get a task from", self.queue)
                 print("trying to get a task from", self.queue)
                 task=self.queue.get(worker_knowledge=self.worker_knowledge)
-                print(f"\033[031mgot task: {task:.200s}...\033[0m")
-                print(f"\033[031mgot task data: {task.task_data:.200s}... \033[0m")
+                print(f"\033[031mgot task: {repr(task):.200s}...\033[0m")
+                print(f"\033[031mgot task data: {repr(task.task_data):.200s}... \033[0m")
                 open('object_identity.json', 'w').write(json.dumps(task.task_data['object_identity']))
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
             except dqueue.TaskStolen:
