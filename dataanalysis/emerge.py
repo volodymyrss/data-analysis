@@ -132,8 +132,16 @@ def main():
     if args.from_hub:
         import dqueue
         q = dqueue.from_uri(os.environ.get('ODAHUB', None))
-        ti = json.loads(q.task_info(args.target)['task_dict_string'])
-        print(ti)
+
+        complete_task_info = q.task_info(args.target)
+        try:
+            ti = json.loads(complete_task_info['task_dict_string'])
+        except KeyError:
+            print("problem finding task_dict_string:", complete_task_info)
+            raise
+
+        print(ti['task_data'])
+        print(ti['task_data']['object_identity'])
         identity=da.DataAnalysisIdentity.from_dict(ti['task_data']['object_identity'])
 
     if args.from_file:
