@@ -603,6 +603,8 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
         if verify_jsonifiable:
             res=[]
+            log(render("{MAGENTA}verify_jsonifiable of %s : %s with %s items{/}"%(self, r, len(r.items()))),level="top")
+
             for a,b in list(r.items()):
                 res.append([a,jsonify.jsonify(b)])
             r=dict(res)
@@ -1306,7 +1308,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
-        log("stacked factory assumptions:", self.factory.factory_assumptions_stacked, level="assumptions")
+        #log("stacked factory assumptions:", self.factory.factory_assumptions_stacked, level="assumptions")
         log(render("{BLUE}PROCESS{/} "+repr(self)))
 
         if requested_by is None:
