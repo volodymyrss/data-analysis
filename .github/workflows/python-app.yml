@@ -14,14 +14,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     services:
       mysql:
         image: mysql:5.7
         env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: yes
           MYSQL_DATABASE: dqueue
-        ports: "3306"
+          MYSQL_USER: dqueue
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: rootpassword
+#          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        ports:
+          - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
@@ -58,7 +62,7 @@ jobs:
       env:
         DDA_DEFAULT_CACHE_ROOT: "/tmp/servercache"
         PYTHONPATH: "./"
-        DQUEUE_DATABASE_URL: "mysql+pool://root:@localhost/dqueue?max_connections=42&stale_timeout=8001.2"
+        DQUEUE_DATABASE_URL: "mysql+pool://dqueue:password@localhost/dqueue?max_connections=42&stale_timeout=8001.2"
 
       run: |        
         py.test ./tests --cov=./
