@@ -29,11 +29,11 @@ def test_cache_corruption():
     I = InputAnalysis()
     I.get()
         
-    for fn in glob.glob(
-            os.path.join(
-                os.environ.get("DDA_DEFAULT_CACHE_ROOT", "./"), 
-                "filecache/InputAnalysis.v0/*/data.txt.gz"
-            )) + glob.glob("data.txt*"):
+    for fn in glob.glob(os.path.join(
+                os.environ.get("DDA_DEFAULT_CACHE_ROOT", "filecache"), 
+                "InputAnalysis.v0/*/data.txt.gz"
+              )) + \
+              glob.glob("data.txt*"):
         print("removing", os.path.abspath(fn))
         os.remove(fn)    
 
