@@ -127,7 +127,7 @@ def test_multiple_resource_delegation(client):
 
     print((excinfo.value.resources))
 
-
+@pytest.mark.skip(reason="not used")
 def test_live_resource_delegation(client):
     import dataanalysis.core as da
     import dataanalysis
@@ -170,6 +170,7 @@ def test_live_resource_delegation(client):
 #    assert os.getpid() == R.data['_da_resource_summary']['main_executed_on']['pid']
     #assert threading.current_thread().ident == R.data['_da_resource_summary']['main_executed_on']['thread_id']
 
+@pytest.mark.skip(reason="not used")
 def test_live_resource_server_cachable(client):
     import dataanalysis.core as da
     import dataanalysis
