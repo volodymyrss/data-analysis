@@ -32,9 +32,8 @@ from dataanalysis.printhook import decorate_method_log,debug_print,log_hook
 
 from dataanalysis.printhook import get_local_log
 from functools import reduce
-import dataanalysis.log
 
-log=get_local_log(__name__)
+log = get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
 
@@ -370,6 +369,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     schema_hidden=False
 
     test_files=True
+    test_files_if_failed=True
 
     assumptions=[]
 
@@ -1255,8 +1255,6 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     def report_runtime(self, message): # separet
         if self.report_runtime_destination is None:
             return
-
-        dataanalysis.log.report_runtime(self.report_runtime_destination, self.runtime_id, message, self.get_version())
 
     _da_output_origin=None
 
