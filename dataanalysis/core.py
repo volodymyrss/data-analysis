@@ -605,7 +605,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
         if verify_jsonifiable:
             res=[]
-            log(render("{MAGENTA}verify_jsonifiable of %s : %s with %s items{/}"%(self, r, len(r.items()))),level="top")
+            #log(render("{MAGENTA}verify_jsonifiable of %s : %s with %s items{/}"%(self, r, len(r.items()))),level="top")
 
             for a,b in list(r.items()):
                 res.append([a,jsonify.jsonify(b)])

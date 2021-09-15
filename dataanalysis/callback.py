@@ -8,6 +8,7 @@ except ImportError:
 
 import requests
 import dqueue
+import os
 
 from dataanalysis.printhook import log, log_hook
 
@@ -104,6 +105,10 @@ class Callback(object):
         return {}
 
     def process_filtered(self,level,obj,message,data):
+        if os.environ.get("DDA_REDUCED_CALLBACKS", "no") == "yes":
+            if message in ["restored from cache", "started object processing"]:
+                log("\033[31mDDA_REDUCED_CALLBACKS requests ignoring callback\033[0m", level, obj, message, data, level="top")
+                return
 
         if self.url is None:
             return
