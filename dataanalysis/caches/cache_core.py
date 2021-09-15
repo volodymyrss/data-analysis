@@ -566,10 +566,11 @@ class Cache(object):
 
     # TODO: clear the directory!
     def assemble_blob(self,hashe,obj):
-        self.store_to_directory(hashe,obj,"./blob")
+        blob_dir = "./blob-{}".format(self.hashe2signature(hashe))
+        self.store_to_directory(hashe, obj, blob_dir)
 
         with tarfile.open("tmp.tgz", "w:gz") as tar:
-            for name in glob.glob("./blob/*"):
+            for name in glob.glob(os.path.join(blob_dir, "*")):
                 tar.add(name)
 
         tar.close()
