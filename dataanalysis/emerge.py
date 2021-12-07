@@ -2,6 +2,7 @@ import os
 import json
 import yaml as yaml
 import argparse
+import difflib
 
 import dataanalysis.importing as importing
 from dataanalysis.caches.resources import jsonify
@@ -34,15 +35,25 @@ def import_ddmodules(module_names=None):
     return modules
 
 class InconsitentEmergence(Exception):
-    def __init__(self,message,cando,wanttodo):
+    def __init__(self,message, cando, wanttodo):
         self.message=message
         self.cando=cando
         self.wanttodo=wanttodo
 
     def __repr__(self):
-        return self.__class__.__name__+": "+repr(self.message)
+        a = json.dumps(self.cando, sort_keys=True, indent=4)
+        b = json.dumps(self.wanttodo, sort_keys=True, indent=4)
+        # open("a.json", "w").write(a)
+        # open("b.json", "w").write(b)
+        return self.__class__.__name__ + ": " + repr(self.message) + \
+               a + \
+               b + \
+               ("\n".join(difflib.unified_diff(a.split("\n"), b.split("\n"))))
 
-def emerge_from_identity(identity):
+    def __str__(self):
+        return repr(self)
+
+def emerge_from_identity(identity: da.DataAnalysisIdentity):
     da.reset()
 
     imp.reload(dataanalysis.graphtools)
@@ -104,9 +115,21 @@ def emerge_from_graph(graph):
     pass
 
 
-def main():
-    log('hello world')
+def verify_identity(object_identity: da.DataAnalysisIdentity):
+    saved_state = da.AnalysisFactory.get_state()
 
+    emerged = emerge_from_identity(object_identity).expected_hashe
+    emerged = hashtools.hashe_replace_object(emerged, None, "None")
+
+    expected = object_identity.expected_hashe
+    expected = hashtools.hashe_replace_object(expected, None, "None")    
+
+    if emerged != expected:
+        raise InconsitentEmergence("verify_identity", emerged, expected)
+    
+    da.AnalysisFactory.set_state(saved_state)
+
+def main():
 
     parser = argparse.ArgumentParser(description='client to remote dda combinator')
     parser.add_argument('target')

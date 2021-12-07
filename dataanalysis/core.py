@@ -430,23 +430,66 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
         return name
 
+    def get_all_assumptions(self, reduce_assumptions_with_hashe=True):
+        all_possible_assumptions = self.factory.factory_assumptions_stacked + self.assumptions
+
+        if reduce_assumptions_with_hashe:        
+            assumptions = []
+
+            for assumption in all_possible_assumptions:
+                print("DDA_DEBUG_TASKDATA:\n\033[36m{}\033[0m".format(
+                    f"checking if {assumption} ({assumption.__class__}) belongs"
+                ))
+
+                if assumption in assumptions:
+                    print("duplicate: popping")                    
+                    assumptions = [a for a in assumptions if a != assumption]                
+
+                # if not hashtools.find_object(self.expected_hashe, assumption.expected_hashe):
+                #     # print("\033[31mNOT found expected_hashe:\033[0m", assumption.expected_hashe)
+                #     # json.dump(assumption.expected_hashe, open('assumption_expected_hashe.json', 'w'))
+                #     # json.dump(self.expected_hashe, open('expected_hashe.json', 'w'))                        
+                #     # raise RuntimeError
+
+                _assumptions = []
+                for _a in assumptions:
+                    if _a != assumption and assumption.get_factory_name() == _a.get_factory_name():
+                        print(f"\033[31moverriding previous assumption: {_a} => {assumption}\033[0m")
+                    else:
+                        _assumptions.append(_a)
+
+                assumptions = _assumptions
+                    
+                # else:
+                #     print("found expected_hashe:", assumption.expected_hashe)
+                
+                assumptions.append(assumption)
+
+            print(f"\033[31m now assumptions {len(assumptions)} / {len(all_possible_assumptions)}\033[0m")                
+        else:
+            assumptions = all_possible_assumptions
+        
+        return assumptions
+
     def get_identity(self):
         log("assembling portable identity", level="top")
         log("object assumptions:",self.assumptions)
         log("factory assumptions:", self.factory.cache_assumptions)
 
         assumptions = []
-        for a in [a.serialize() for a in (self.factory.factory_assumptions_stacked + self.assumptions)]:
+        for a in [a.serialize() for a in self.get_all_assumptions()]:
             if len(assumptions) == 0 or assumptions[-1] != a:
                 assumptions.append(a)
 
-        return DataAnalysisIdentity(
+        object_identity = DataAnalysisIdentity(
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
             assumptions=assumptions,
             expected_hashe=self.expected_hashe,
         )
+
+        return object_identity
 
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
         self=object.__new__(self)
