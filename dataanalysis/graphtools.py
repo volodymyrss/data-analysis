@@ -50,7 +50,7 @@ class Factorize(da.DataAnalysis):
         ahash = mf.process(output_required=False, run_if_haveto=False)[0]
 
         print(("generalized hash:", ahash))
-        print(("replaced None hash:",hashe_replace_object(ahash, None, 'None') ))
+        print(("replaced None hash:",hashe_replace_object(ahash, None, 'None')))
         rh = shhash(ahash)
         print(("hashmapped:", hashe_map(rh, str)))
         print(("reduced hash", rh))

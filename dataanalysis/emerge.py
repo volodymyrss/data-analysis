@@ -1,5 +1,6 @@
 import os
 import json
+import gzip
 import yaml as yaml
 import argparse
 import difflib
@@ -129,11 +130,14 @@ def verify_identity(object_identity: da.DataAnalysisIdentity):
     
     da.AnalysisFactory.set_state(saved_state)
 
-def main():
-
+def main(args=None):
+        
     parser = argparse.ArgumentParser(description='client to remote dda combinator')
     parser.add_argument('target')
-    parser.add_argument('-p',dest='just_print',action='store_true',default=False)
+    parser.add_argument('-p',dest='just_print', help="just print", action='store_true',default=False)
+    parser.add_argument('-c',dest='just_check', help="just check",action='store_true',default=False)
+    parser.add_argument('-r',dest='just_restore', help="just restore",action='store_true',default=False)
+    parser.add_argument('-C',dest='from_ddcache', help="from ddcache entry", action='store_true',default=False)
     parser.add_argument('-F',dest='from_file',action='store_true',default=False)
     parser.add_argument('-m',dest='modules',action='append',default=[])
     parser.add_argument('-a',dest='assume',action='append',default=[])
@@ -141,9 +145,12 @@ def main():
     parser.add_argument('-D',dest='prompt_delegate',action='store_true',default=False)
     parser.add_argument('-H',dest='from_hub',action='store_true',default=False)
 
-    args = parser.parse_args()
+    if args is None:    
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args)
 
-    custom_source_flags = { k:getattr(args, k) for k in ['from_hub', 'from_file'] }
+    custom_source_flags = { k:getattr(args, k) for k in ['from_hub', 'from_file', 'from_ddcache'] }
 
     if sum(custom_source_flags.values()) > 1:
         raise Exception(f"{', '.join(custom_source_flags.keys())} are mutually exclusive!")
@@ -167,9 +174,24 @@ def main():
         print(ti['task_data']['object_identity'])
         identity=da.DataAnalysisIdentity.from_dict(ti['task_data']['object_identity'])
 
-    if args.from_file:
-        identity=da.DataAnalysisIdentity.from_dict(yaml.load(open(args.target)))
+    if args.from_ddcache:
+        import glob
+        print("target:", args.target)
+        print(glob.glob(args.target + "/*"))
+        args.from_file = True
+        args.target  = args.target + "/object_identity.yaml.gz"
 
+
+    if args.from_file:
+        try:
+            y = yaml.load(open(args.target), Loader=yaml.Loader)
+        except:
+            y = yaml.load(gzip.open(args.target), Loader=yaml.Loader)
+
+        identity=da.DataAnalysisIdentity.from_dict(y)
+
+    A = None
+    
     if args.just_print:
         print(identity)
 
@@ -191,7 +213,15 @@ def main():
         
         print(c)
     else:
-        emerge_from_identity(identity).get()
+        A = emerge_from_identity(identity)
+
+        if not args.just_check:
+            if args.just_restore:
+                A.produce_disabled = True
+
+            A.get()
+                
+    return A
 
 
 if __name__ == "__main__":
