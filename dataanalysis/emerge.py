@@ -1,7 +1,9 @@
 import os
 import json
+import gzip
 import yaml as yaml
 import argparse
+import difflib
 
 import dataanalysis.importing as importing
 from dataanalysis.caches.resources import jsonify
@@ -34,15 +36,25 @@ def import_ddmodules(module_names=None):
     return modules
 
 class InconsitentEmergence(Exception):
-    def __init__(self,message,cando,wanttodo):
+    def __init__(self,message, cando, wanttodo):
         self.message=message
         self.cando=cando
         self.wanttodo=wanttodo
 
     def __repr__(self):
-        return self.__class__.__name__+": "+repr(self.message)
+        a = json.dumps(self.cando, sort_keys=True, indent=4)
+        b = json.dumps(self.wanttodo, sort_keys=True, indent=4)
+        # open("a.json", "w").write(a)
+        # open("b.json", "w").write(b)
+        return self.__class__.__name__ + ": " + repr(self.message) + \
+               a + \
+               b + \
+               ("\n".join(difflib.unified_diff(a.split("\n"), b.split("\n"))))
 
-def emerge_from_identity(identity):
+    def __str__(self):
+        return repr(self)
+
+def emerge_from_identity(identity: da.DataAnalysisIdentity):
     da.reset()
 
     imp.reload(dataanalysis.graphtools)
@@ -104,13 +116,28 @@ def emerge_from_graph(graph):
     pass
 
 
-def main():
-    log('hello world')
+def verify_identity(object_identity: da.DataAnalysisIdentity):
+    saved_state = da.AnalysisFactory.get_state()
 
+    emerged = emerge_from_identity(object_identity).expected_hashe
+    emerged = hashtools.hashe_replace_object(emerged, None, "None")
 
+    expected = object_identity.expected_hashe
+    expected = hashtools.hashe_replace_object(expected, None, "None")    
+
+    if emerged != expected:
+        raise InconsitentEmergence("verify_identity", emerged, expected)
+    
+    da.AnalysisFactory.set_state(saved_state)
+
+def main(args=None):
+        
     parser = argparse.ArgumentParser(description='client to remote dda combinator')
     parser.add_argument('target')
-    parser.add_argument('-p',dest='just_print',action='store_true',default=False)
+    parser.add_argument('-p',dest='just_print', help="just print", action='store_true',default=False)
+    parser.add_argument('-c',dest='just_check', help="just check",action='store_true',default=False)
+    parser.add_argument('-r',dest='just_restore', help="just restore",action='store_true',default=False)
+    parser.add_argument('-C',dest='from_ddcache', help="from ddcache entry", action='store_true',default=False)
     parser.add_argument('-F',dest='from_file',action='store_true',default=False)
     parser.add_argument('-m',dest='modules',action='append',default=[])
     parser.add_argument('-a',dest='assume',action='append',default=[])
@@ -118,9 +145,12 @@ def main():
     parser.add_argument('-D',dest='prompt_delegate',action='store_true',default=False)
     parser.add_argument('-H',dest='from_hub',action='store_true',default=False)
 
-    args = parser.parse_args()
+    if args is None:    
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(args)
 
-    custom_source_flags = { k:getattr(args, k) for k in ['from_hub', 'from_file'] }
+    custom_source_flags = { k:getattr(args, k) for k in ['from_hub', 'from_file', 'from_ddcache'] }
 
     if sum(custom_source_flags.values()) > 1:
         raise Exception(f"{', '.join(custom_source_flags.keys())} are mutually exclusive!")
@@ -132,13 +162,36 @@ def main():
     if args.from_hub:
         import dqueue
         q = dqueue.from_uri(os.environ.get('ODAHUB', None))
-        ti = json.loads(q.task_info(args.target)['task_dict_string'])
-        print(ti)
+
+        complete_task_info = q.task_info(args.target)
+        try:
+            ti = json.loads(complete_task_info['task_dict_string'])
+        except KeyError:
+            print("problem finding task_dict_string:", complete_task_info)
+            raise
+
+        print(ti['task_data'])
+        print(ti['task_data']['object_identity'])
         identity=da.DataAnalysisIdentity.from_dict(ti['task_data']['object_identity'])
 
-    if args.from_file:
-        identity=da.DataAnalysisIdentity.from_dict(yaml.load(open(args.target)))
+    if args.from_ddcache:
+        import glob
+        print("target:", args.target)
+        print(glob.glob(args.target + "/*"))
+        args.from_file = True
+        args.target  = args.target + "/object_identity.yaml.gz"
 
+
+    if args.from_file:
+        try:
+            y = yaml.load(open(args.target), Loader=yaml.Loader)
+        except:
+            y = yaml.load(gzip.open(args.target), Loader=yaml.Loader)
+
+        identity=da.DataAnalysisIdentity.from_dict(y)
+
+    A = None
+    
     if args.just_print:
         print(identity)
 
@@ -160,7 +213,15 @@ def main():
         
         print(c)
     else:
-        emerge_from_identity(identity).get()
+        A = emerge_from_identity(identity)
+
+        if not args.just_check:
+            if args.just_restore:
+                A.produce_disabled = True
+
+            A.get()
+                
+    return A
 
 
 if __name__ == "__main__":

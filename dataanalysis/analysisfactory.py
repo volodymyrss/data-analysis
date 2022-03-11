@@ -45,6 +45,22 @@ class AnalysisFactoryClass(metaclass=decorate_factory):  # how to unify this wit
         self.factorizations=[]
         self.dda_modules_used=[]
 
+    def get_state(self):
+        return {
+            n: getattr(self, n) for n in [
+                "comment",
+                "cache",
+                "cache_assumptions",
+                "cache_stack",
+                "factorizations",
+                "dda_modules_used"]
+        }
+
+    def set_state(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
+        
+
     def note_factorization(self,factorization):
         self.factorizations.append(factorization)
 

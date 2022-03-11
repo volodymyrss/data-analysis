@@ -10,12 +10,11 @@ import tempfile
 import re
 import pprint
 import shutil
-import socket
 import sys
 import traceback
 import time
 import glob
-import base64
+import socket
 from collections import Mapping, Set, Sequence, OrderedDict
 
 from future.utils import with_metaclass
@@ -33,7 +32,8 @@ from dataanalysis.printhook import decorate_method_log,debug_print,log_hook
 
 from dataanalysis.printhook import get_local_log
 from functools import reduce
-log=get_local_log(__name__)
+
+log = get_local_log(__name__)
 
 from dataanalysis.callback import CallbackHook
 
@@ -369,6 +369,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     schema_hidden=False
 
     test_files=True
+    test_files_if_failed=True
 
     assumptions=[]
 
@@ -429,23 +430,66 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
         return name
 
+    def get_all_assumptions(self, reduce_assumptions_with_hashe=True):
+        all_possible_assumptions = self.factory.factory_assumptions_stacked + self.assumptions
+
+        if reduce_assumptions_with_hashe:        
+            assumptions = []
+
+            for assumption in all_possible_assumptions:
+                print("DDA_DEBUG_TASKDATA:\n\033[36m{}\033[0m".format(
+                    f"checking if {assumption} ({assumption.__class__}) belongs"
+                ))
+
+                if assumption in assumptions:
+                    print("duplicate: popping")                    
+                    assumptions = [a for a in assumptions if a != assumption]                
+
+                # if not hashtools.find_object(self.expected_hashe, assumption.expected_hashe):
+                #     # print("\033[31mNOT found expected_hashe:\033[0m", assumption.expected_hashe)
+                #     # json.dump(assumption.expected_hashe, open('assumption_expected_hashe.json', 'w'))
+                #     # json.dump(self.expected_hashe, open('expected_hashe.json', 'w'))                        
+                #     # raise RuntimeError
+
+                _assumptions = []
+                for _a in assumptions:
+                    if _a != assumption and assumption.get_factory_name() == _a.get_factory_name():
+                        print(f"\033[31moverriding previous assumption: {_a} => {assumption}\033[0m")
+                    else:
+                        _assumptions.append(_a)
+
+                assumptions = _assumptions
+                    
+                # else:
+                #     print("found expected_hashe:", assumption.expected_hashe)
+                
+                assumptions.append(assumption)
+
+            print(f"\033[31m now assumptions {len(assumptions)} / {len(all_possible_assumptions)}\033[0m")                
+        else:
+            assumptions = all_possible_assumptions
+        
+        return assumptions
+
     def get_identity(self):
         log("assembling portable identity", level="top")
         log("object assumptions:",self.assumptions)
         log("factory assumptions:", self.factory.cache_assumptions)
 
         assumptions = []
-        for a in [a.serialize() for a in (self.factory.factory_assumptions_stacked + self.assumptions)]:
+        for a in [a.serialize() for a in self.get_all_assumptions()]:
             if len(assumptions) == 0 or assumptions[-1] != a:
                 assumptions.append(a)
 
-        return DataAnalysisIdentity(
+        object_identity = DataAnalysisIdentity(
             factory_name=self.get_factory_name(),
             full_name=self.get_version(),
             modules = self.factory.get_module_description(),
             assumptions=assumptions,
             expected_hashe=self.expected_hashe,
         )
+
+        return object_identity
 
     def __new__(self,*a,**args): # no need to split this in new and factory, all togather
         self=object.__new__(self)
@@ -604,6 +648,8 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
         if verify_jsonifiable:
             res=[]
+            #log(render("{MAGENTA}verify_jsonifiable of %s : %s with %s items{/}"%(self, r, len(r.items()))),level="top")
+
             for a,b in list(r.items()):
                 res.append([a,jsonify.jsonify(b)])
             r=dict(res)
@@ -1249,35 +1295,9 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
     report_runtime_destination=None
     runtime_id=None
 
-    def report_runtime(self,message): # separet
-        if self.report_runtime_destination is None: return
-        try:
-            if not self.report_runtime_destination.startswith("mysql://"): return
-            dbname,table=self.report_runtime_destination[8:].split(".")
-            log("state goes to",dbname,table)
-
-            import MySQLdb
-            db = MySQLdb.connect(host="apcclwn12",
-                      user="root",
-                      port=42512,
-                      #unix_socket="/workdir/savchenk/mysql/var/mysql.socket",
-                      passwd=open(os.environ['HOME']+"/.secret_mysql_password").read().strip(), # your password
-                      db=dbname)
-
-            import socket
-
-            if self.runtime_id is None:
-                import random
-                self.runtime_id=random.randint(0,10000000)
-
-            cur=db.cursor()
-            cur.execute("INSERT INTO "+table+" (analysis,host,date,message,id) VALUES (%s,%s,NOW(),%s,%s)",(self.get_version(),socket.gethostname(),message,self.runtime_id))
-
-            db.commit()
-            db.close()
-
-        except Exception as e:
-            log("failed:",e)
+    def report_runtime(self, message): # separet
+        if self.report_runtime_destination is None:
+            return
 
     _da_output_origin=None
 
@@ -1307,7 +1327,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
 
     def process(self,process_function=None,restore_rules=None,restore_config=None,requested_by=None,**extra):
-        log("stacked factory assumptions:", self.factory.factory_assumptions_stacked, level="assumptions")
+        #log("stacked factory assumptions:", self.factory.factory_assumptions_stacked, level="assumptions")
         log(render("{BLUE}PROCESS{/} "+repr(self)))
 
         if requested_by is None:
@@ -1457,6 +1477,9 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
                     if restore_rules['run_if_haveto'] or self.run_for_hashe:
 
                         mr=self.process_run_main() # MAIN!
+
+                        # failing should lead to checking cache
+
                         self.process_timespent_interpret()
                         output_origin="main"
                         self._da_output_origin=output_origin

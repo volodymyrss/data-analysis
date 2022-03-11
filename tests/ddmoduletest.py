@@ -97,6 +97,15 @@ class AAnalysis(da.DataAnalysis):
         if self.assumed_data is not None:
             self.data += "assumed:"+self.assumed_data
 
+class AAnalysisFiled(da.DataAnalysis):
+    cached=True
+
+    def main(self):
+        fn = 'data-file.txt'
+        open(fn, "w").write('test')
+        self.data_file = da.DataFile(fn)
+
+
 class BAnalysis(da.DataAnalysis):
     cached=True
     cache=cache
