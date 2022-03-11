@@ -136,7 +136,7 @@ class Callback(object):
                 log("callback to file", self.url, fn, params, level="callback")
                 f.write(str(datetime.datetime.now())+" "+level+": "+" in "+str(obj)+" got "+message+"; "+repr(object_data)+"\n")
 
-        elif self.url.startswith("http://"):
+        elif self.url.startswith("http://") or self.url.startswith("https://"):
 
             try:
                 r = dqueue.from_uri().callback(
