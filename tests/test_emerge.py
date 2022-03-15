@@ -1,4 +1,7 @@
 import imp
+import re
+import pytest
+
 def test_simple():
     import dataanalysis.core as da
     da.reset()
@@ -193,3 +196,41 @@ def test_destacking_tool():
         3,
         5,
     ]
+
+
+def test_from_ddcache():
+    import os
+    import shutil
+    import dataanalysis.core as da
+    da.reset()
+
+    shutil.rmtree("filecache")
+
+    import ddmoduletest    
+    
+    A = ddmoduletest.AAnalysisFiled()
+    A.get()
+
+    # ident=A.get_identity()
+    cached_path = os.path.dirname(A.data_file.get_cached_path())
+
+    da.reset()
+
+    from dataanalysis.emerge import main as emerge_main
+
+    emerge_main([cached_path, '-C', '-c'])    
+    
+    emerge_main([cached_path, '-C'])    
+
+    emerge_main([cached_path, '-C', '-r'])    
+
+    os.remove(cached_path + "/data-file.txt.gz")
+    os.remove("data-file.txt")
+
+    with pytest.raises(da.ProduceDisabledException):
+        A = emerge_main([cached_path, '-C', '-r'])    
+
+    # eA=emerge.emerge_from_identity(ident)
+    # eA.get()
+
+    # assert A.data_file == eA.data

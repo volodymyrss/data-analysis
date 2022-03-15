@@ -46,6 +46,23 @@ class QueueCache(SelectivelyDelegatingCache):
             object_identity=obj.get_identity().serialize(),
         )
 
+        if os.getenv('DDA_IDVERIFY_SIMPLIFY', 'no') == 'yes':
+            pass
+        else:
+            try:
+                emerge.verify_identity(da.DataAnalysisIdentity.from_dict(task_data['object_identity']))
+                print("verify identity succeeded")
+            except Exception:
+                print("verify identity failed")
+                raise
+
+        if os.getenv('DDA_DEBUG_TASKDATA', 'no') == 'yes':
+            # print("DDA_DEBUG_TASKDATA:\n\033[36m{}\033[0m".format(json.dumps(task_data, sort_keys=True, indent=4)))
+            print(f"DDA_DEBUG_TASKDATA:\n\033[36mtotal assumptions {len(task_data['object_identity']['assumptions'])}\033[0m")
+            print("DDA_DEBUG_TASKDATA:\n\033[36mall assumptions {}\033[0m".format(
+                ("\n".join([f"\033[36m{a[0]}:\033[37m {a}\033[0m" for a in task_data['object_identity']['assumptions']]))
+            ))
+
         r = None
         problems = []
         for i in range(20):
@@ -262,8 +279,8 @@ class QueueCacheWorker(object):
             worker_heartrate_skip=0
 
         while True:
-            if worker_heartrate_skip>0 and worker_age%worker_heartrate_skip==0:
-                log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_age)
+            if worker_heartrate_skip>0 and worker_tasks%worker_heartrate_skip==0:
+                log_logstash("worker", message="worker heart rate "+repr(self.queue.info), queue_info=self.queue.info,worker_age=worker_tasks)
             worker_tasks+=1
 
             if limit_tasks is not None and limit_tasks>0 and worker_tasks>limit_tasks:
@@ -279,9 +296,14 @@ class QueueCacheWorker(object):
             try:
                 log("trying to get a task from", self.queue)
                 print("trying to get a task from", self.queue)
-                task=self.queue.get(worker_knowledge=self.worker_knowledge)
-                print("\033[031mgot task:", task, "\033[0m")
-                print("\033[031mgot task dict:", task.task_data, "\033[0m")
+                
+                task = self.queue.get(
+                        worker_knowledge=self.worker_knowledge,
+                        only_users=os.environ.get('DDA_ONLY_USERS', 'all')
+                    )
+
+                print(f"\033[031mgot task: {repr(task):.200s}...\033[0m")
+                print(f"\033[031mgot task data: {repr(task.task_data):.200s}... \033[0m")
                 open('object_identity.json', 'w').write(json.dumps(task.task_data['object_identity']))
                 log_logstash("worker",message="worker taking task",origin="dda_worker",worker_event="taking_task",target=task.task_data['object_identity']['factory_name'])
             except dqueue.TaskStolen:

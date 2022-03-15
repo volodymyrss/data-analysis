@@ -340,6 +340,7 @@ class Cache(object):
             log("stored filename:", stored_filename)
         except Exception as e:
             log("wat", e)
+            
         if not self.filebackend.exists(stored_filename):  # and
             log("file from cache does not exist, while cache record exists! inconsistent cache!")  # ,stored_filename)
             return None
@@ -348,6 +349,7 @@ class Cache(object):
         # other way
         if restore_config['datafile_restore_mode'] == "copy":
             try:
+                log('restore_config["datafile_restore_mode"] == "copy"', stored_filename)
                 if not self.filebackend.exists(stored_filename):
                     log("can not copy from from cache, while cache record exists! inconsistent cache!", stored_filename,
                         level='top')
@@ -564,10 +566,11 @@ class Cache(object):
 
     # TODO: clear the directory!
     def assemble_blob(self,hashe,obj):
-        self.store_to_directory(hashe,obj,"./blob")
+        blob_dir = "./blob-{}".format(self.hashe2signature(hashe))
+        self.store_to_directory(hashe, obj, blob_dir)
 
         with tarfile.open("tmp.tgz", "w:gz") as tar:
-            for name in glob.glob("./blob/*"):
+            for name in glob.glob(os.path.join(blob_dir, "*")):
                 tar.add(name)
 
         tar.close()
