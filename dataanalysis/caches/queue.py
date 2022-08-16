@@ -225,7 +225,7 @@ class QueueCacheWorker(object):
         except dqueue.TaskStolen:
             raise
         except Exception as e:
-            A.process_hooks("top", A, message="task complete", state=final_state, task_comment="completed with unexpected failure "+repr(e))
+            A.process_hooks("top", A, message="task complete", state="failed", task_comment="completed with unexpected failure "+repr(e))
 
             client=get_sentry_client()
             if client is not None:
