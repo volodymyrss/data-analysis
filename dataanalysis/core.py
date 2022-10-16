@@ -1582,7 +1582,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
 
         if exceptions!=[]:
             log('found exceptions in',self,':',exceptions,level='top')
-            to_raise=AnalysisException.from_list(exceptions)
+            to_raise =AnalysisException.from_list(exceptions)
             log('will raise',to_raise,level='top')
             raise to_raise
 
