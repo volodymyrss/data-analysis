@@ -138,6 +138,7 @@ def main(args=None):
     parser.add_argument('-c',dest='just_check', help="just check",action='store_true',default=False)
     parser.add_argument('-r',dest='just_restore', help="just restore",action='store_true',default=False)
     parser.add_argument('-C',dest='from_ddcache', help="from ddcache entry", action='store_true',default=False)
+    parser.add_argument('-f',dest='force_run',action='store_true',default=False)
     parser.add_argument('-F',dest='from_file',action='store_true',default=False)
     parser.add_argument('-m',dest='modules',action='append',default=[])
     parser.add_argument('-a',dest='assume',action='append',default=[])
@@ -218,6 +219,12 @@ def main(args=None):
         if not args.just_check:
             if args.just_restore:
                 A.produce_disabled = True
+
+            if args.force_run:
+                b = da.AnalysisFactory[A.get_factory_name()]()
+                A.__class__.cached = False
+                A.cached = False
+                b.__class__.cached = False
 
             A.get()
                 

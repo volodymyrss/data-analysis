@@ -2,6 +2,7 @@ import time
 import traceback
 import yaml
 import json
+import random
 
 
 import os
@@ -264,7 +265,7 @@ class QueueCacheWorker(object):
     def worker_knowledge(self):
         return getattr(self, "_worker_knowledge", {})
 
-    def run_all(self, limit_tasks=1, limit_time_seconds=0, wait=10):
+    def run_all(self, limit_tasks=1, limit_time_seconds=0, wait=10, only_users=None):
         log_logstash("worker", message="worker starting", worker_event="starting")
         worker_tasks=0
 
@@ -296,10 +297,20 @@ class QueueCacheWorker(object):
             try:
                 log("trying to get a task from", self.queue)
                 print("trying to get a task from", self.queue)
+
+                extra = {}
+                
+                if only_users is None:
+                    only_users = os.environ.get('DDA_ONLY_USERS', None)
+
+                if only_users is not None:
+                    extra['only_users'] = random.choice(only_users.split(","))
+
+                log("extra job get keywords:", extra)
                 
                 task = self.queue.get(
                         worker_knowledge=self.worker_knowledge,
-                        only_users=os.environ.get('DDA_ONLY_USERS', 'all')
+                        **extra
                     )
 
                 print(f"\033[031mgot task: {repr(task):.200s}...\033[0m")
@@ -396,6 +407,7 @@ def main():
     parser.add_argument('-d', dest='delay', type=int, help='...', default=10)
     parser.add_argument('-k', dest='worker_knowledge_yaml', type=str, help='...', default=None)
     parser.add_argument('-n', dest='worker_id', type=str, help='...', default=None)
+    parser.add_argument('-u', dest='only_users', type=str, help='...', default=None)
     parser.add_argument('--json-log-file', dest='json_log_file', type=str, help='...', default=None)
 
     args=parser.parse_args()
@@ -425,7 +437,8 @@ def main():
         qcworker.run_all(
                     limit_tasks=args.limit_tasks,
                     limit_time_seconds=args.limit_time_seconds,
-                    wait=args.delay
+                    wait=args.delay,
+                    only_users=args.only_users,
                 )
 
 
