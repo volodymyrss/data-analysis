@@ -3,7 +3,12 @@ FROM docker.io/integralsw/osa-python:11.2-2-g667521a3-20220403-190332-refcat-43.
 RUN export HOME_OVERRRIDE=/tmp/home && mkdir -pv /tmp/home/pfiles && \
 	source /init.sh &&  \
 	pip install "minio<7.0.0" rdflib-jsonld pytest-flask "mistune<2.1,>=2.0.3" && \
+	pip uninstall -y data-analysis && \
 	cd /tmp && git clone https://github.com/ferrigno/data-analysis.git && \
 	cd data-analysis &&\
 	python setup.py install
 
+#To be able to use it for testing
+RUN rm -rf /tmp/home
+
+ADD tests /tests

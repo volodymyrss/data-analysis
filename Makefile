@@ -27,7 +27,6 @@ squash:
 	docker build --squash --build-arg OSA_VERSION=$(OSA_VERSION) --build-arg python_version=$(PYTHON_VERSION) --build-arg heasoft_version=$(HEASOFT_VERSION) . -t $(IMAGE)-squashed 
 	docker build --squash --build-arg OSA_VERSION=$(OSA_VERSION) --build-arg python_version=$(PYTHON_VERSION) --build-arg heasoft_version=$(HEASOFT_VERSION) . -t $(IMAGE_LATEST)-squashed 
 	
-
 pull:
 	docker pull $(IMAGE) 
 	docker pull $(IMAGE_LATEST) 
@@ -38,5 +37,5 @@ pull:
 jupyter: build
 	docker run -e DISPLAY=${DISPLAY} -v $(PWD):/home/jovyan -v /etc/passwd:/etc/passwd -it --entrypoint='' -v /tmp/.X11-unix:/tmp/.X11-unix -v ${HOME}/.Xauthority:/home/jovyan/.Xauthority:rw --net=host --user $(DUSER) $(IMAGE) bash -c 'export HOME_OVERRRIDE=/tmp; source /init.sh; jupyter notebook --ip 0.0.0.0 --no-browser --port=1234'
 
-test:
-	docker run --user $(shell id -u) $(IMAGE) bash -c 'cd /tests; ls -ltor; make'
+test: build
+	docker run -it -v /tmp:/home/jovyan --entrypoint='' --user $(shell id -u) $(IMAGE) bash -c 'export HOME_OVERRRIDE=/tmp/home;mkdir -pv /tmp/home/pfiles;source /init.sh;cp /tests/*.py /tmp/home; cd /tmp/home; ls -lotr; pytest'
