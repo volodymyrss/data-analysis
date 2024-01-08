@@ -17,12 +17,12 @@ import glob
 import socket
 try:
     # using Python 3.10+
-    from collections.abc import Mapping
+    from collections.abc import Mapping, Set, Sequence
 except ImportError:
     # using Python 3.10-
-    from collections import Mapping
+    from collections import Mapping, Set, Sequence
 
-from collections import Set, Sequence, OrderedDict
+from collections import OrderedDict
 
 from future.utils import with_metaclass
 
