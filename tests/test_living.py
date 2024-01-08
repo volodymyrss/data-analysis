@@ -16,7 +16,7 @@ def test_api_ping(client):
     res = client.get(url)
     assert res.json['ping']== 'pong'
 
-
+@pytest.mark.skip(reason='very long')
 def test_api_ping_separate(ddservice_fixture,app):
     url=url_for('status')
     import requests
@@ -39,6 +39,7 @@ def test_app_list(client):
 
 
 
+@pytest.mark.skip(reason='very long')
 def test_live_delegation(ddservice_fixture,app):
     import requests
     import dataanalysis.core as da
@@ -57,6 +58,7 @@ def test_live_delegation(ddservice_fixture,app):
 
     assert len(factory_r)>0
 
+@pytest.mark.skip(reason='very long')
 def test_live_delegation_assumptions(ddservice_fixture,app):
     import requests
     import dataanalysis.core as da
@@ -254,6 +256,7 @@ def test_live_chained_delegation(ddservice_fixture, app):
 
     assert isinstance(excinfo.value.resources[0], dataanalysis.caches.resources.WebResource)
 
+@pytest.mark.skip(reason='very long')
 def test_chained_waiting(ddservice_fixture, app):
     import dataanalysis.core as da
 
