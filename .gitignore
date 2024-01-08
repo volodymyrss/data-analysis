@@ -10,3 +10,9 @@ data_*csv*
 data_*txt*
 file*txt*
 log*txt*
+.Xauthority
+.ipynb_checkpoints/
+build/
+data_analysis.egg-info/
+dist/
+
