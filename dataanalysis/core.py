@@ -1,6 +1,5 @@
 from io import StringIO
 from pathlib import Path
-import collections
 import threading
 import gzip
 import json
@@ -15,7 +14,11 @@ import traceback
 import time
 import glob
 import socket
-from collections import Mapping, Set, Sequence, OrderedDict
+try:
+    from collections.abc import Mapping, Set, Sequence, Iterable
+    from collections import OrderedDict
+except ImportError:
+    from collections import Mapping, Set, Sequence, OrderedDict
 
 from future.utils import with_metaclass
 
@@ -1158,7 +1161,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         if mr is not None:
             log("main returns",mr,"attaching to the object as list")
 
-            if isinstance(mr, collections.Iterable):
+            if isinstance(mr, Iterable):
                 mr=list(mr)
             else:
                 mr=[mr]
