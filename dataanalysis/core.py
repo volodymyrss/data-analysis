@@ -1159,7 +1159,7 @@ class DataAnalysis(with_metaclass(decorate_all_methods, object)):
         if mr is not None:
             log("main returns",mr,"attaching to the object as list")
 
-            if isinstance(mr, collections.abc.Iterable):
+            if isinstance(mr, Iterable):
                 mr=list(mr)
             else:
                 mr=[mr]
