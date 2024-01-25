@@ -15,8 +15,12 @@ import traceback
 import time
 import glob
 import socket
-from collections.abc import Mapping, Set, Sequence
-from collections import OrderedDict
+try:
+    from collections.abc import Mapping, Set, Sequence, Iterable
+    from collections import OrderedDict
+    
+except ImportError:
+    from collections import Mapping, Set, Sequence, OrderedDict
 
 from future.utils import with_metaclass
 
