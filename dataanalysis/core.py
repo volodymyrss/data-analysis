@@ -17,7 +17,6 @@ import socket
 try:
     from collections.abc import Mapping, Set, Sequence, Iterable
     from collections import OrderedDict
-    
 except ImportError:
     from collections import Mapping, Set, Sequence, OrderedDict
 
