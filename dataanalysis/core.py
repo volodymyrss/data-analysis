@@ -1,6 +1,5 @@
 from io import StringIO
 from pathlib import Path
-import collections.abc
 import threading
 import gzip
 import json
